@@ -1,0 +1,28 @@
+logging:
+  level:
+    root: warn
+    net.wavem.uvc: debug
+
+server:
+  port: 8080
+
+url:
+  base: http://localhost:8080
+
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+    hiddenmethod:
+      filter:
+        enabled: true
+
+mqtt:
+  url: tcp://localhost
+  port: 1883
+  topic: /index
+  qos: 0
