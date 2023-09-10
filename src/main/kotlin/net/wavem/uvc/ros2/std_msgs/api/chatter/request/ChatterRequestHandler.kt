@@ -6,11 +6,11 @@ import org.springframework.stereotype.Component
 
 @Component
 class ChatterRequestHandler(
-    private val logger: MqttLogger,
+    private val log: MqttLogger,
     private val mqttOutboundGateway: MqttConfiguration.MqttOutboundGateway
 ) {
     fun handle(stdString: net.wavem.uvc.ros2.std_msgs.msg.String) {
-        logger.info(REQUEST_CLASS_TYPE, "[$MQTT_CHATTER_REQUEST_TOPIC] message arrived [$stdString]")
+        log.info(REQUEST_CLASS_TYPE, "[$MQTT_CHATTER_REQUEST_TOPIC] message arrived [$stdString]")
         mqttOutboundGateway.publish(topic = MQTT_CHATTER_REQUEST_TOPIC, data = stdString)
     }
 
