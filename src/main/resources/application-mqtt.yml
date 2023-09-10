@@ -1,0 +1,10 @@
+spring:
+  config:
+    activate:
+      on-profile: mqtt
+
+mqtt:
+  url: tcp://localhost
+  port: 1883
+  topic: /index
+  qos: 0

@@ -1,4 +1,4 @@
-package net.wavem.uvc.ros2.nav_msgs.handler.response
+package net.wavem.uvc.ros2.nav_msgs.api.map.response
 
 import net.wavem.uvc.ros2.std_msgs.msg.String
 import org.springframework.stereotype.Component

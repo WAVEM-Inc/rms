@@ -2,9 +2,9 @@ package net.wavem.uvc.mqtt.infra
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.wavem.uvc.mqtt.domain.MqttProperties
-import net.wavem.uvc.ros2.nav_msgs.msg.GetMap
-import net.wavem.uvc.ros2.std_msgs.handler.request.ChatterRequestHandler
-import net.wavem.uvc.ros2.std_msgs.handler.response.ChatterResponseHandler
+import net.wavem.uvc.ros2.nav_msgs.srv.GetMap
+import net.wavem.uvc.ros2.std_msgs.api.chatter.request.ChatterRequestHandler
+import net.wavem.uvc.ros2.std_msgs.api.chatter.response.ChatterResponseHandler
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions

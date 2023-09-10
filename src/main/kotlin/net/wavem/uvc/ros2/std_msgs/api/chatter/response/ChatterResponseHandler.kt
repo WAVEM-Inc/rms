@@ -1,19 +1,21 @@
-package net.wavem.uvc.ros2.std_msgs.handler.response
+package net.wavem.uvc.ros2.std_msgs.api.chatter.response
 
 import net.wavem.uvc.mqtt.infra.MqttConfiguration
+import net.wavem.uvc.mqtt.infra.MqttLogger
 import org.springframework.stereotype.Component
 
 @Component
 class ChatterResponseHandler(
+    private val log: MqttLogger,
     private val mqttOutboundGateway: MqttConfiguration.MqttOutboundGateway
 ) {
     fun handle(stdString: net.wavem.uvc.ros2.std_msgs.msg.String) {
-        println("$MQTT_CHATTER_RESPONSE_FLAG [$MQTT_CHATTER_RESPONSE_TOPIC] message arrived : [$stdString]")
+        log.info(RESPONSE_CLASS_TYPE, "[$MQTT_CHATTER_RESPONSE_TOPIC] message arrived : [$stdString]")
         mqttOutboundGateway.publish(topic = MQTT_CHATTER_RESPONSE_TOPIC, data = stdString)
     }
 
     companion object {
-        const val MQTT_CHATTER_RESPONSE_FLAG: String = "[INFO] mqtt callback result from"
+        const val RESPONSE_CLASS_TYPE: String = "RESP"
         const val MQTT_CHATTER_RESPONSE_TOPIC: String = "/atc/uvc/response/chatter"
     }
 }
