@@ -1,4 +1,4 @@
-package net.wavem.uvc.ros2.nav_msgs.handler.request
+package net.wavem.uvc.ros2.nav_msgs.api.map.request
 
 import net.wavem.uvc.mqtt.infra.MqttConfiguration
 import net.wavem.uvc.ros2.geometry_msgs.msg.Pose

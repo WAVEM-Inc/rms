@@ -5,7 +5,7 @@ import net.wavem.uvc.ros2.std_msgs.msg.Header
 data class OccupancyGrid(
     val header: Header,
     val info: MapMetaData,
-    val data: IntArray
+    val data: ByteArray
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -13,12 +13,11 @@ data class OccupancyGrid(
 
         other as OccupancyGrid
 
-        if (!data.contentEquals(other.data)) return false
-
-        return true
+        return data.contentEquals(other.data)
     }
 
     override fun hashCode(): Int {
         return data.contentHashCode()
     }
+
 }
