@@ -8,3 +8,42 @@ mqtt:
   port: 1883
   topic: /index
   qos: 0
+
+cmdvel:
+  requestToBridgeTopic: "/atc/uvc/request/cmd_vel"
+  responseFromBridgeTopic: "/response/cmd_vel"
+  qos: 0
+
+robotpose:
+  responseFromBridgeTopic: "/response/robot_pose"
+  qos: 0
+
+mapservermap:
+  requestToBridgeTopic: "/atc/uvc/request/map_server/map"
+  responseFromBridgeTopic: "/response/map_server/map"
+  qos: 1
+
+odometry:
+  requestToBridgeTopic: "/atc/uvc/request/odom"
+  responseFromBridgeTopic: "/response/odom"
+  qos: 0
+
+scan:
+  requestToBridgeTopic: "/atc/uvc/request/scan"
+  responseFromBridgeTopic: "/response/scan"
+  qos: 0
+
+imu:
+  requestToBridgeTopic: "/atc/uvc/request/imu"
+  responseFromBridgeTopic: "/response/imu"
+  qos: 0
+
+ubloxfix:
+  requestToBridgeTopic: "/atc/uvc/request/ublox/fix"
+  responseFromBridgeTopic: "/response/ublox/fix"
+  qos: 0
+
+chatter:
+  requestToBridgeTopic: "/atc/uvc/request/chatter"
+  responseFromBridgeTopic: "/response/chatter"
+  qos: 0

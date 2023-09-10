@@ -2,7 +2,24 @@ package net.wavem.uvc.mqtt.infra
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.wavem.uvc.mqtt.domain.MqttProperties
+import net.wavem.uvc.ros2.geometry_msgs.api.cmd_vel.domain.CmdVelProperties
+import net.wavem.uvc.ros2.geometry_msgs.api.cmd_vel.request.CmdVelRequestHandler
+import net.wavem.uvc.ros2.geometry_msgs.api.cmd_vel.response.CmdVelResponseHandler
+import net.wavem.uvc.ros2.geometry_msgs.api.robot_pose.domain.RobotPoseProperties
+import net.wavem.uvc.ros2.geometry_msgs.api.robot_pose.response.RobotPoseResponseHandler
+import net.wavem.uvc.ros2.geometry_msgs.msg.Pose
+import net.wavem.uvc.ros2.geometry_msgs.msg.Twist
+import net.wavem.uvc.ros2.nav_msgs.api.map.domain.MapServerMapProperties
+import net.wavem.uvc.ros2.nav_msgs.api.map.request.MapServerMapRequestHandler
+import net.wavem.uvc.ros2.nav_msgs.api.map.response.MapServerMapResponseHandler
+import net.wavem.uvc.ros2.nav_msgs.api.odometry.domain.OdometryProperties
+import net.wavem.uvc.ros2.nav_msgs.api.odometry.response.OdometryResponseHandler
+import net.wavem.uvc.ros2.nav_msgs.msg.Odometry
 import net.wavem.uvc.ros2.nav_msgs.srv.GetMap
+import net.wavem.uvc.ros2.sensor_msgs.msg.Imu
+import net.wavem.uvc.ros2.sensor_msgs.msg.LaserScan
+import net.wavem.uvc.ros2.sensor_msgs.msg.NavSatFix
+import net.wavem.uvc.ros2.std_msgs.api.chatter.domain.ChatterProperties
 import net.wavem.uvc.ros2.std_msgs.api.chatter.request.ChatterRequestHandler
 import net.wavem.uvc.ros2.std_msgs.api.chatter.response.ChatterResponseHandler
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient
@@ -27,10 +44,22 @@ import org.springframework.messaging.handler.annotation.Header
 
 @Configuration
 class MqttConfiguration(
+    private val log: MqttLogger,
+    private val mqttProperties: MqttProperties,
+    private val cmdVelProperties: CmdVelProperties,
+    private val robotPoseProperties: RobotPoseProperties,
+    private val mapServerMapProperties: MapServerMapProperties,
+    private val odometryProperties: OdometryProperties,
+    private val chatterProperties: ChatterProperties,
+    private val objectMapper: ObjectMapper,
+    private val cmdVelRequestHandler: CmdVelRequestHandler,
+    private val cmdVelResponseHandler: CmdVelResponseHandler,
+    private val robotPoseResponseHandler: RobotPoseResponseHandler,
+    private val mapServerMapRequestHandler: MapServerMapRequestHandler,
+    private val mapServerMapResponseHandler: MapServerMapResponseHandler,
+    private val odometryResponseHandler: OdometryResponseHandler,
     private val chatterRequestHandler: ChatterRequestHandler,
     private val chatterResponseHandler: ChatterResponseHandler,
-    private val mqttProperties: MqttProperties,
-    private val objectMapper: ObjectMapper,
 ) {
 
     @Bean
@@ -61,26 +90,122 @@ class MqttConfiguration(
     }
 
     @Bean
-    fun chatterRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter("/atc/uvc/request/chatter", 1)) {
+    fun cmdVelRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        cmdVelProperties.requestToBridgeTopic,
+        cmdVelProperties.qos
+    )) {
+        try {
+            transform(Transformers.fromJson(Twist::class.java))
+            handle {
+                cmdVelRequestHandler.handle(it.payload as Twist)
+            }
+        } catch (e: MqttException) {
+            log.error(REQUEST_CLASS_TYPE, "mqtt cmdVelRequestToBridge error occurred ${e.message}")
+        }
+    }
+
+    @Bean
+    fun cmdVelResponseFromBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        cmdVelProperties.requestToBridgeTopic,
+        cmdVelProperties.qos
+    )) {
+        try {
+            transform(Transformers.fromJson(Twist::class.java))
+            handle {
+                cmdVelResponseHandler.handle(it.payload as Twist)
+            }
+        } catch (e: MqttException) {
+            log.error(RESPONSE_CLASS_TYPE, "mqtt cmdVelResponseFromBridge error occurred ${e.message}")
+        }
+    }
+
+    @Bean
+    fun robotPoseResponseFromBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        robotPoseProperties.responseFromBridgeTopic,
+        robotPoseProperties.qos
+    )) {
+        try {
+            transform(Transformers.fromJson(Pose::class.java))
+            handle {
+                robotPoseResponseHandler.handle(it.payload as Pose)
+            }
+        } catch (e: MqttException) {
+            log.error(RESPONSE_CLASS_TYPE, "mqtt robotPoseResponseFromBridge error occurred ${e.message}")
+        }
+    }
+
+    @Bean
+    fun mapServerMapRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        mapServerMapProperties.requestToBridgeTopic,
+        mapServerMapProperties.qos
+    )) {
+        try {
+            transform(Transformers.fromJson(GetMap::class.java))
+            handle {
+                mapServerMapRequestHandler.handle(it.payload as GetMap)
+            }
+        } catch (e: MqttException) {
+            log.error(REQUEST_CLASS_TYPE, "mqtt mapServerMapRequestToBridge error occurred ${e.message}")
+        }
+    }
+
+    @Bean
+    fun mapServerMapResponseFromBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        mapServerMapProperties.responseFromBridgeTopic,
+        mapServerMapProperties.qos
+    )) {
+        try {
+            transform(Transformers.fromJson(GetMap::class.java))
+            handle {
+                mapServerMapResponseHandler.handle(it.payload as GetMap)
+            }
+        } catch (e: MqttException) {
+            log.error(RESPONSE_CLASS_TYPE, "mqtt mapServerMapResponseFromBridge error occurred ${e.message}")
+        }
+    }
+
+    @Bean
+    fun odometryResponseFromBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        odometryProperties.responseFromBridgeTopic,
+        odometryProperties.qos
+    )) {
+        try {
+            transform(Transformers.fromJson(Odometry::class.java))
+            handle {
+                odometryResponseHandler.handle(it.payload as Odometry)
+            }
+        } catch (e: MqttException) {
+            log.error(RESPONSE_CLASS_TYPE, "mqtt odometryResponseFromBridge error occurred ${e.message}")
+        }
+    }
+
+    @Bean
+    fun chatterRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        chatterProperties.requestToBridgeTopic,
+        chatterProperties.qos
+    )) {
         try {
             transform(Transformers.fromJson(net.wavem.uvc.ros2.std_msgs.msg.String::class.java))
             handle {
                 chatterRequestHandler.handle(it.payload as net.wavem.uvc.ros2.std_msgs.msg.String)
             }
         } catch (e: MqttException) {
-            println("mqtt chatterRequestToBridge error occurred ${e.message}")
+            log.error(REQUEST_CLASS_TYPE, "mqtt chatterRequestToBridge error occurred ${e.message}")
         }
     }
 
     @Bean
-    fun chatterResponseFromBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter("/response/chatter", 1)) {
+    fun chatterResponseFromBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        chatterProperties.responseFromBridgeTopic,
+        chatterProperties.qos
+    )) {
         try {
             transform(Transformers.fromJson(net.wavem.uvc.ros2.std_msgs.msg.String::class.java))
             handle {
                 chatterResponseHandler.handle(it.payload as net.wavem.uvc.ros2.std_msgs.msg.String)
             }
         } catch (e: MqttException) {
-            println("mqtt chatterResponseFromBridge error occurred ${e.message}")
+            log.error(RESPONSE_CLASS_TYPE, "mqtt chatterResponseFromBridge error occurred ${e.message}")
         }
     }
 
@@ -89,6 +214,12 @@ class MqttConfiguration(
         transform<Any> {
             when (it) {
                 is net.wavem.uvc.ros2.std_msgs.msg.String -> objectMapper.writeValueAsString(it)
+                is Twist -> objectMapper.writeValueAsString(it)
+                is Pose -> objectMapper.writeValueAsString(it)
+                is Odometry -> objectMapper.writeValueAsString(it)
+                is Imu -> objectMapper.writeValueAsString(it)
+                is LaserScan -> objectMapper.writeValueAsString(it)
+                is NavSatFix -> objectMapper.writeValueAsString(it)
                 is GetMap -> objectMapper.writeValueAsString(it)
                 else -> it
             }
@@ -115,10 +246,20 @@ class MqttConfiguration(
         fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: net.wavem.uvc.ros2.std_msgs.msg.String)
 
         @Gateway
+        fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: Twist)
+        @Gateway
         fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: GetMap)
+
+        @Gateway
+        fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: Odometry)
+
+        @Gateway
+        fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: Pose)
     }
 
     companion object {
         const val MQTT_OUTBOUND_CHANNEL: String = "outboundChannel"
+        const val REQUEST_CLASS_TYPE: String = "REQ"
+        const val RESPONSE_CLASS_TYPE: String = "RESP"
     }
 }
