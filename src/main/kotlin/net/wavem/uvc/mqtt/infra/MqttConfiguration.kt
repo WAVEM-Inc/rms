@@ -2,26 +2,26 @@ package net.wavem.uvc.mqtt.infra
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.wavem.uvc.mqtt.domain.MqttProperties
-import net.wavem.uvc.ros2.geometry_msgs.api.cmd_vel.domain.CmdVelProperties
-import net.wavem.uvc.ros2.geometry_msgs.api.cmd_vel.request.CmdVelRequestHandler
-import net.wavem.uvc.ros2.geometry_msgs.api.cmd_vel.response.CmdVelResponseHandler
-import net.wavem.uvc.ros2.geometry_msgs.api.robot_pose.domain.RobotPoseProperties
-import net.wavem.uvc.ros2.geometry_msgs.api.robot_pose.response.RobotPoseResponseHandler
-import net.wavem.uvc.ros2.geometry_msgs.msg.Pose
-import net.wavem.uvc.ros2.geometry_msgs.msg.Twist
-import net.wavem.uvc.ros2.nav_msgs.api.map.domain.MapServerMapProperties
-import net.wavem.uvc.ros2.nav_msgs.api.map.request.MapServerMapRequestHandler
-import net.wavem.uvc.ros2.nav_msgs.api.map.response.MapServerMapResponseHandler
-import net.wavem.uvc.ros2.nav_msgs.api.odometry.domain.OdometryProperties
-import net.wavem.uvc.ros2.nav_msgs.api.odometry.response.OdometryResponseHandler
-import net.wavem.uvc.ros2.nav_msgs.msg.Odometry
-import net.wavem.uvc.ros2.nav_msgs.srv.GetMap
-import net.wavem.uvc.ros2.sensor_msgs.msg.Imu
-import net.wavem.uvc.ros2.sensor_msgs.msg.LaserScan
-import net.wavem.uvc.ros2.sensor_msgs.msg.NavSatFix
-import net.wavem.uvc.ros2.std_msgs.api.chatter.domain.ChatterProperties
-import net.wavem.uvc.ros2.std_msgs.api.chatter.request.ChatterRequestHandler
-import net.wavem.uvc.ros2.std_msgs.api.chatter.response.ChatterResponseHandler
+import net.wavem.uvc.ros.geometry_msgs.api.cmd_vel.domain.CmdVelProperties
+import net.wavem.uvc.ros.geometry_msgs.api.cmd_vel.request.CmdVelRequestHandler
+import net.wavem.uvc.ros.geometry_msgs.api.cmd_vel.response.CmdVelResponseHandler
+import net.wavem.uvc.ros.geometry_msgs.api.robot_pose.domain.RobotPoseProperties
+import net.wavem.uvc.ros.geometry_msgs.api.robot_pose.response.RobotPoseResponseHandler
+import net.wavem.uvc.ros.geometry_msgs.msg.Pose
+import net.wavem.uvc.ros.geometry_msgs.msg.Twist
+import net.wavem.uvc.ros.nav_msgs.api.map.domain.MapServerMapProperties
+import net.wavem.uvc.ros.nav_msgs.api.map.request.MapServerMapRequestHandler
+import net.wavem.uvc.ros.nav_msgs.api.map.response.MapServerMapResponseHandler
+import net.wavem.uvc.ros.nav_msgs.api.odometry.domain.OdometryProperties
+import net.wavem.uvc.ros.nav_msgs.api.odometry.response.OdometryResponseHandler
+import net.wavem.uvc.ros.nav_msgs.msg.Odometry
+import net.wavem.uvc.ros.nav_msgs.srv.GetMap
+import net.wavem.uvc.ros.sensor_msgs.msg.Imu
+import net.wavem.uvc.ros.sensor_msgs.msg.LaserScan
+import net.wavem.uvc.ros.sensor_msgs.msg.NavSatFix
+import net.wavem.uvc.ros.std_msgs.api.chatter.domain.ChatterProperties
+import net.wavem.uvc.ros.std_msgs.api.chatter.request.ChatterRequestHandler
+import net.wavem.uvc.ros.std_msgs.api.chatter.response.ChatterResponseHandler
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
@@ -185,9 +185,9 @@ class MqttConfiguration(
         chatterProperties.qos
     )) {
         try {
-            transform(Transformers.fromJson(net.wavem.uvc.ros2.std_msgs.msg.String::class.java))
+            transform(Transformers.fromJson(net.wavem.uvc.ros.std_msgs.msg.String::class.java))
             handle {
-                chatterRequestHandler.handle(it.payload as net.wavem.uvc.ros2.std_msgs.msg.String)
+                chatterRequestHandler.handle(it.payload as net.wavem.uvc.ros.std_msgs.msg.String)
             }
         } catch (e: MqttException) {
             log.error(REQUEST_CLASS_TYPE, "mqtt chatterRequestToBridge error occurred ${e.message}")
@@ -200,9 +200,9 @@ class MqttConfiguration(
         chatterProperties.qos
     )) {
         try {
-            transform(Transformers.fromJson(net.wavem.uvc.ros2.std_msgs.msg.String::class.java))
+            transform(Transformers.fromJson(net.wavem.uvc.ros.std_msgs.msg.String::class.java))
             handle {
-                chatterResponseHandler.handle(it.payload as net.wavem.uvc.ros2.std_msgs.msg.String)
+                chatterResponseHandler.handle(it.payload as net.wavem.uvc.ros.std_msgs.msg.String)
             }
         } catch (e: MqttException) {
             log.error(RESPONSE_CLASS_TYPE, "mqtt chatterResponseFromBridge error occurred ${e.message}")
@@ -213,7 +213,7 @@ class MqttConfiguration(
     fun mqttOutboundFlow(): StandardIntegrationFlow = integrationFlow(MQTT_OUTBOUND_CHANNEL) {
         transform<Any> {
             when (it) {
-                is net.wavem.uvc.ros2.std_msgs.msg.String -> objectMapper.writeValueAsString(it)
+                is net.wavem.uvc.ros.std_msgs.msg.String -> objectMapper.writeValueAsString(it)
                 is Twist -> objectMapper.writeValueAsString(it)
                 is Pose -> objectMapper.writeValueAsString(it)
                 is Odometry -> objectMapper.writeValueAsString(it)
@@ -243,7 +243,7 @@ class MqttConfiguration(
         fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: String)
 
         @Gateway
-        fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: net.wavem.uvc.ros2.std_msgs.msg.String)
+        fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: net.wavem.uvc.ros.std_msgs.msg.String)
 
         @Gateway
         fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: Twist)
