@@ -21,7 +21,5 @@ class ChatterResponseHandler(
         )
 
         stdString = data
-
-        println("stdString returned data : [$data]")
     }
 }

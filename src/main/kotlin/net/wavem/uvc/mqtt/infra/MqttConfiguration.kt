@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import net.wavem.uvc.mqtt.domain.MqttConnectionType
 import net.wavem.uvc.mqtt.domain.MqttProperties
 import net.wavem.uvc.rms.domain.RmsCommonProperties
+import net.wavem.uvc.rms.gateway.config.domain.EnvConfig
+import net.wavem.uvc.rms.gateway.config.response.EnvConfigHandler
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.domain.CmdVelProperties
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.request.CmdVelRequestHandler
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.response.CmdVelResponseHandler
@@ -55,6 +57,7 @@ class MqttConfiguration(
     private val odometryProperties: OdometryProperties,
     private val chatterProperties: ChatterProperties,
     private val objectMapper: ObjectMapper,
+    private val envConfigHandler: EnvConfigHandler,
     private val cmdVelRequestHandler: CmdVelRequestHandler,
     private val cmdVelResponseHandler: CmdVelResponseHandler,
     private val robotPoseResponseHandler: RobotPoseResponseHandler,
@@ -90,6 +93,21 @@ class MqttConfiguration(
                 setConverter(DefaultPahoMessageConverter())
                 setQos(qos)
             }
+    }
+
+    @Bean
+    fun envConfigRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        "/test/config",
+        0
+    )) {
+        try {
+            transform(Transformers.fromJson(EnvConfig::class.java))
+            handle {
+                envConfigHandler.handle(it.payload as EnvConfig)
+            }
+        } catch (e: MqttException) {
+
+        }
     }
 
     @Bean
