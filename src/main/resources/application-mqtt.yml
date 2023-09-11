@@ -10,52 +10,52 @@ mqtt:
   qos: 0
 
 rms:
-  toRosTopicFormat: "hubilon/atcplus/rms/"
-  fromRostopicformat: "hubilon/atcplus/ros/"
+  toROS: "hubilon/atcplus/rms/"
+  fromROS: "hubilon/atcplus/ros/"
 
 cmdvel:
-  topic: "cmd_vel"
-  requestToBridgeTopic: "wavem/atcplus/rms/cmd_vel"
-  responseFromBridgeTopic: "wavem/atcplus/ros/cmd_vel"
+  default: "cmd_vel"
+  toBridge: "wavem/atcplus/rms/cmd_vel"
+  fromBridge: "wavem/atcplus/ros/cmd_vel"
   qos: 0
 
 robotpose:
-  topic: "robot_pose"
-  responseFromBridgeTopic: "wavem/atcplus/ros/robot_pose"
+  default: "robot_pose"
+  fromBridge: "wavem/atcplus/ros/robot_pose"
   qos: 0
 
 mapservermap:
-  topic: "map_server/map"
-  requestToBridgeTopic: "wavem/atcplus/rms/map_server/map"
-  responseFromBridgeTopic: "wavem/atcplus/ros/map_server/map"
+  default: "map_server/map"
+  toBridge: "wavem/atcplus/rms/map_server/map"
+  fromBridge: "wavem/atcplus/ros/map_server/map"
   qos: 1
 
 odometry:
-  topic: "odom"
-  requestToBridgeTopic: "wavem/atcplus/rms/odom"
-  responseFromBridgeTopic: "wavem/atcplus/ros/odom"
+  default: "odom"
+  toBridge: "wavem/atcplus/rms/odom"
+  fromBridge: "wavem/atcplus/ros/odom"
   qos: 0
 
 scan:
-  topic: "scan"
-  requestToBridgeTopic: "wavem/atcplus/rms/scan"
-  responseFromBridgeTopic: "wavem/atcplus/ros/scan"
+  default: "scan"
+  toBridge: "wavem/atcplus/rms/scan"
+  fromBridge: "wavem/atcplus/ros/scan"
   qos: 0
 
 imu:
-  topic: "imu"
-  requestToBridgeTopic: "wavem/atcplus/rms/imu"
-  responseFromBridgeTopic: "wavem/atcplus/ros/imu"
+  default: "imu"
+  toBridge: "wavem/atcplus/rms/imu"
+  fromBridge: "wavem/atcplus/ros/imu"
   qos: 0
 
-ubloxfix:
-  topic: "ublox/fix"
-  requestToBridgeTopic: "wavem/atcplus/rms/ublox/fix"
-  responseFromBridgeTopic: "wavem/atcplus/ros/ublox/fix"
+gps:
+  default: "ublox/fix"
+  toBridge: "wavem/atcplus/rms/ublox/fix"
+  fromBridge: "wavem/atcplus/ros/ublox/fix"
   qos: 0
 
 chatter:
-  topic: "chatter"
-  requestToBridgeTopic: "wavem/atcplus/rms/chatter"
-  responseFromBridgeTopic: "wavem/atcplus/ros/chatter"
+  default: "chatter"
+  toBridge: "wavem/atcplus/rms/chatter"
+  fromBridge: "wavem/atcplus/ros/chatter"
   qos: 0

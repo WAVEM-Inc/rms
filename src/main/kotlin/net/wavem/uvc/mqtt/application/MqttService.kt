@@ -11,8 +11,8 @@ class MqttService<T>(
     private val mqttOutboundGateway: MqttConfiguration.MqttOutboundGateway<T>
 ){
 
-    fun handle(connectionType: MqttConnectionType, topic: String, data: T) {
-        log.info(connectionType.type, "[${topic}] message arrived : [$data]")
+    fun bridge(connectionType: MqttConnectionType, topic: String, data: T) {
+        log.info(connectionType, "[${topic}] message arrived : [$data]")
         mqttOutboundGateway.publish(topic = topic, data = data)
     }
 }

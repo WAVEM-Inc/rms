@@ -1,6 +1,7 @@
 package net.wavem.uvc.mqtt.infra
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import net.wavem.uvc.mqtt.domain.MqttConnectionType
 import net.wavem.uvc.mqtt.domain.MqttProperties
 import net.wavem.uvc.rms.domain.RmsCommonProperties
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.domain.CmdVelProperties
@@ -83,8 +84,8 @@ class MqttConfiguration(
         return MqttPahoMessageDrivenChannelAdapter(
             MqttClient.generateClientId(),
             mqttPahoClientFactory(),
-            topic)
-            .apply {
+            topic
+        ).apply {
                 setCompletionTimeout(5000)
                 setConverter(DefaultPahoMessageConverter())
                 setQos(qos)
@@ -93,7 +94,7 @@ class MqttConfiguration(
 
     @Bean
     fun cmdVelRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        cmdVelProperties.requestToBridgeTopic,
+        rmsCommonProperties.toROS + cmdVelProperties.default,
         cmdVelProperties.qos
     )) {
         try {
@@ -102,13 +103,13 @@ class MqttConfiguration(
                 cmdVelRequestHandler.handle(it.payload as Twist)
             }
         } catch (e: MqttException) {
-            log.error(REQUEST_CLASS_TYPE, "mqtt cmdVelRequestToBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.REQ, "mqtt cmdVelRequestToBridge error occurred ${e.message}")
         }
     }
 
     @Bean
     fun cmdVelResponseFromBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        cmdVelProperties.requestToBridgeTopic,
+        cmdVelProperties.toBridge,
         cmdVelProperties.qos
     )) {
         try {
@@ -117,13 +118,13 @@ class MqttConfiguration(
                 cmdVelResponseHandler.handle(it.payload as Twist)
             }
         } catch (e: MqttException) {
-            log.error(RESPONSE_CLASS_TYPE, "mqtt cmdVelResponseFromBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.RESP, "mqtt cmdVelResponseFromBridge error occurred ${e.message}")
         }
     }
 
     @Bean
     fun robotPoseResponseFromBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        robotPoseProperties.responseFromBridgeTopic,
+        robotPoseProperties.fromBridge,
         robotPoseProperties.qos
     )) {
         try {
@@ -132,13 +133,13 @@ class MqttConfiguration(
                 robotPoseResponseHandler.handle(it.payload as Pose)
             }
         } catch (e: MqttException) {
-            log.error(RESPONSE_CLASS_TYPE, "mqtt robotPoseResponseFromBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.RESP, "mqtt robotPoseResponseFromBridge error occurred ${e.message}")
         }
     }
 
     @Bean
     fun mapServerMapRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        mapServerMapProperties.requestToBridgeTopic,
+        rmsCommonProperties.toROS + mapServerMapProperties.default,
         mapServerMapProperties.qos
     )) {
         try {
@@ -147,13 +148,13 @@ class MqttConfiguration(
                 mapServerMapRequestHandler.handle(it.payload as GetMap)
             }
         } catch (e: MqttException) {
-            log.error(REQUEST_CLASS_TYPE, "mqtt mapServerMapRequestToBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.REQ, "mqtt mapServerMapRequestToBridge error occurred ${e.message}")
         }
     }
 
     @Bean
     fun mapServerMapResponseFromBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        mapServerMapProperties.responseFromBridgeTopic,
+        mapServerMapProperties.fromBridge,
         mapServerMapProperties.qos
     )) {
         try {
@@ -162,13 +163,13 @@ class MqttConfiguration(
                 mapServerMapResponseHandler.handle(it.payload as GetMap)
             }
         } catch (e: MqttException) {
-            log.error(RESPONSE_CLASS_TYPE, "mqtt mapServerMapResponseFromBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.RESP, "mqtt mapServerMapResponseFromBridge error occurred ${e.message}")
         }
     }
 
     @Bean
     fun odometryResponseFromBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        odometryProperties.responseFromBridgeTopic,
+        odometryProperties.fromBridge,
         odometryProperties.qos
     )) {
         try {
@@ -177,13 +178,13 @@ class MqttConfiguration(
                 odometryResponseHandler.handle(it.payload as Odometry)
             }
         } catch (e: MqttException) {
-            log.error(RESPONSE_CLASS_TYPE, "mqtt odometryResponseFromBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.RESP, "mqtt odometryResponseFromBridge error occurred ${e.message}")
         }
     }
 
     @Bean
     fun chatterRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        rmsCommonProperties.toRosTopicFormat + chatterProperties.topic,
+        rmsCommonProperties.toROS + chatterProperties.default,
         chatterProperties.qos
     )) {
         try {
@@ -192,13 +193,13 @@ class MqttConfiguration(
                 chatterRequestHandler.handle(it.payload as net.wavem.uvc.ros.std_msgs.msg.String)
             }
         } catch (e: MqttException) {
-            log.error(REQUEST_CLASS_TYPE, "mqtt chatterRequestToBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.REQ, "mqtt chatterRequestToBridge error occurred ${e.message}")
         }
     }
 
     @Bean
     fun chatterResponseFromBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        chatterProperties.responseFromBridgeTopic,
+        chatterProperties.fromBridge,
         chatterProperties.qos
     )) {
         try {
@@ -207,7 +208,7 @@ class MqttConfiguration(
                 chatterResponseHandler.handle(it.payload as net.wavem.uvc.ros.std_msgs.msg.String)
             }
         } catch (e: MqttException) {
-            log.error(RESPONSE_CLASS_TYPE, "mqtt chatterResponseFromBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.RESP, "mqtt chatterResponseFromBridge error occurred ${e.message}")
         }
     }
 
@@ -240,14 +241,11 @@ class MqttConfiguration(
 
     @MessagingGateway(defaultRequestChannel = MQTT_OUTBOUND_CHANNEL)
     interface MqttOutboundGateway<T> {
-
         @Gateway
         fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: T)
     }
 
     companion object {
         const val MQTT_OUTBOUND_CHANNEL: String = "outboundChannel"
-        const val REQUEST_CLASS_TYPE: String = "REQ"
-        const val RESPONSE_CLASS_TYPE: String = "RESP"
     }
 }

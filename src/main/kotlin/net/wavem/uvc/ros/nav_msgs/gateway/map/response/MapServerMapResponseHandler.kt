@@ -15,9 +15,9 @@ class MapServerMapResponseHandler(
 ) {
 
     fun handle(getMap: GetMap) {
-        mqttService.handle(
+        mqttService.bridge(
             connectionType = MqttConnectionType.REQ,
-            topic = rmsCommonProperties.fromRosTopicFormat + mapServerMapProperties.topic,
+            topic = mapServerMapProperties.fromBridge,
             data = getMap
         )
     }

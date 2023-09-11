@@ -4,8 +4,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties("rms")
 data class RmsCommonProperties(
-    val toRosTopicFormat: String,
-    val fromRosTopicFormat: String
+    val toROS: String,
+    val fromROS: String
 ) {
 
 }
