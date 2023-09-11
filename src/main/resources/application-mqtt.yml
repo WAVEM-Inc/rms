@@ -10,8 +10,8 @@ mqtt:
   qos: 0
 
 rms:
-  toRosTopicFormat: "hublion/atcplus/rms/"
-  fromRostopicformat: "hublion/atcplus/ros/"
+  toRosTopicFormat: "hubilon/atcplus/rms/"
+  fromRostopicformat: "hubilon/atcplus/ros/"
 
 cmdvel:
   topic: "cmd_vel"

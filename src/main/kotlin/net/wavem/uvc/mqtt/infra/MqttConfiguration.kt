@@ -2,6 +2,7 @@ package net.wavem.uvc.mqtt.infra
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.wavem.uvc.mqtt.domain.MqttProperties
+import net.wavem.uvc.rms.domain.RmsCommonProperties
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.domain.CmdVelProperties
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.request.CmdVelRequestHandler
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.response.CmdVelResponseHandler
@@ -46,6 +47,7 @@ import org.springframework.messaging.handler.annotation.Header
 class MqttConfiguration(
     private val log: MqttLogger,
     private val mqttProperties: MqttProperties,
+    private val rmsCommonProperties: RmsCommonProperties,
     private val cmdVelProperties: CmdVelProperties,
     private val robotPoseProperties: RobotPoseProperties,
     private val mapServerMapProperties: MapServerMapProperties,
@@ -181,7 +183,7 @@ class MqttConfiguration(
 
     @Bean
     fun chatterRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        chatterProperties.requestToBridgeTopic,
+        rmsCommonProperties.toRosTopicFormat + chatterProperties.topic,
         chatterProperties.qos
     )) {
         try {
