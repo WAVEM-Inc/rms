@@ -17,7 +17,7 @@ class ChatterRequestHandler (
     fun handle(string: String) {
         mqttService.handle(
             connectionType = MqttConnectionType.REQ,
-            topic = rmsCommonProperties.toRosTopicFormat + chatterProperties.topic,
+            topic = chatterProperties.requestToBridgeTopic + chatterProperties.topic,
             data = string
         )
     }
