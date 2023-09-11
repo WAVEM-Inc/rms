@@ -14,40 +14,40 @@ rms:
   fromRostopicformat: "hublion/atcplus/ros/"
 
 cmdvel:
-  requestToBridgeTopic: "/atc/uvc/request/cmd_vel"
-  responseFromBridgeTopic: "/response/cmd_vel"
+  requestToBridgeTopic: "wavem/atcplus/ros/cmd_vel"
+  responseFromBridgeTopic: "wavem/atcplus/rms/cmd_vel"
   qos: 0
 
 robotpose:
-  responseFromBridgeTopic: "/response/robot_pose"
+  responseFromBridgeTopic: "wavem/atcplus/rms/robot_pose"
   qos: 0
 
 mapservermap:
-  requestToBridgeTopic: "/atc/uvc/request/map_server/map"
-  responseFromBridgeTopic: "/response/map_server/map"
+  requestToBridgeTopic: "wavem/atcplus/ros/map_server/map"
+  responseFromBridgeTopic: "wavem/atcplus/rms/map_server/map"
   qos: 1
 
 odometry:
-  requestToBridgeTopic: "/atc/uvc/request/odom"
-  responseFromBridgeTopic: "/response/odom"
+  requestToBridgeTopic: "wavem/atcplus/ros/odom"
+  responseFromBridgeTopic: "wavem/atcplus/rms/odom"
   qos: 0
 
 scan:
-  requestToBridgeTopic: "/atc/uvc/request/scan"
-  responseFromBridgeTopic: "/response/scan"
+  requestToBridgeTopic: "wavem/atcplus/ros/scan"
+  responseFromBridgeTopic: "wavem/atcplus/rms/scan"
   qos: 0
 
 imu:
-  requestToBridgeTopic: "/atc/uvc/request/imu"
-  responseFromBridgeTopic: "/response/imu"
+  requestToBridgeTopic: "wavem/atcplus/ros/imu"
+  responseFromBridgeTopic: "wavem/atcplus/rms/imu"
   qos: 0
 
 ubloxfix:
-  requestToBridgeTopic: "/atc/uvc/request/ublox/fix"
-  responseFromBridgeTopic: "/response/ublox/fix"
+  requestToBridgeTopic: "wavem/atcplus/ros/ublox/fix"
+  responseFromBridgeTopic: "wavem/atcplus/rms/ublox/fix"
   qos: 0
 
 chatter:
-  requestToBridgeTopic: "/atc/uvc/request/chatter"
-  responseFromBridgeTopic: "/response/chatter"
+  requestToBridgeTopic: "wavem/atcplus/ros/chatter"
+  responseFromBridgeTopic: "wavem/atcplus/rms/chatter"
   qos: 0

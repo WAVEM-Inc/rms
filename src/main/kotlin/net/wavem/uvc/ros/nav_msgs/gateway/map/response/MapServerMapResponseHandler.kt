@@ -1,6 +1,7 @@
 package net.wavem.uvc.ros.nav_msgs.gateway.map.response
 
 import net.wavem.uvc.mqtt.infra.MqttConfiguration
+import net.wavem.uvc.mqtt.infra.MqttHandler
 import net.wavem.uvc.mqtt.infra.MqttLogger
 import net.wavem.uvc.ros.nav_msgs.srv.GetMap
 import org.springframework.stereotype.Component
@@ -9,11 +10,11 @@ import org.springframework.stereotype.Component
 class MapServerMapResponseHandler(
     private val log: MqttLogger,
     private val mqttOutboundGateway: MqttConfiguration.MqttOutboundGateway
-) {
+) : MqttHandler<GetMap> {
 
-    fun handle(getMap: GetMap) {
-        log.info(RESPONSE_CLASS_TYPE, "[${MQTT_MAP_SERVER_MAP_RESPONSE_TOPIC}] message arrived [$getMap]")
-        mqttOutboundGateway.publish(topic = MQTT_MAP_SERVER_MAP_RESPONSE_TOPIC, data = getMap)
+    override fun handle(data: GetMap) {
+        log.info(RESPONSE_CLASS_TYPE, "[${MQTT_MAP_SERVER_MAP_RESPONSE_TOPIC}] message arrived [$data]")
+        mqttOutboundGateway.publish(topic = MQTT_MAP_SERVER_MAP_RESPONSE_TOPIC, data = data)
     }
 
     companion object {
