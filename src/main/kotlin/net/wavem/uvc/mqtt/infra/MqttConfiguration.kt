@@ -94,7 +94,7 @@ class MqttConfiguration(
 
     @Bean
     fun cmdVelRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        rmsCommonProperties.toROS + cmdVelProperties.default,
+        cmdVelProperties.toBridge,
         cmdVelProperties.qos
     )) {
         try {
@@ -109,7 +109,7 @@ class MqttConfiguration(
 
     @Bean
     fun cmdVelResponseFromBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        cmdVelProperties.toBridge,
+        cmdVelProperties.fromBridge,
         cmdVelProperties.qos
     )) {
         try {
@@ -139,7 +139,7 @@ class MqttConfiguration(
 
     @Bean
     fun mapServerMapRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        rmsCommonProperties.toROS + mapServerMapProperties.default,
+        mapServerMapProperties.toBridge,
         mapServerMapProperties.qos
     )) {
         try {
@@ -184,7 +184,7 @@ class MqttConfiguration(
 
     @Bean
     fun chatterRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        rmsCommonProperties.toROS + chatterProperties.default,
+        chatterProperties.toBridge,
         chatterProperties.qos
     )) {
         try {

@@ -1,4 +1,4 @@
-package net.wavem.uvc.rms.gateway.config
+package net.wavem.uvc.rms.gateway.config.response
 
 import org.springframework.stereotype.Component
 
