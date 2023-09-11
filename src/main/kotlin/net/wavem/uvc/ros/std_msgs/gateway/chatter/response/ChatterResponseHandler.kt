@@ -22,10 +22,4 @@ class ChatterResponseHandler(
 
         stdString = data
     }
-
-    fun getStdString(): net.wavem.uvc.ros.std_msgs.msg.String? {
-        return if (stdString != null) {
-            this.stdString
-        } else null
-    }
 }
