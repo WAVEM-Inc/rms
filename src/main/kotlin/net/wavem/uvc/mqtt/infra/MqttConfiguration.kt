@@ -237,24 +237,10 @@ class MqttConfiguration(
     }
 
     @MessagingGateway(defaultRequestChannel = MQTT_OUTBOUND_CHANNEL)
-    interface MqttOutboundGateway {
+    interface MqttOutboundGateway<T> {
 
         @Gateway
-        fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: String)
-
-        @Gateway
-        fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: net.wavem.uvc.ros.std_msgs.msg.String)
-
-        @Gateway
-        fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: Twist)
-        @Gateway
-        fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: GetMap)
-
-        @Gateway
-        fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: Odometry)
-
-        @Gateway
-        fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: Pose)
+        fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: T)
     }
 
     companion object {

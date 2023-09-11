@@ -14,40 +14,48 @@ rms:
   fromRostopicformat: "hublion/atcplus/ros/"
 
 cmdvel:
-  requestToBridgeTopic: "wavem/atcplus/ros/cmd_vel"
-  responseFromBridgeTopic: "wavem/atcplus/rms/cmd_vel"
+  topic: "cmd_vel"
+  requestToBridgeTopic: "wavem/atcplus/rms/cmd_vel"
+  responseFromBridgeTopic: "wavem/atcplus/ros/cmd_vel"
   qos: 0
 
 robotpose:
-  responseFromBridgeTopic: "wavem/atcplus/rms/robot_pose"
+  topic: "robot_pose"
+  responseFromBridgeTopic: "wavem/atcplus/ros/robot_pose"
   qos: 0
 
 mapservermap:
-  requestToBridgeTopic: "wavem/atcplus/ros/map_server/map"
-  responseFromBridgeTopic: "wavem/atcplus/rms/map_server/map"
+  topic: "map_server/map"
+  requestToBridgeTopic: "wavem/atcplus/rms/map_server/map"
+  responseFromBridgeTopic: "wavem/atcplus/ros/map_server/map"
   qos: 1
 
 odometry:
-  requestToBridgeTopic: "wavem/atcplus/ros/odom"
-  responseFromBridgeTopic: "wavem/atcplus/rms/odom"
+  topic: "odom"
+  requestToBridgeTopic: "wavem/atcplus/rms/odom"
+  responseFromBridgeTopic: "wavem/atcplus/ros/odom"
   qos: 0
 
 scan:
-  requestToBridgeTopic: "wavem/atcplus/ros/scan"
-  responseFromBridgeTopic: "wavem/atcplus/rms/scan"
+  topic: "scan"
+  requestToBridgeTopic: "wavem/atcplus/rms/scan"
+  responseFromBridgeTopic: "wavem/atcplus/ros/scan"
   qos: 0
 
 imu:
-  requestToBridgeTopic: "wavem/atcplus/ros/imu"
-  responseFromBridgeTopic: "wavem/atcplus/rms/imu"
+  topic: "imu"
+  requestToBridgeTopic: "wavem/atcplus/rms/imu"
+  responseFromBridgeTopic: "wavem/atcplus/ros/imu"
   qos: 0
 
 ubloxfix:
-  requestToBridgeTopic: "wavem/atcplus/ros/ublox/fix"
-  responseFromBridgeTopic: "wavem/atcplus/rms/ublox/fix"
+  topic: "ublox/fix"
+  requestToBridgeTopic: "wavem/atcplus/rms/ublox/fix"
+  responseFromBridgeTopic: "wavem/atcplus/ros/ublox/fix"
   qos: 0
 
 chatter:
-  requestToBridgeTopic: "wavem/atcplus/ros/chatter"
-  responseFromBridgeTopic: "wavem/atcplus/rms/chatter"
+  topic: "chatter"
+  requestToBridgeTopic: "wavem/atcplus/rms/chatter"
+  responseFromBridgeTopic: "wavem/atcplus/ros/chatter"
   qos: 0

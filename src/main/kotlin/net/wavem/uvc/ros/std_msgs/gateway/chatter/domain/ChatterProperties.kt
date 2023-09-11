@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties("chatter")
 data class ChatterProperties(
+    val topic: String,
     val requestToBridgeTopic: String,
     val responseFromBridgeTopic: String,
     val qos: Int
