@@ -9,6 +9,10 @@ mqtt:
   topic: /index
   qos: 0
 
+rms:
+  toRosTopicFormat: "hublion/atcplus/rms/"
+  fromRostopicformat: "hublion/atcplus/ros/"
+
 cmdvel:
   requestToBridgeTopic: "/atc/uvc/request/cmd_vel"
   responseFromBridgeTopic: "/response/cmd_vel"
