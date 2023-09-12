@@ -4,8 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import net.wavem.uvc.mqtt.domain.MqttConnectionType
 import net.wavem.uvc.mqtt.domain.MqttProperties
 import net.wavem.uvc.rms.domain.RmsCommonProperties
-import net.wavem.uvc.rms.gateway.config.domain.EnvConfig
-import net.wavem.uvc.rms.gateway.config.response.EnvConfigHandler
+import net.wavem.uvc.rms.gateway.env_config.domain.EnvConfig
+import net.wavem.uvc.rms.gateway.env_config.request.EnvConfigRequestHandler
+import net.wavem.uvc.rms.gateway.location.domain.Location
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.domain.CmdVelProperties
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.request.CmdVelRequestHandler
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.response.CmdVelResponseHandler
@@ -54,7 +55,7 @@ class MqttConfiguration(
     private val odometryProperties: OdometryProperties,
     private val chatterProperties: ChatterProperties,
     private val objectMapper: ObjectMapper,
-    private val envConfigHandler: EnvConfigHandler,
+    private val envConfigRequestHandler: EnvConfigRequestHandler,
     private val cmdVelRequestHandler: CmdVelRequestHandler,
     private val cmdVelResponseHandler: CmdVelResponseHandler,
     private val robotPoseResponseHandler: RobotPoseResponseHandler,
@@ -62,7 +63,7 @@ class MqttConfiguration(
     private val mapServerMapResponseHandler: MapServerMapResponseHandler,
     private val odometryResponseHandler: OdometryResponseHandler,
     private val chatterRequestHandler: ChatterRequestHandler,
-    private val chatterResponseHandler: ChatterResponseHandler,
+    private val chatterResponseHandler: ChatterResponseHandler
 ) {
 
     @Bean
@@ -100,7 +101,7 @@ class MqttConfiguration(
         try {
             transform(Transformers.fromJson(EnvConfig::class.java))
             handle {
-                envConfigHandler.handle(it.payload as EnvConfig)
+                envConfigRequestHandler.handle(it.payload as EnvConfig)
             }
         } catch (e: MqttException) {
 
@@ -118,7 +119,7 @@ class MqttConfiguration(
                 cmdVelRequestHandler.handle(it.payload as Twist)
             }
         } catch (e: MqttException) {
-            log.error(MqttConnectionType.REQ, "mqtt cmdVelRequestToBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.TO_BRIDGE, "mqtt cmdVelRequestToBridge error occurred ${e.message}")
         }
     }
 
@@ -133,7 +134,7 @@ class MqttConfiguration(
                 cmdVelResponseHandler.handle(it.payload as Twist)
             }
         } catch (e: MqttException) {
-            log.error(MqttConnectionType.RESP, "mqtt cmdVelResponseFromBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.FROM_BRIDGE, "mqtt cmdVelResponseFromBridge error occurred ${e.message}")
         }
     }
 
@@ -148,7 +149,7 @@ class MqttConfiguration(
                 robotPoseResponseHandler.handle(it.payload as Pose)
             }
         } catch (e: MqttException) {
-            log.error(MqttConnectionType.RESP, "mqtt robotPoseResponseFromBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.FROM_BRIDGE, "mqtt robotPoseResponseFromBridge error occurred ${e.message}")
         }
     }
 
@@ -163,7 +164,7 @@ class MqttConfiguration(
                 mapServerMapRequestHandler.handle(it.payload as GetMap)
             }
         } catch (e: MqttException) {
-            log.error(MqttConnectionType.REQ, "mqtt mapServerMapRequestToBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.TO_BRIDGE, "mqtt mapServerMapRequestToBridge error occurred ${e.message}")
         }
     }
 
@@ -178,7 +179,7 @@ class MqttConfiguration(
                 mapServerMapResponseHandler.handle(it.payload as GetMap)
             }
         } catch (e: MqttException) {
-            log.error(MqttConnectionType.RESP, "mqtt mapServerMapResponseFromBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.FROM_BRIDGE, "mqtt mapServerMapResponseFromBridge error occurred ${e.message}")
         }
     }
 
@@ -193,7 +194,7 @@ class MqttConfiguration(
                 odometryResponseHandler.handle(it.payload as Odometry)
             }
         } catch (e: MqttException) {
-            log.error(MqttConnectionType.RESP, "mqtt odometryResponseFromBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.FROM_BRIDGE, "mqtt odometryResponseFromBridge error occurred ${e.message}")
         }
     }
 
@@ -208,7 +209,7 @@ class MqttConfiguration(
                 chatterRequestHandler.handle(it.payload as net.wavem.uvc.ros.std_msgs.msg.String)
             }
         } catch (e: MqttException) {
-            log.error(MqttConnectionType.REQ, "mqtt chatterRequestToBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.TO_BRIDGE, "mqtt chatterRequestToBridge error occurred ${e.message}")
         }
     }
 
@@ -223,7 +224,7 @@ class MqttConfiguration(
                 chatterResponseHandler.handle(it.payload as net.wavem.uvc.ros.std_msgs.msg.String)
             }
         } catch (e: MqttException) {
-            log.error(MqttConnectionType.RESP, "mqtt chatterResponseFromBridge error occurred ${e.message}")
+            log.error(MqttConnectionType.FROM_BRIDGE, "mqtt chatterResponseFromBridge error occurred ${e.message}")
         }
     }
 
@@ -233,6 +234,7 @@ class MqttConfiguration(
             when (it) {
                 is net.wavem.uvc.ros.std_msgs.msg.String -> objectMapper.writeValueAsString(it)
                 is EnvConfig -> objectMapper.writeValueAsString(it)
+                is Location -> objectMapper.writeValueAsString(it)
                 else -> it
             }
         }

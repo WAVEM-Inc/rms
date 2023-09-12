@@ -14,7 +14,7 @@ class CmdVelRequestHandler(
 
     fun handle(twist: Twist) {
         mqttService.bridge(
-            connectionType = MqttConnectionType.REQ,
+            connectionType = MqttConnectionType.TO_BRIDGE,
             topic = cmdVelProperties.toBridge,
             data = twist
         )

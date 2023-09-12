@@ -14,7 +14,7 @@ class RobotPoseResponseHandler(
 
     fun handle(pose: Pose) {
         mqttService.bridge(
-            connectionType = MqttConnectionType.RESP,
+            connectionType = MqttConnectionType.FROM_BRIDGE,
             topic = robotPoseProperties.fromBridge,
             data = pose
         )

@@ -14,7 +14,7 @@ class OdometryResponseHandler(
 
     fun handle(odometry: Odometry) {
         mqttService.bridge(
-            connectionType = MqttConnectionType.REQ,
+            connectionType = MqttConnectionType.TO_BRIDGE,
             topic = odometryProperties.fromBridge,
             data = odometry
         )

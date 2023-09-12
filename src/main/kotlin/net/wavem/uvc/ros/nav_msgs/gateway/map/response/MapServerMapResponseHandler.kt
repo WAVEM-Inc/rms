@@ -16,7 +16,7 @@ class MapServerMapResponseHandler(
 
     fun handle(getMap: GetMap) {
         mqttService.bridge(
-            connectionType = MqttConnectionType.REQ,
+            connectionType = MqttConnectionType.TO_BRIDGE,
             topic = mapServerMapProperties.fromBridge,
             data = getMap
         )

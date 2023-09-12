@@ -11,7 +11,7 @@ class MqttService<T>(
     private val mqttOutboundGateway: MqttConfiguration.MqttOutboundGateway<T>
 ) {
 
-    fun handle(connectionType: MqttConnectionType, topic: String, data: T) : T {
+    fun processROSData(connectionType: MqttConnectionType, topic: String, data: T) : T {
         log.info(connectionType, "[$topic] message arrived : [$data]")
 
         return data

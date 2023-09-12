@@ -14,8 +14,8 @@ class ChatterResponseHandler(
     var stdString: net.wavem.uvc.ros.std_msgs.msg.String? = null
 
     fun handle(string: net.wavem.uvc.ros.std_msgs.msg.String) {
-        val data: net.wavem.uvc.ros.std_msgs.msg.String = mqttService.handle(
-            connectionType = MqttConnectionType.RESP,
+        val data: net.wavem.uvc.ros.std_msgs.msg.String = mqttService.processROSData(
+            connectionType = MqttConnectionType.FROM_BRIDGE,
             topic = chatterProperties.fromBridge,
             data = string
         )

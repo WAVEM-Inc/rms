@@ -1,4 +1,4 @@
-package net.wavem.uvc.rms.gateway.config.domain
+package net.wavem.uvc.rms.gateway.env_config.domain
 
 data class EnvInfo(
     val robotType: String,
