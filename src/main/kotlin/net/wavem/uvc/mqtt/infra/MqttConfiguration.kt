@@ -20,9 +20,6 @@ import net.wavem.uvc.ros.nav_msgs.gateway.odometry.domain.OdometryProperties
 import net.wavem.uvc.ros.nav_msgs.gateway.odometry.response.OdometryResponseHandler
 import net.wavem.uvc.ros.nav_msgs.msg.Odometry
 import net.wavem.uvc.ros.nav_msgs.srv.GetMap
-import net.wavem.uvc.ros.sensor_msgs.msg.Imu
-import net.wavem.uvc.ros.sensor_msgs.msg.LaserScan
-import net.wavem.uvc.ros.sensor_msgs.msg.NavSatFix
 import net.wavem.uvc.ros.std_msgs.gateway.chatter.domain.ChatterProperties
 import net.wavem.uvc.ros.std_msgs.gateway.chatter.request.ChatterRequestHandler
 import net.wavem.uvc.ros.std_msgs.gateway.chatter.response.ChatterResponseHandler
@@ -235,13 +232,7 @@ class MqttConfiguration(
         transform<Any> {
             when (it) {
                 is net.wavem.uvc.ros.std_msgs.msg.String -> objectMapper.writeValueAsString(it)
-                is Twist -> objectMapper.writeValueAsString(it)
-                is Pose -> objectMapper.writeValueAsString(it)
-                is Odometry -> objectMapper.writeValueAsString(it)
-                is Imu -> objectMapper.writeValueAsString(it)
-                is LaserScan -> objectMapper.writeValueAsString(it)
-                is NavSatFix -> objectMapper.writeValueAsString(it)
-                is GetMap -> objectMapper.writeValueAsString(it)
+                is EnvConfig -> objectMapper.writeValueAsString(it)
                 else -> it
             }
         }

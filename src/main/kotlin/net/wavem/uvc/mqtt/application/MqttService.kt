@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service
 class MqttService<T>(
     private val log: MqttLogger,
     private val mqttOutboundGateway: MqttConfiguration.MqttOutboundGateway<T>
-){
+) {
 
     fun handle(connectionType: MqttConnectionType, topic: String, data: T) : T {
         log.info(connectionType, "[$topic] message arrived : [$data]")
