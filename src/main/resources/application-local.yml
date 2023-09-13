@@ -3,20 +3,11 @@ logging:
     root: warn
     net.wavem.uvc: debug
 
-server:
-  port: 8080
-
-url:
-  base: http://localhost:8080
-
 spring:
+  main:
+    web-application-type: none
   config:
     activate:
       on-profile: local
-
-  mvc:
-    pathmatch:
-      matching-strategy: ant_path_matcher
-    hiddenmethod:
-      filter:
-        enabled: true
+  thymeleaf:
+    check-template-location: false
