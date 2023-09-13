@@ -1,6 +1,6 @@
-package net.wavem.uvc.rms.domain
+package net.wavem.uvc.rms.domain.header
 
-data class RmsHeader(
+data class Header(
     val topicId: String,
     val robotCorpId: String,
     val workCorpId: String,

@@ -6,6 +6,8 @@ import net.wavem.uvc.mqtt.domain.MqttProperties
 import net.wavem.uvc.rms.domain.RmsCommonProperties
 import net.wavem.uvc.rms.gateway.env_config.domain.EnvConfig
 import net.wavem.uvc.rms.gateway.env_config.request.EnvConfigRequestHandler
+import net.wavem.uvc.rms.gateway.event.domain.Event
+import net.wavem.uvc.rms.gateway.event.gateway.EventRequestHandler
 import net.wavem.uvc.rms.gateway.location.domain.Location
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.domain.CmdVelProperties
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.request.CmdVelRequestHandler
@@ -56,6 +58,7 @@ class MqttConfiguration(
     private val chatterProperties: ChatterProperties,
     private val objectMapper: ObjectMapper,
     private val envConfigRequestHandler: EnvConfigRequestHandler,
+    private val eventRequestHandler: EventRequestHandler,
     private val cmdVelRequestHandler: CmdVelRequestHandler,
     private val cmdVelResponseHandler: CmdVelResponseHandler,
     private val robotPoseResponseHandler: RobotPoseResponseHandler,
@@ -102,6 +105,21 @@ class MqttConfiguration(
             transform(Transformers.fromJson(EnvConfig::class.java))
             handle {
                 envConfigRequestHandler.handle(it.payload as EnvConfig)
+            }
+        } catch (e: MqttException) {
+
+        }
+    }
+
+    @Bean
+    fun eventReqeustToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        "hubilon/atcplus/rms/event",
+        0
+    )) {
+        try {
+            transform(Transformers.fromJson(Event::class.java))
+            handle {
+                eventRequestHandler.handle(it.payload as Event)
             }
         } catch (e: MqttException) {
 
@@ -233,7 +251,6 @@ class MqttConfiguration(
         transform<Any> {
             when (it) {
                 is net.wavem.uvc.ros.std_msgs.msg.String -> objectMapper.writeValueAsString(it)
-                is EnvConfig -> objectMapper.writeValueAsString(it)
                 is Location -> objectMapper.writeValueAsString(it)
                 else -> it
             }
@@ -254,6 +271,9 @@ class MqttConfiguration(
     interface MqttOutboundGateway<T> {
         @Gateway
         fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: T)
+
+        @Gateway
+        fun publish(@Header(MqttHeaders.TOPIC) topic: String, qos: Int, data: T)
     }
 
     companion object {
