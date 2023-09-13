@@ -1,5 +1,4 @@
 # uvc_manufacture_server
-<hr>
 
 ## Document
 - [uvc_manufacture_server - For MQTT data manufacturing](#rclpy_mqtt_bridge)
@@ -21,16 +20,12 @@
       - [Build Project](#3-2-build-project)
     - [Usage Example](#4-usage-example)
 
-<hr>
-
 ## 1. Environment
 * <img src="https://img.shields.io/badge/openjdk17-437291?style=for-the-badge&logo=openjdk&logoColor=white">
 * <img src="https://img.shields.io/badge/kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white">
 * <img src="https://img.shields.io/badge/spring boot 3.1.3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">
 * <img src="https://img.shields.io/badge/mqtt-660066?style=for-the-badge&logo=mqtt&logoColor=white">
 * <img src="https://img.shields.io/badge/ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white">
-
-<hr>
 
 ## 2. SetUp Installation
 
@@ -43,8 +38,6 @@ Before installing, please ensure the following software is installed and configu
 - [openjdk](https://openjdk.org/) version required 17 - **INSTALL [openjdk17](https://openjdk.org/projects/jdk/17/)** 
 
 - [mosquitto](https://mosquitto.org/) version required 1.6.9 - **INSTALL [mosquitto 1.6.9](https://mosquitto.org/)**
-
-<hr>
 
 ### 2-2. Install openjdk17
 ```bash
@@ -90,7 +83,6 @@ sudo update-alternatives --config javac
 #
 # Press <enter> to keep the current choice[*], or type selection number: 0
 ```
-<hr>
 
 ### 2-3. Install gradle 8.2.1
 
@@ -146,15 +138,12 @@ gradle -v
 # JVM:          17.0.8.1 (Private Build 17.0.8.1+1-Ubuntu-0ubuntu120.04)
 # OS:           Linux 5.15.0-83-generic amd64
 ```
-<hr>
 
 ### 2-4. Install mosquitto 1.6.9
 ```bash
 sudo apt-get update
 sudo apt-get install mosquitto-dev
 ```
-
-<hr>
 
 ## 3. Clone & Build Project
 
@@ -176,8 +165,6 @@ cd ${your workspace}/src/uvc_manufacture_server
 # BUILD SUCCESSFUL in 18s
 # 6 actionable tasks: 6 executed
 ```
-
-<hr>
 
 ## 4. Usage Example
 ```bash
