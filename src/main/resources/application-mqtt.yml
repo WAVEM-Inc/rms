@@ -23,6 +23,11 @@ event:
   qos: 0
   retain: false
 
+path:
+  topic: "hubilon/atcplus/ros/path"
+  qos: 0
+  retain: false
+
 cmdvel:
   default: "cmd_vel"
   toBridge: "wavem/atcplus/rms/cmd_vel"

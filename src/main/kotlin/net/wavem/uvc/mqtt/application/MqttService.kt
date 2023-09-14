@@ -18,12 +18,7 @@ class MqttService<T>(
     }
 
     fun bridge(connectionType: MqttConnectionType, topic: String, data: T) {
-        log.info(connectionType, "bridge message [$data] to [$topic]")
+//        log.info(connectionType, "bridge message [$data] to [$topic]")
         mqttOutboundGateway.publish(topic = topic, data = data)
-    }
-
-    fun bridge(connectionType: MqttConnectionType, topic: String, qos: Int, data: T) {
-        log.info(connectionType, "bridge message [$data] to [$topic]")
-        mqttOutboundGateway.publish(topic = topic, qos = qos, data = data)
     }
 }

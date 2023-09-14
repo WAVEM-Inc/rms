@@ -3,12 +3,14 @@ package net.wavem.uvc.mqtt.infra
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.wavem.uvc.mqtt.domain.MqttConnectionType
 import net.wavem.uvc.mqtt.domain.MqttProperties
-import net.wavem.uvc.rms.domain.RmsCommonProperties
+import net.wavem.uvc.rms.common.domain.RmsCommonProperties
 import net.wavem.uvc.rms.gateway.env_config.domain.EnvConfig
 import net.wavem.uvc.rms.gateway.env_config.request.EnvConfigRequestHandler
 import net.wavem.uvc.rms.gateway.event.domain.Event
-import net.wavem.uvc.rms.gateway.event.gateway.EventRequestHandler
+import net.wavem.uvc.rms.gateway.event.request.EventRequestHandler
 import net.wavem.uvc.rms.gateway.location.domain.Location
+import net.wavem.uvc.rms.gateway.path.domain.Path
+import net.wavem.uvc.rms.gateway.path.request.PathRequestHandler
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.domain.CmdVelProperties
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.request.CmdVelRequestHandler
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.response.CmdVelResponseHandler
@@ -59,6 +61,7 @@ class MqttConfiguration(
     private val objectMapper: ObjectMapper,
     private val envConfigRequestHandler: EnvConfigRequestHandler,
     private val eventRequestHandler: EventRequestHandler,
+    private val pathRequestHandler: PathRequestHandler,
     private val cmdVelRequestHandler: CmdVelRequestHandler,
     private val cmdVelResponseHandler: CmdVelResponseHandler,
     private val robotPoseResponseHandler: RobotPoseResponseHandler,
@@ -112,7 +115,7 @@ class MqttConfiguration(
     }
 
     @Bean
-    fun eventReqeustToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+    fun eventRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
         "hubilon/atcplus/rms/event",
         0
     )) {
@@ -122,7 +125,22 @@ class MqttConfiguration(
                 eventRequestHandler.handle(it.payload as Event)
             }
         } catch (e: MqttException) {
+            log.error(MqttConnectionType.TO_RMS, "mqtt eventRequestToBridge error occurred ${e.message}")
+        }
+    }
 
+    @Bean
+    fun pathRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        "hubilon/atcplus/rms/path",
+        2,
+    )) {
+        try {
+            transform(Transformers.fromJson(Path::class.java))
+            handle {
+                pathRequestHandler.handle(it.payload as Path)
+            }
+        } catch (e: MqttException) {
+            log.error(MqttConnectionType.TO_RMS, "mqtt pathRequestToBridge error occurred ${e.message}")
         }
     }
 
@@ -271,9 +289,6 @@ class MqttConfiguration(
     interface MqttOutboundGateway<T> {
         @Gateway
         fun publish(@Header(MqttHeaders.TOPIC) topic: String, data: T)
-
-        @Gateway
-        fun publish(@Header(MqttHeaders.TOPIC) topic: String, qos: Int, data: T)
     }
 
     companion object {

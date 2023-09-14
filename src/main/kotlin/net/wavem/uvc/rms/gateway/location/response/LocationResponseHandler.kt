@@ -5,18 +5,18 @@ import com.google.gson.JsonObject
 import net.wavem.uvc.mqtt.application.MqttService
 import net.wavem.uvc.mqtt.domain.MqttConnectionType
 import net.wavem.uvc.mqtt.infra.MqttLogger
-import net.wavem.uvc.rms.domain.header.Header
-import net.wavem.uvc.rms.domain.header.types.RobotType
-import net.wavem.uvc.rms.domain.job.JobInfo
-import net.wavem.uvc.rms.domain.job.task.TaskInfo
-import net.wavem.uvc.rms.domain.job.types.JobGroupType
-import net.wavem.uvc.rms.domain.job.types.JobKindType
-import net.wavem.uvc.rms.domain.job.types.TaskStatusType
+import net.wavem.uvc.rms.common.domain.header.RmsCommonHeader
+import net.wavem.uvc.rms.common.types.area.AreaClsfType
+import net.wavem.uvc.rms.common.types.header.RobotType
+import net.wavem.uvc.rms.common.types.job.JobGroupType
+import net.wavem.uvc.rms.common.types.job.JobKindType
+import net.wavem.uvc.rms.common.types.job.TaskStatusType
 import net.wavem.uvc.rms.gateway.location.domain.Location
 import net.wavem.uvc.rms.gateway.location.domain.LocationProperties
-import net.wavem.uvc.rms.gateway.location.domain.last_info.LastInfo
+import net.wavem.uvc.rms.gateway.location.domain.job.LocationJobInfo
+import net.wavem.uvc.rms.gateway.location.domain.last_info.LocationLastInfo
 import net.wavem.uvc.rms.gateway.location.domain.position.LocationPosition
-import net.wavem.uvc.rms.gateway.location.domain.types.AreaClsfType
+import net.wavem.uvc.rms.gateway.location.domain.task.LocationTaskInfo
 import org.springframework.stereotype.Component
 
 @Component
@@ -26,8 +26,8 @@ class LocationResponseHandler(
     private val mqttService: MqttService<String>,
 ) {
 
-    private fun buildHeader(): Header {
-        return Header(
+    private fun buildHeader(): RmsCommonHeader {
+        return RmsCommonHeader(
             topicId = "loc0000001",
             robotCorpId = "roc0000001",
             workCorpId = "wco0000001",
@@ -37,30 +37,29 @@ class LocationResponseHandler(
         )
     }
 
-    private fun buildJobInfo(): JobInfo {
-        val taskInfo: TaskInfo = TaskInfo(
+    private fun buildJobInfo(): LocationJobInfo {
+        val taskInfo: LocationTaskInfo = LocationTaskInfo(
             jobGroup = JobGroupType.SUPPLY.type,
             jobKind = JobKindType.MOVE.type,
             taskStatus = TaskStatusType.ASSIGNED.type
         )
 
-        return JobInfo(
+        return LocationJobInfo(
             jobPlanId = "job0000001",
             jobGroupId = 1,
             jobOrderId = 1,
-            taskInfo = taskInfo,
-            jobResult = null
+            taskInfo = taskInfo
         )
     }
 
-    private fun buildLastInfo(): LastInfo {
+    private fun buildLastInfo(): LocationLastInfo {
         val locationPosition: LocationPosition = LocationPosition(
             xpos = 11.3245,
             ypos = 24.2214,
             heading = 45
         )
 
-        return LastInfo(
+        return LocationLastInfo(
             location = locationPosition,
             areaClsf = AreaClsfType.INDOOR.type,
             floor = "1F",
@@ -74,11 +73,11 @@ class LocationResponseHandler(
         val location: Location = Location(
             header = this.buildHeader(),
             jobInfo = this.buildJobInfo(),
-            lastInfo = this.buildLastInfo()
+            locationLastInfo = this.buildLastInfo()
         )
 
         val locationJSON: JsonObject = Gson().toJsonTree(location).asJsonObject
-        log.info(MqttConnectionType.TO_RMS,"location chatterJSON : [${locationJSON} =====")
+//        log.info(MqttConnectionType.TO_RMS,"location chatterJSON : [${locationJSON} =====")
         mqttService.bridge(MqttConnectionType.FROM_BRIDGE, locationProperties.topic, locationJSON.toString())
     }
 }
