@@ -1,4 +1,4 @@
-package net.wavem.uvc.ros.geometry_msgs.msg
+package net.wavem.uvc.ros.geometry_msgs.msg.quaternion
 
 data class Quaternion(
     val x: Double,

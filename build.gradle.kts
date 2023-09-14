@@ -19,6 +19,7 @@ dependencies {
     implementation("org.springframework.integration:spring-integration-core")
     implementation("org.springframework.integration:spring-integration-mqtt")
     implementation("org.springframework.integration:spring-integration-stream")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-devtools")

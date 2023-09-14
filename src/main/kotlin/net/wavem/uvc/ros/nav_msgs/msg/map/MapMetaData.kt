@@ -1,6 +1,6 @@
-package net.wavem.uvc.ros.nav_msgs.msg
+package net.wavem.uvc.ros.nav_msgs.msg.map
 
-import net.wavem.uvc.ros.geometry_msgs.msg.Pose
+import net.wavem.uvc.ros.geometry_msgs.msg.pose.Pose
 import java.util.*
 
 data class MapMetaData(

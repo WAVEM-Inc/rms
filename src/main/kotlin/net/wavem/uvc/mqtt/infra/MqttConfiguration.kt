@@ -1,9 +1,13 @@
 package net.wavem.uvc.mqtt.infra
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import lombok.RequiredArgsConstructor
 import net.wavem.uvc.mqtt.domain.MqttConnectionType
-import net.wavem.uvc.mqtt.domain.MqttProperties
 import net.wavem.uvc.rms.common.domain.RmsCommonProperties
+import net.wavem.uvc.rms.gateway.control.domain.Control
+import net.wavem.uvc.rms.gateway.control.request.ControlRequestHandler
 import net.wavem.uvc.rms.gateway.env_config.domain.EnvConfig
 import net.wavem.uvc.rms.gateway.env_config.request.EnvConfigRequestHandler
 import net.wavem.uvc.rms.gateway.event.domain.Event
@@ -16,14 +20,14 @@ import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.request.CmdVelRequestHand
 import net.wavem.uvc.ros.geometry_msgs.gateway.cmd_vel.response.CmdVelResponseHandler
 import net.wavem.uvc.ros.geometry_msgs.gateway.robot_pose.domain.RobotPoseProperties
 import net.wavem.uvc.ros.geometry_msgs.gateway.robot_pose.response.RobotPoseResponseHandler
-import net.wavem.uvc.ros.geometry_msgs.msg.Pose
-import net.wavem.uvc.ros.geometry_msgs.msg.Twist
+import net.wavem.uvc.ros.geometry_msgs.msg.pose.Pose
+import net.wavem.uvc.ros.geometry_msgs.msg.twist.Twist
 import net.wavem.uvc.ros.nav_msgs.gateway.map.domain.MapServerMapProperties
 import net.wavem.uvc.ros.nav_msgs.gateway.map.request.MapServerMapRequestHandler
 import net.wavem.uvc.ros.nav_msgs.gateway.map.response.MapServerMapResponseHandler
 import net.wavem.uvc.ros.nav_msgs.gateway.odometry.domain.OdometryProperties
 import net.wavem.uvc.ros.nav_msgs.gateway.odometry.response.OdometryResponseHandler
-import net.wavem.uvc.ros.nav_msgs.msg.Odometry
+import net.wavem.uvc.ros.nav_msgs.msg.odometry.Odometry
 import net.wavem.uvc.ros.nav_msgs.srv.GetMap
 import net.wavem.uvc.ros.std_msgs.gateway.chatter.domain.ChatterProperties
 import net.wavem.uvc.ros.std_msgs.gateway.chatter.request.ChatterRequestHandler
@@ -32,8 +36,12 @@ import org.eclipse.paho.client.mqttv3.MqttAsyncClient
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.env.Environment
+import org.springframework.core.io.ClassPathResource
 import org.springframework.integration.annotation.Gateway
 import org.springframework.integration.annotation.MessagingGateway
 import org.springframework.integration.dsl.StandardIntegrationFlow
@@ -47,11 +55,14 @@ import org.springframework.integration.mqtt.support.DefaultPahoMessageConverter
 import org.springframework.integration.mqtt.support.MqttHeaders
 import org.springframework.messaging.MessageHandler
 import org.springframework.messaging.handler.annotation.Header
+import java.io.InputStream
+
 
 @Configuration
+@RequiredArgsConstructor
 class MqttConfiguration(
     private val log: MqttLogger,
-    private val mqttProperties: MqttProperties,
+    private val environment: Environment,
     private val rmsCommonProperties: RmsCommonProperties,
     private val cmdVelProperties: CmdVelProperties,
     private val robotPoseProperties: RobotPoseProperties,
@@ -59,9 +70,10 @@ class MqttConfiguration(
     private val odometryProperties: OdometryProperties,
     private val chatterProperties: ChatterProperties,
     private val objectMapper: ObjectMapper,
-    private val envConfigRequestHandler: EnvConfigRequestHandler,
     private val eventRequestHandler: EventRequestHandler,
     private val pathRequestHandler: PathRequestHandler,
+    private val controlRequestHandler: ControlRequestHandler,
+    private val envConfigRequestHandler: EnvConfigRequestHandler,
     private val cmdVelRequestHandler: CmdVelRequestHandler,
     private val cmdVelResponseHandler: CmdVelResponseHandler,
     private val robotPoseResponseHandler: RobotPoseResponseHandler,
@@ -71,6 +83,7 @@ class MqttConfiguration(
     private val chatterRequestHandler: ChatterRequestHandler,
     private val chatterResponseHandler: ChatterResponseHandler
 ) {
+    private val logger: Logger = LoggerFactory.getLogger(this.javaClass)
 
     @Bean
     fun mqttPahoClientFactory(): MqttPahoClientFactory {
@@ -81,9 +94,27 @@ class MqttConfiguration(
     }
 
     private fun connectOptions(): MqttConnectOptions {
+        var mqttUrl: String = ""
+        try {
+            val configFile: ClassPathResource = ClassPathResource("mqtt.json")
+            val inputStream: InputStream = configFile.inputStream
+
+            val jsonText: String = inputStream.bufferedReader().use { it.readText() }
+
+            val gson: Gson = Gson()
+            val mqttConnectionInfoJson: JsonObject = gson.fromJson(jsonText, JsonObject::class.java)
+
+            logger.info("======= MQTT connection info $mqttConnectionInfoJson =======")
+            mqttUrl = "${mqttConnectionInfoJson.get("protocol").asString}://${mqttConnectionInfoJson.get("ip").asString}:${mqttConnectionInfoJson.get("port")}"
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RuntimeException("Failed to load MQTT config file", e)
+        }
+
         return MqttConnectOptions()
             .apply {
-                serverURIs = arrayOf(mqttProperties.connectionInfo())
+                logger.info("======== MQTT Connected to [$mqttUrl] ========")
+                serverURIs = arrayOf(mqttUrl)
             }
     }
 
@@ -100,21 +131,6 @@ class MqttConfiguration(
     }
 
     @Bean
-    fun envConfigRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        "/test/config",
-        0
-    )) {
-        try {
-            transform(Transformers.fromJson(EnvConfig::class.java))
-            handle {
-                envConfigRequestHandler.handle(it.payload as EnvConfig)
-            }
-        } catch (e: MqttException) {
-
-        }
-    }
-
-    @Bean
     fun eventRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
         "hubilon/atcplus/rms/event",
         0
@@ -126,6 +142,7 @@ class MqttConfiguration(
             }
         } catch (e: MqttException) {
             log.error(MqttConnectionType.TO_RMS, "mqtt eventRequestToBridge error occurred ${e.message}")
+            e.printStackTrace()
         }
     }
 
@@ -141,6 +158,39 @@ class MqttConfiguration(
             }
         } catch (e: MqttException) {
             log.error(MqttConnectionType.TO_RMS, "mqtt pathRequestToBridge error occurred ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    @Bean
+    fun controlRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        "hubilon/atcplus/rms/control",
+        1
+    )) {
+        try {
+            transform(Transformers.fromJson(Control::class.java))
+            handle {
+                controlRequestHandler.handle(it.payload as Control)
+            }
+        } catch (e: MqttException) {
+            log.error(MqttConnectionType.TO_RMS, "mqtt controlRequestToBridge error occurred ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    @Bean
+    fun envConfigRequestToBridge(): StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
+        "hubilon/atcplus/rms/config",
+        0
+    )) {
+        try {
+            transform(Transformers.fromJson(EnvConfig::class.java))
+            handle {
+                envConfigRequestHandler.handle(it.payload as EnvConfig)
+            }
+        } catch (e: MqttException) {
+            log.error(MqttConnectionType.TO_RMS, "mqtt envConfigRequestToBridge error occurred ${e.message}")
+            e.printStackTrace()
         }
     }
 
@@ -240,9 +290,9 @@ class MqttConfiguration(
         chatterProperties.qos
     )) {
         try {
-            transform(Transformers.fromJson(net.wavem.uvc.ros.std_msgs.msg.String::class.java))
+            transform(Transformers.fromJson(net.wavem.uvc.ros.std_msgs.msg.string.String::class.java))
             handle {
-                chatterRequestHandler.handle(it.payload as net.wavem.uvc.ros.std_msgs.msg.String)
+                chatterRequestHandler.handle(it.payload as net.wavem.uvc.ros.std_msgs.msg.string.String)
             }
         } catch (e: MqttException) {
             log.error(MqttConnectionType.TO_BRIDGE, "mqtt chatterRequestToBridge error occurred ${e.message}")
@@ -255,9 +305,9 @@ class MqttConfiguration(
         chatterProperties.qos
     )) {
         try {
-            transform(Transformers.fromJson(net.wavem.uvc.ros.std_msgs.msg.String::class.java))
+            transform(Transformers.fromJson(net.wavem.uvc.ros.std_msgs.msg.string.String::class.java))
             handle {
-                chatterResponseHandler.handle(it.payload as net.wavem.uvc.ros.std_msgs.msg.String)
+                chatterResponseHandler.handle(it.payload as net.wavem.uvc.ros.std_msgs.msg.string.String)
             }
         } catch (e: MqttException) {
             log.error(MqttConnectionType.FROM_BRIDGE, "mqtt chatterResponseFromBridge error occurred ${e.message}")
@@ -268,7 +318,7 @@ class MqttConfiguration(
     fun mqttOutboundFlow(): StandardIntegrationFlow = integrationFlow(MQTT_OUTBOUND_CHANNEL) {
         transform<Any> {
             when (it) {
-                is net.wavem.uvc.ros.std_msgs.msg.String -> objectMapper.writeValueAsString(it)
+                is net.wavem.uvc.ros.std_msgs.msg.string.String -> objectMapper.writeValueAsString(it)
                 is Location -> objectMapper.writeValueAsString(it)
                 else -> it
             }
@@ -280,8 +330,6 @@ class MqttConfiguration(
         return MqttPahoMessageHandler(MqttAsyncClient.generateClientId(), mqttPahoClientFactory())
             .apply {
                 setAsync(true)
-                setDefaultTopic(mqttProperties.topic)
-                setDefaultQos(mqttProperties.qos)
             }
     }
 

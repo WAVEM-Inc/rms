@@ -3,7 +3,7 @@ package net.wavem.uvc.ros.nav_msgs.gateway.odometry.response
 import net.wavem.uvc.mqtt.application.MqttService
 import net.wavem.uvc.mqtt.domain.MqttConnectionType
 import net.wavem.uvc.ros.nav_msgs.gateway.odometry.domain.OdometryProperties
-import net.wavem.uvc.ros.nav_msgs.msg.Odometry
+import net.wavem.uvc.ros.nav_msgs.msg.odometry.Odometry
 import org.springframework.stereotype.Component
 
 @Component

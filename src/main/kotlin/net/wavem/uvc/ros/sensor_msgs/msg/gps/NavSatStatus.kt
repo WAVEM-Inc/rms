@@ -1,4 +1,4 @@
-package net.wavem.uvc.ros.sensor_msgs.msg
+package net.wavem.uvc.ros.sensor_msgs.msg.gps
 
 data class NavSatStatus(
     val STATUS_NO_FIX: Byte = -1,

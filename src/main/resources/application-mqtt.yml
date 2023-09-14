@@ -3,12 +3,6 @@ spring:
     activate:
       on-profile: mqtt
 
-mqtt:
-  url: tcp://localhost
-  port: 1883
-  topic: /index
-  qos: 0
-
 rms:
   toROS: "hubilon/atcplus/rms/"
   fromROS: "hubilon/atcplus/ros/"
@@ -19,12 +13,22 @@ location:
   retain: false
 
 event:
-  topic: "hubilon/atcplus/ros/event"
+  topic: "hubilon/atcplus/rms/event"
   qos: 0
   retain: false
 
 path:
-  topic: "hubilon/atcplus/ros/path"
+  topic: "hubilon/atcplus/rms/path"
+  qos: 0
+  retain: false
+
+control:
+  topic: "hubilon/atcplus/rms/control"
+  qos: 1
+  retain: false
+
+config:
+  topic: "hubilon/atcplus/rms/config"
   qos: 0
   retain: false
 

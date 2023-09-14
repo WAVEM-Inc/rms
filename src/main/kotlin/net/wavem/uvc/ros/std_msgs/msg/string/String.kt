@@ -1,4 +1,4 @@
-package net.wavem.uvc.ros.std_msgs.msg
+package net.wavem.uvc.ros.std_msgs.msg.string
 
 import kotlin.String
 

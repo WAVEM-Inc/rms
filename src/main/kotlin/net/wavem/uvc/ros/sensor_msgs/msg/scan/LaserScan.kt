@@ -1,6 +1,6 @@
-package net.wavem.uvc.ros.sensor_msgs.msg
+package net.wavem.uvc.ros.sensor_msgs.msg.scan
 
-import net.wavem.uvc.ros.std_msgs.msg.Header
+import net.wavem.uvc.ros.std_msgs.msg.header.Header
 
 data class LaserScan(
     val header: Header,

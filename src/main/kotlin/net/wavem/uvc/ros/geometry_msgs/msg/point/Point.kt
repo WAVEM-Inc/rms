@@ -1,4 +1,4 @@
-package net.wavem.uvc.ros.geometry_msgs.msg
+package net.wavem.uvc.ros.geometry_msgs.msg.point
 
 data class Point(
     val x: Double,

@@ -10,39 +10,45 @@ class MqttLogger {
     private val logger: Logger = LoggerFactory.getLogger(this.javaClass)
 
     fun info(type: MqttConnectionType, message: String) {
+        val loggingMessage: String = "$MQTT_TO_BRIDGE $message"
+
         when (type) {
-            MqttConnectionType.TO_BRIDGE -> logger.info(MQTT_TO_BRIDGE + message)
-            MqttConnectionType.FROM_BRIDGE -> logger.info(MQTT_FROM_BRIDGE + message)
-            MqttConnectionType.TO_RMS -> logger.info(MQTT_TO_RMS + message)
-            MqttConnectionType.FROM_RMS -> logger.info(MQTT_FROM_RMS + message)
+            MqttConnectionType.TO_BRIDGE -> logger.info(loggingMessage)
+            MqttConnectionType.FROM_BRIDGE -> logger.info(loggingMessage)
+            MqttConnectionType.TO_RMS -> logger.info(loggingMessage)
+            MqttConnectionType.FROM_RMS -> logger.info(loggingMessage)
             else -> logger.error("Failed to log MQTT")
         }
     }
 
     fun warn(type: MqttConnectionType, message: String) {
+        val loggingMessage: String = "$MQTT_TO_BRIDGE $message"
+
         when (type) {
-            MqttConnectionType.TO_BRIDGE -> logger.warn(MQTT_TO_BRIDGE + message)
-            MqttConnectionType.FROM_BRIDGE -> logger.warn(MQTT_FROM_BRIDGE + message)
-            MqttConnectionType.TO_RMS -> logger.warn(MQTT_TO_RMS + message)
-            MqttConnectionType.FROM_RMS -> logger.warn(MQTT_FROM_RMS + message)
+            MqttConnectionType.TO_BRIDGE -> logger.warn(loggingMessage)
+            MqttConnectionType.FROM_BRIDGE -> logger.warn(loggingMessage)
+            MqttConnectionType.TO_RMS -> logger.warn(loggingMessage)
+            MqttConnectionType.FROM_RMS -> logger.warn(loggingMessage)
             else -> logger.error("Failed to log MQTT")
         }
     }
 
     fun error(type: MqttConnectionType, message: String) {
+        val loggingMessage: String = "$MQTT_TO_BRIDGE $message"
+
         when (type) {
-            MqttConnectionType.TO_BRIDGE -> logger.error(MQTT_TO_BRIDGE + message)
-            MqttConnectionType.FROM_BRIDGE -> logger.error(MQTT_FROM_BRIDGE + message)
-            MqttConnectionType.TO_RMS -> logger.warn(MQTT_TO_RMS + message)
-            MqttConnectionType.FROM_RMS -> logger.warn(MQTT_FROM_RMS + message)
+            MqttConnectionType.TO_BRIDGE -> logger.error(loggingMessage)
+            MqttConnectionType.FROM_BRIDGE -> logger.error(loggingMessage)
+            MqttConnectionType.TO_RMS -> logger.warn(loggingMessage)
+            MqttConnectionType.FROM_RMS -> logger.warn(loggingMessage)
             else -> logger.error("Failed to log MQTT")
         }
     }
 
     companion object {
-        const val MQTT_TO_BRIDGE: String = "MQTT -> Bridge "
-        const val MQTT_FROM_BRIDGE: String = "Bridge -> MQTT "
-        const val MQTT_TO_RMS: String = "MQTT -> RMS"
-        const val MQTT_FROM_RMS: String = "RMS -> MQTT"
+        const val MQTT_TO_BRIDGE: String = "[MQTT -> Bridge]"
+        const val MQTT_FROM_BRIDGE: String = "[Bridge -> MQTT]"
+        const val MQTT_TO_RMS: String = "[MQTT -> RMS]"
+        const val MQTT_FROM_RMS: String = "[RMS -> MQTT]"
     }
 }

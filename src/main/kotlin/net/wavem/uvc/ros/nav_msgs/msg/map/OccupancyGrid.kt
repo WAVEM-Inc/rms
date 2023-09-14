@@ -1,6 +1,6 @@
-package net.wavem.uvc.ros.nav_msgs.msg
+package net.wavem.uvc.ros.nav_msgs.msg.map
 
-import net.wavem.uvc.ros.std_msgs.msg.Header
+import net.wavem.uvc.ros.std_msgs.msg.header.Header
 
 data class OccupancyGrid(
     val header: Header,

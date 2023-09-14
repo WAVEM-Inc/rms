@@ -1,8 +1,8 @@
-package net.wavem.uvc.ros.sensor_msgs.msg
+package net.wavem.uvc.ros.sensor_msgs.msg.imu
 
-import net.wavem.uvc.ros.geometry_msgs.msg.Quaternion
-import net.wavem.uvc.ros.geometry_msgs.msg.Vector3
-import net.wavem.uvc.ros.std_msgs.msg.Header
+import net.wavem.uvc.ros.geometry_msgs.msg.quaternion.Quaternion
+import net.wavem.uvc.ros.geometry_msgs.msg.vector3.Vector3
+import net.wavem.uvc.ros.std_msgs.msg.header.Header
 
 data class Imu(
     val header: Header,
