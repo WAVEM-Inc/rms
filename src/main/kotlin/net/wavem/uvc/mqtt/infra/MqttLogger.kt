@@ -39,8 +39,8 @@ class MqttLogger {
         when (type) {
             MqttConnectionType.TO_BRIDGE -> logger.error(loggingMessage)
             MqttConnectionType.FROM_BRIDGE -> logger.error(loggingMessage)
-            MqttConnectionType.TO_RMS -> logger.warn(loggingMessage)
-            MqttConnectionType.FROM_RMS -> logger.warn(loggingMessage)
+            MqttConnectionType.TO_RMS -> logger.error(loggingMessage)
+            MqttConnectionType.FROM_RMS -> logger.error(loggingMessage)
             else -> logger.error("Failed to log MQTT")
         }
     }

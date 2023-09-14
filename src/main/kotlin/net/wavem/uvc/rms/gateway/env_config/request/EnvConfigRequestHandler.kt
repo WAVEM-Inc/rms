@@ -18,26 +18,17 @@ import java.io.InputStream
 class EnvConfigRequestHandler(
     val log: MqttLogger,
     val envConfigProperties: EnvConfigProperties,
-    val mqttService: MqttService<String>
+    val mqttService: MqttService<String>,
+    val gson: Gson
 ) {
 
-    fun handle(envConfig: EnvConfig) {
-        val gson: Gson = Gson()
-
+    private fun renewMQTTIP(setInfoJson: JsonObject) {
         val previousMqttConfigFile: ClassPathResource = ClassPathResource("mqtt.json")
         val previousMqttConfigFileInputStream: InputStream = previousMqttConfigFile.inputStream
         val previousMqttConfigFileText: String = previousMqttConfigFileInputStream.bufferedReader().use { it.readText() }
 
         val mqttInfoJsonObject: JsonObject = gson.fromJson(previousMqttConfigFileText, JsonObject::class.java)
 
-        val envConfigJson: JsonObject = Gson().toJsonTree(envConfig).asJsonObject
-        log.info(MqttConnectionType.FROM_RMS, "envConfigJson : [$envConfigJson]")
-
-        val header: RmsCommonHeader = envConfig.header
-        val headerJson: JsonObject = JsonObject()
-
-        val setInfo: EnvConfigSetInfo = envConfig.setInfo
-        val setInfoJson: JsonObject = envConfigJson.getAsJsonObject("setInfo")
         log.info(MqttConnectionType.FROM_RMS, "setInfoJson : [$setInfoJson]")
 
         val previousIP: String = mqttInfoJsonObject.get("ip").asString
@@ -54,8 +45,31 @@ class EnvConfigRequestHandler(
             log.warn(MqttConnectionType.FROM_RMS, "Server Rebooting Required...")
         } else {
             log.warn(MqttConnectionType.FROM_RMS, "MQTT IP Address is equals to renewalIP {$previousIP} / {$renewalIP}")
+        }
+    }
+
+    fun handle(envConfig: EnvConfig) {
+        val envConfigJson: JsonObject = gson.toJsonTree(envConfig).asJsonObject
+        log.info(MqttConnectionType.FROM_RMS, "envConfigJson : [$envConfigJson]")
+
+        val header: RmsCommonHeader? = envConfig.header
+        val setInfo: EnvConfigSetInfo? = envConfig.setInfo
+
+        if(header == null) {
+            log.error(MqttConnectionType.FROM_RMS, "envConfig header is null skipping...")
+            return
+        } else if(setInfo == null) {
+            log.error(MqttConnectionType.FROM_RMS, "envConfig setInfo is null skipping...")
             return
         }
+
+        val headerJson: JsonObject = envConfigJson.getAsJsonObject("header")
+        log.info(MqttConnectionType.FROM_RMS, "envConfig headerJson : [$headerJson]")
+
+        val setInfoJson: JsonObject = envConfigJson.getAsJsonObject("setInfo")
+        log.info(MqttConnectionType.FROM_RMS, "envConfigsetInfoJson : [$setInfoJson]")
+
+        renewMQTTIP(setInfoJson)
 
         mqttService.bridge(
             MqttConnectionType.TO_BRIDGE,
