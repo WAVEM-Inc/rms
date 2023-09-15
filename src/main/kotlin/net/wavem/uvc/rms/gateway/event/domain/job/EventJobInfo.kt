@@ -1,6 +1,6 @@
 package net.wavem.uvc.rms.gateway.event.domain.job
 
-import net.wavem.uvc.rms.common.domain.job.result.RmsCommonJobResult
+import net.wavem.uvc.rms.common.domain.job.result.JobResult
 
 data class EventJobInfo(
     val jobPlanId: String?,
@@ -8,6 +8,6 @@ data class EventJobInfo(
     val jobOrderId: Int?,
     val jobGroup: String?,
     val jobKindType: String?,
-    val jobResult: RmsCommonJobResult?
+    val jobResult: JobResult?
 ) {
 }

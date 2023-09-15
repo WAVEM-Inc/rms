@@ -1,6 +1,6 @@
 package net.wavem.uvc.rms.common.domain.header
 
-data class RmsCommonHeader(
+data class Header(
     val topicId: String?,
     val robotCorpId: String?,
     val workCorpId: String?,

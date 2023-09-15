@@ -5,7 +5,7 @@ import com.google.gson.JsonObject
 import net.wavem.uvc.mqtt.application.MqttService
 import net.wavem.uvc.mqtt.domain.MqttConnectionType
 import net.wavem.uvc.mqtt.infra.MqttLogger
-import net.wavem.uvc.rms.common.domain.header.RmsCommonHeader
+import net.wavem.uvc.rms.common.domain.header.Header
 import net.wavem.uvc.rms.common.types.area.AreaClsfType
 import net.wavem.uvc.rms.common.types.header.RobotType
 import net.wavem.uvc.rms.common.types.job.JobGroupType
@@ -26,8 +26,8 @@ class LocationResponseHandler(
     private val mqttService: MqttService<String>,
 ) {
 
-    private fun buildHeader(): RmsCommonHeader {
-        return RmsCommonHeader(
+    private fun buildHeader(): Header {
+        return Header(
             topicId = "loc0000001",
             robotCorpId = "roc0000001",
             workCorpId = "wco0000001",

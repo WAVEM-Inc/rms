@@ -5,7 +5,7 @@ import com.google.gson.JsonObject
 import net.wavem.uvc.mqtt.application.MqttService
 import net.wavem.uvc.mqtt.domain.MqttConnectionType
 import net.wavem.uvc.mqtt.infra.MqttLogger
-import net.wavem.uvc.rms.common.domain.header.RmsCommonHeader
+import net.wavem.uvc.rms.common.domain.header.Header
 import net.wavem.uvc.rms.gateway.env_config.domain.EnvConfig
 import net.wavem.uvc.rms.gateway.env_config.domain.EnvConfigProperties
 import net.wavem.uvc.rms.gateway.env_config.domain.set_info.EnvConfigSetInfo
@@ -52,7 +52,7 @@ class EnvConfigRequestHandler(
         val envConfigJson: JsonObject = gson.toJsonTree(envConfig).asJsonObject
         log.info(MqttConnectionType.FROM_RMS, "envConfigJson : [$envConfigJson]")
 
-        val header: RmsCommonHeader? = envConfig.header
+        val header: Header? = envConfig.header
         val setInfo: EnvConfigSetInfo? = envConfig.setInfo
 
         if(header == null) {
@@ -63,10 +63,10 @@ class EnvConfigRequestHandler(
             return
         }
 
-        val headerJson: JsonObject = envConfigJson.getAsJsonObject("header")
+        val headerJson: JsonObject = envConfigJson.getAsJsonObject(KEY_HEADER)
         log.info(MqttConnectionType.FROM_RMS, "envConfig headerJson : [$headerJson]")
 
-        val setInfoJson: JsonObject = envConfigJson.getAsJsonObject("setInfo")
+        val setInfoJson: JsonObject = envConfigJson.getAsJsonObject(KEY_SET_INFO)
         log.info(MqttConnectionType.FROM_RMS, "envConfigsetInfoJson : [$setInfoJson]")
 
         renewMQTTIP(setInfoJson)
@@ -76,5 +76,10 @@ class EnvConfigRequestHandler(
             "/test/config",
             envConfigJson.toString()
         )
+    }
+
+    private companion object {
+        const val KEY_HEADER: String = "header"
+        const val KEY_SET_INFO: String = "setInfo"
     }
 }
