@@ -6,6 +6,7 @@ import net.wavem.uvc.mqtt.application.MqttService
 import net.wavem.uvc.mqtt.domain.MqttConnectionType
 import net.wavem.uvc.mqtt.infra.MqttLogger
 import net.wavem.uvc.rms.common.domain.header.Header
+import net.wavem.uvc.rms.common.jwt.JwtProvider
 import net.wavem.uvc.rms.common.types.area.AreaClsfType
 import net.wavem.uvc.rms.common.types.header.RobotType
 import net.wavem.uvc.rms.common.types.job.JobGroupType
@@ -24,11 +25,11 @@ class LocationResponseHandler(
     private val log: MqttLogger,
     private val locationProperties: LocationProperties,
     private val mqttService: MqttService<String>,
+    private val jwtProvider: JwtProvider
 ) {
 
     private fun buildHeader(): Header {
         return Header(
-            topicId = "loc0000001",
             robotCorpId = "roc0000001",
             workCorpId = "wco0000001",
             workSiteId = "wst0000001",
@@ -77,7 +78,8 @@ class LocationResponseHandler(
         )
 
         val locationJSON: JsonObject = Gson().toJsonTree(location).asJsonObject
-//        log.info(MqttConnectionType.TO_RMS,"location chatterJSON : [${locationJSON} =====")
-        mqttService.bridge(MqttConnectionType.FROM_BRIDGE, locationProperties.topic, locationJSON.toString())
+        val encryptedJson: String = jwtProvider.encode("location", locationJSON.toString())
+        log.info(MqttConnectionType.FROM_BRIDGE, "decode test : ${jwtProvider.decode(encryptedJson)}")
+        mqttService.bridge(MqttConnectionType.FROM_BRIDGE, locationProperties.topic, encryptedJson)
     }
 }

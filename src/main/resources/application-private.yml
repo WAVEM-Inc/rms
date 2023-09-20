@@ -1,0 +1,6 @@
+spring:
+  config:
+    activate:
+      on-profile: private
+  jwt:
+    secret: wqlreasldfkjqawierqlkajsdilfjqwilkasfnipqklasdnfioqwnlemwnflaksdf

@@ -6,6 +6,7 @@ import net.wavem.uvc.mqtt.application.MqttService
 import net.wavem.uvc.mqtt.domain.MqttConnectionType
 import net.wavem.uvc.mqtt.infra.MqttLogger
 import net.wavem.uvc.rms.common.domain.header.Header
+import net.wavem.uvc.rms.common.jwt.JwtProvider
 import net.wavem.uvc.rms.gateway.event.domain.Event
 import net.wavem.uvc.rms.gateway.event.domain.EventProperties
 import net.wavem.uvc.rms.gateway.event.domain.com_info.ComInfo
@@ -18,7 +19,8 @@ class EventRequestHandler(
     private val log: MqttLogger,
     private val eventProperties: EventProperties,
     private val mqttService: MqttService<String>,
-    val gson: Gson
+    private val gson: Gson,
+    private val jwtProvider: JwtProvider
 ) {
 
     fun handle(event: Event) {
@@ -56,10 +58,12 @@ class EventRequestHandler(
         val comInfoJson: JsonObject = eventJson.getAsJsonObject(KEY_COM_INFO)
         log.info(MqttConnectionType.FROM_RMS, "event comInfoJson : [$comInfoJson]")
 
+        val encryptedJson: String = jwtProvider.encode("event", eventJson.toString())
+
         mqttService.bridge(
             MqttConnectionType.TO_BRIDGE,
             topic = "/test/event",
-            eventJson.toString()
+            encryptedJson
         )
     }
 
