@@ -13,7 +13,7 @@ location:
   retain: false
 
 event:
-  topic: "hubilon/atcplus/rms/event"
+  topic: "hubilon/atcplus/ros/event"
   qos: 0
   retain: false
 

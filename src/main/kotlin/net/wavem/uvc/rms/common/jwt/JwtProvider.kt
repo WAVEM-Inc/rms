@@ -25,8 +25,9 @@ class JwtProvider {
     }
 
     fun encode(key: String, value: String): String {
-        val claims = Jwts.claims()
+        val claims: Claims = Jwts.claims()
         claims[key] = value
+
         return Jwts.builder()
             .setClaims(claims)
             .setIssuedAt(Date(System.currentTimeMillis()))
@@ -34,6 +35,7 @@ class JwtProvider {
             .signWith(SignatureAlgorithm.HS256, secretKey)
             .compact()
     }
+
 
     fun decode(jwt: String): Claims {
         return Jwts.parser()

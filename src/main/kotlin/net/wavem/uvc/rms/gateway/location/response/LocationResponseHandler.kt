@@ -79,7 +79,8 @@ class LocationResponseHandler(
 
         val locationJSON: JsonObject = Gson().toJsonTree(location).asJsonObject
         val encryptedJson: String = jwtProvider.encode("location", locationJSON.toString())
-        log.info(MqttConnectionType.FROM_BRIDGE, "decode test : ${jwtProvider.decode(encryptedJson)}")
-        mqttService.bridge(MqttConnectionType.FROM_BRIDGE, locationProperties.topic, encryptedJson)
+
+//        log.info(MqttConnectionType.TO_RMS, "decode test : ${jwtProvider.decode(encryptedJson)}")
+        mqttService.bridge(MqttConnectionType.TO_RMS, locationProperties.topic, encryptedJson)
     }
 }
