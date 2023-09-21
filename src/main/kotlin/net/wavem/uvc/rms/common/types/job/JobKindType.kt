@@ -1,7 +1,7 @@
 package net.wavem.uvc.rms.common.types.job
 
 enum class JobKindType(
-    val type: String
+    val type : String
 ) {
     LOAD("load"),
     UNLOAD("unload"),

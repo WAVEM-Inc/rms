@@ -1,7 +1,7 @@
 package net.wavem.uvc.mqtt.domain
 
 enum class MqttConnectionType(
-    val type: String
+    val type : String
 ) {
     TO_BRIDGE("TO_ROS"),
     FROM_BRIDGE("FROM_BRIDGE"),

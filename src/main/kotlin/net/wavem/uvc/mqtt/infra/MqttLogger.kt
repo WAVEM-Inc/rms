@@ -7,10 +7,10 @@ import org.springframework.stereotype.Component
 
 @Component
 class MqttLogger {
-    private val logger: Logger = LoggerFactory.getLogger(this.javaClass)
+    private val logger : Logger = LoggerFactory.getLogger(this.javaClass)
 
-    fun info(type: MqttConnectionType, message: String) {
-        val loggingMessage: String = "$MQTT_TO_BRIDGE $message"
+    fun info(type : MqttConnectionType, message : String) {
+        val loggingMessage : String = "$MQTT_TO_BRIDGE $message"
 
         when (type) {
             MqttConnectionType.TO_BRIDGE -> logger.info(loggingMessage)
@@ -21,8 +21,8 @@ class MqttLogger {
         }
     }
 
-    fun warn(type: MqttConnectionType, message: String) {
-        val loggingMessage: String = "$MQTT_TO_BRIDGE $message"
+    fun warn(type : MqttConnectionType, message : String) {
+        val loggingMessage : String = "$MQTT_TO_BRIDGE $message"
 
         when (type) {
             MqttConnectionType.TO_BRIDGE -> logger.warn(loggingMessage)
@@ -33,8 +33,8 @@ class MqttLogger {
         }
     }
 
-    fun error(type: MqttConnectionType, message: String) {
-        val loggingMessage: String = "$MQTT_TO_BRIDGE $message"
+    fun error(type : MqttConnectionType, message : String) {
+        val loggingMessage : String = "$MQTT_TO_BRIDGE $message"
 
         when (type) {
             MqttConnectionType.TO_BRIDGE -> logger.error(loggingMessage)
@@ -45,10 +45,10 @@ class MqttLogger {
         }
     }
 
-    companion object {
-        const val MQTT_TO_BRIDGE: String = "[MQTT -> Bridge]"
-        const val MQTT_FROM_BRIDGE: String = "[Bridge -> MQTT]"
-        const val MQTT_TO_RMS: String = "[MQTT -> RMS]"
-        const val MQTT_FROM_RMS: String = "[RMS -> MQTT]"
+    private companion object {
+        const val MQTT_TO_BRIDGE : String = "[MQTT -> Bridge]"
+        const val MQTT_FROM_BRIDGE : String = "[Bridge -> MQTT]"
+        const val MQTT_TO_RMS : String = "[MQTT -> RMS]"
+        const val MQTT_FROM_RMS : String = "[RMS -> MQTT]"
     }
 }

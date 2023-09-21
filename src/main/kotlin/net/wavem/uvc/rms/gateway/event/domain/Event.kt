@@ -6,9 +6,9 @@ import net.wavem.uvc.rms.gateway.event.domain.event_info.EventInfo
 import net.wavem.uvc.rms.gateway.event.domain.job.EventJobInfo
 
 data class Event(
-    val header: Header?,
-    val jobInfo: EventJobInfo?,
-    val eventInfo: EventInfo?,
-    val comInfo: ComInfo?
+    val header : Header?,
+    val jobInfo : EventJobInfo?,
+    val eventInfo : EventInfo?,
+    val comInfo : ComInfo?
 ) {
 }

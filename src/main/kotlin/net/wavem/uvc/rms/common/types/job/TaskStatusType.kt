@@ -1,7 +1,7 @@
 package net.wavem.uvc.rms.common.types.job
 
 enum class TaskStatusType(
-    val type: String
+    val type : String
 ) {
     ASSIGNED("assigned"),
     UNASSIGNED("unassigned")

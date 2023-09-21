@@ -7,9 +7,9 @@ import java.util.*
 @Service
 class TimeService {
 
-    fun getCurrentDateTime(): String {
-        val sdf: SimpleDateFormat = SimpleDateFormat("yyMMddHHmmss")
-        val currentDate: Date = Date()
+    fun getCurrentDateTime() : String {
+        val sdf : SimpleDateFormat = SimpleDateFormat("yyMMddHHmmss")
+        val currentDate : Date = Date()
         return sdf.format(currentDate)
     }
 }

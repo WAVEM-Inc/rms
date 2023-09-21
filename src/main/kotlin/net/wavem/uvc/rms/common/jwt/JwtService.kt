@@ -16,7 +16,7 @@ import java.util.*
 class JwtService {
 
     @Value("\${spring.jwt.secret}")
-    private lateinit var secretKey: String
+    private lateinit var secretKey : String
 
     private val accessTokenValidMillisecond = 60 * 60 * 1000L
 
@@ -27,8 +27,8 @@ class JwtService {
         secretKey = Base64.getEncoder().encodeToString(secretKey.toByteArray());
     }
 
-    fun encode(key: String, value: String): String {
-        val claims: Claims = Jwts.claims()
+    fun encode(key : String, value : String) : String {
+        val claims : Claims = Jwts.claims()
         claims[key] = value
 
         return Jwts.builder()
@@ -40,7 +40,7 @@ class JwtService {
     }
 
 
-    fun decode(jwt: String): Claims {
+    fun decode(jwt : String) : Claims {
         return Jwts.parser()
             .setSigningKey(secretKey)
             .parseClaimsJws(jwt)
@@ -48,8 +48,8 @@ class JwtService {
     }
 }
 
-inline fun <reified T> convertClaimsToJsonObject(decodedClaims: Claims, key: String): T {
-    val decodedClaimsString: String = decodedClaims[key].toString()
+inline fun <reified T> convertClaimsToJsonObject(decodedClaims : Claims, key : String) : T {
+    val decodedClaimsString : String = decodedClaims[key].toString()
 
     val decodedClaimsJsonObject: JsonObject = JsonParser().parse(decodedClaimsString).asJsonObject
     return Gson().fromJson(decodedClaimsJsonObject, T::class.java)

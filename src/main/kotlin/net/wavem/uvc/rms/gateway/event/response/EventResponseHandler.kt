@@ -26,15 +26,15 @@ import org.springframework.stereotype.Component
 
 @Component
 class EventResponseHandler(
-    private val log: MqttLogger,
-    private val eventProperties: EventProperties,
-    private val mqttService: MqttService<String>,
-    private val timeService: TimeService,
-    private val gson: Gson,
-    private val jwtService: JwtService
+    private val log : MqttLogger,
+    private val eventProperties : EventProperties,
+    private val mqttService : MqttService<String>,
+    private val timeService : TimeService,
+    private val gson : Gson,
+    private val jwtService : JwtService
 ) {
 
-    private fun buildHeader(): Header {
+    private fun buildHeader() : Header {
         return Header(
             robotCorpId = "rco0000001",
             workCorpId = "wco0000001",
@@ -44,7 +44,7 @@ class EventResponseHandler(
         )
     }
 
-    private fun buildJobResult(): JobResult {
+    private fun buildJobResult() : JobResult {
         return JobResult(
             status = JobResultType.SUCCESS.type,
             startTime = timeService.getCurrentDateTime(),
@@ -55,7 +55,7 @@ class EventResponseHandler(
         )
     }
 
-    private fun buildJobInfo(): EventJobInfo {
+    private fun buildJobInfo() : EventJobInfo {
         return EventJobInfo(
             jobPlanId = "job0000001",
             jobGroupId = 1,
@@ -66,7 +66,7 @@ class EventResponseHandler(
         )
     }
 
-    private fun buildLocationPosition(): LocationPosition {
+    private fun buildLocationPosition() : LocationPosition {
         return LocationPosition(
             xpos = 11.3245,
             ypos = 24.2214,
@@ -74,7 +74,7 @@ class EventResponseHandler(
         )
     }
 
-    private fun buildEventInfo(): EventInfo {
+    private fun buildEventInfo() : EventInfo {
         return EventInfo(
             eventId = "evt0000001",
             eventCd = EventCodeType.STOP.type,
@@ -86,7 +86,7 @@ class EventResponseHandler(
         )
     }
 
-    private fun buildComInfo(): ComInfo {
+    private fun buildComInfo() : ComInfo {
         return ComInfo(
             status = ComInfoStatusType.CONNECTED.type,
             robotIP = "10.223.188.152",

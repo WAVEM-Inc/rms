@@ -6,9 +6,9 @@ import net.wavem.uvc.rms.gateway.path.domain.job.kind.PathJobKind
 import net.wavem.uvc.rms.gateway.path.domain.job.path.PathJobPath
 
 data class Path(
-    val header: Header?,
-    val jobInfo: PathJobInfo?,
-    val jobPath: PathJobPath?,
-    val jobKind: PathJobKind?
+    val header : Header?,
+    val jobInfo : PathJobInfo?,
+    val jobPath : PathJobPath?,
+    val jobKind : PathJobKind?
 ) {
 }

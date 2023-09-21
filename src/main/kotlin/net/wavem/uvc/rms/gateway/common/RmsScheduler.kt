@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component
 
 @Component
 class RmsScheduler(
-    private val locationResponseHandler: LocationResponseHandler,
-    private val eventResponseHandler: EventResponseHandler
+    private val locationResponseHandler : LocationResponseHandler,
+    private val eventResponseHandler : EventResponseHandler
 ) {
 
     @Scheduled(fixedRate = HANDLE_RATE)
@@ -22,6 +22,6 @@ class RmsScheduler(
     }
 
     private companion object {
-        const val HANDLE_RATE: Long = 1000
+        const val HANDLE_RATE : Long = 1000
     }
 }
