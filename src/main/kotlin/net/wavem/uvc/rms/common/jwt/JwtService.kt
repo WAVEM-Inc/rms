@@ -1,16 +1,19 @@
 package net.wavem.uvc.rms.common.jwt
 
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import java.util.*
 
 
-@Component
-class JwtProvider {
+@Service
+class JwtService {
 
     @Value("\${spring.jwt.secret}")
     private lateinit var secretKey: String
@@ -43,17 +46,11 @@ class JwtProvider {
             .parseClaimsJws(jwt)
             .body
     }
+}
 
-    fun getLoginId(token: String, secretKey: String): String {
-        return extractClaims(token, secretKey)["loginId"].toString()
-    }
+inline fun <reified T> convertClaimsToJsonObject(decodedClaims: Claims, key: String): T {
+    val decodedClaimsString: String = decodedClaims[key].toString()
 
-    fun isExpired(token: String, secretKey: String): Boolean {
-        val expiredDate: Date = extractClaims(token, secretKey).expiration
-        return expiredDate.before(Date())
-    }
-
-    private fun extractClaims(token: String, secretKey: String): Claims {
-        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).body
-    }
+    val decodedClaimsJsonObject: JsonObject = JsonParser().parse(decodedClaimsString).asJsonObject
+    return Gson().fromJson(decodedClaimsJsonObject, T::class.java)
 }

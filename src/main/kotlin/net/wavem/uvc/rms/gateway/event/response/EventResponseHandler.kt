@@ -8,7 +8,7 @@ import net.wavem.uvc.mqtt.infra.MqttLogger
 import net.wavem.uvc.rms.common.application.TimeService
 import net.wavem.uvc.rms.common.domain.header.Header
 import net.wavem.uvc.rms.common.domain.job.result.JobResult
-import net.wavem.uvc.rms.common.jwt.JwtProvider
+import net.wavem.uvc.rms.common.jwt.JwtService
 import net.wavem.uvc.rms.common.types.area.AreaClsfType
 import net.wavem.uvc.rms.common.types.event.ComInfoStatusType
 import net.wavem.uvc.rms.common.types.event.EventCodeType
@@ -31,7 +31,7 @@ class EventResponseHandler(
     private val mqttService: MqttService<String>,
     private val timeService: TimeService,
     private val gson: Gson,
-    private val jwtProvider: JwtProvider
+    private val jwtService: JwtService
 ) {
 
     private fun buildHeader(): Header {
@@ -105,7 +105,7 @@ class EventResponseHandler(
         )
 
         val eventJson: JsonObject = Gson().toJsonTree(event).asJsonObject
-        val encryptedJson: String = jwtProvider.encode("event", eventJson.toString())
+        val encryptedJson: String = jwtService.encode("event", eventJson.toString())
 
         mqttService.bridge(MqttConnectionType.TO_RMS, topic = eventProperties.topic, encryptedJson)
     }
