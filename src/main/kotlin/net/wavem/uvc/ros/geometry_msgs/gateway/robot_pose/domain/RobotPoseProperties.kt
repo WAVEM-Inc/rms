@@ -4,8 +4,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties("robotpose")
 data class RobotPoseProperties(
-    val default: String,
-    val fromBridge: String,
-    val qos: Int
+    val default : String,
+    val fromBridge : String,
+    val qos : Int
 ) {
 }

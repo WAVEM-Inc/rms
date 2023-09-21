@@ -8,11 +8,11 @@ import org.springframework.stereotype.Component
 
 @Component
 class OdometryResponseHandler(
-    private val odometryProperties: OdometryProperties,
-    private val mqttService: MqttService<Odometry>
+    private val odometryProperties : OdometryProperties,
+    private val mqttService : MqttService<Odometry>
 ) {
 
-    fun handle(odometry: Odometry) {
+    fun handle(odometry : Odometry) {
         mqttService.bridge(
             connectionType = MqttConnectionType.TO_BRIDGE,
             topic = odometryProperties.fromBridge,

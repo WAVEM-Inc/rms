@@ -8,14 +8,14 @@ import org.springframework.stereotype.Component
 
 @Component
 class ChatterResponseHandler(
-    private val chatterProperties: ChatterProperties,
-    private val mqttService: MqttService<String>
+    private val chatterProperties : ChatterProperties,
+    private val mqttService : MqttService<String>
 ) {
 
-    var stdString: String? = null
+    var stdString : String? = null
 
-    fun handle(string: String) {
-        val data: String = mqttService.processROSData(
+    fun handle(string : String) {
+        val data : String = mqttService.processROSData(
             connectionType = MqttConnectionType.FROM_BRIDGE,
             topic = chatterProperties.fromBridge,
             data = string

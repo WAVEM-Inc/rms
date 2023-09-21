@@ -18,9 +18,9 @@ class JwtService {
     @Value("\${spring.jwt.secret}")
     private lateinit var secretKey : String
 
-    private val accessTokenValidMillisecond = 60 * 60 * 1000L
+    private val accessTokenValidMillisecond : Long = 60 * 60 * 1000L
 
-    private val refreshTokenValidMillisecond = 14 * 24 * 60 * 60 * 1000L
+    private val refreshTokenValidMillisecond : Long = 14 * 24 * 60 * 60 * 1000L
 
     @PostConstruct
     protected fun secretInit() {

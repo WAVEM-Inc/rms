@@ -4,9 +4,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties("cmdvel")
 data class CmdVelProperties(
-    val default: String,
-    val toBridge: String,
-    val fromBridge: String,
-    val qos: Int
+    val default : String,
+    val toBridge : String,
+    val fromBridge : String,
+    val qos : Int
 ) {
 }

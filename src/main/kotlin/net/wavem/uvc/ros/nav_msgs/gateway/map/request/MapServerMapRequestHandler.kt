@@ -8,11 +8,11 @@ import org.springframework.stereotype.Component
 
 @Component
 class MapServerMapRequestHandler(
-    private val mapServerMapProperties: MapServerMapProperties,
-    private val mqttService: MqttService<GetMap>
+    private val mapServerMapProperties : MapServerMapProperties,
+    private val mqttService : MqttService<GetMap>
 ) {
 
-    fun handle(getMap: GetMap) {
+    fun handle(getMap : GetMap) {
         mqttService.bridge(
             connectionType = MqttConnectionType.TO_BRIDGE,
             topic = mapServerMapProperties.toBridge,

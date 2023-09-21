@@ -17,7 +17,6 @@ class MqttLogger {
             MqttConnectionType.FROM_BRIDGE -> logger.info(loggingMessage)
             MqttConnectionType.TO_RMS -> logger.info(loggingMessage)
             MqttConnectionType.FROM_RMS -> logger.info(loggingMessage)
-            else -> logger.error("Failed to log MQTT")
         }
     }
 
@@ -29,7 +28,6 @@ class MqttLogger {
             MqttConnectionType.FROM_BRIDGE -> logger.warn(loggingMessage)
             MqttConnectionType.TO_RMS -> logger.warn(loggingMessage)
             MqttConnectionType.FROM_RMS -> logger.warn(loggingMessage)
-            else -> logger.error("Failed to log MQTT")
         }
     }
 
@@ -41,7 +39,6 @@ class MqttLogger {
             MqttConnectionType.FROM_BRIDGE -> logger.error(loggingMessage)
             MqttConnectionType.TO_RMS -> logger.error(loggingMessage)
             MqttConnectionType.FROM_RMS -> logger.error(loggingMessage)
-            else -> logger.error("Failed to log MQTT")
         }
     }
 

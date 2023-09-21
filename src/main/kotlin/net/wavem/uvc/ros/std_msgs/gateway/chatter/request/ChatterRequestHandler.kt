@@ -8,11 +8,11 @@ import org.springframework.stereotype.Component
 
 @Component
 class ChatterRequestHandler (
-    private val chatterProperties: ChatterProperties,
-    private val mqttService: MqttService<String>
+    private val chatterProperties : ChatterProperties,
+    private val mqttService : MqttService<String>
 ) {
 
-    fun handle(string: String) {
+    fun handle(string : String) {
         mqttService.bridge(
             connectionType = MqttConnectionType.TO_BRIDGE,
             topic = chatterProperties.toBridge,

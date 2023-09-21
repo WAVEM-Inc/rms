@@ -97,15 +97,15 @@ class EventResponseHandler(
     }
 
     fun handle() {
-        val event: Event = Event(
+        val event : Event = Event(
             header = this.buildHeader(),
             jobInfo = this.buildJobInfo(),
             eventInfo = this.buildEventInfo(),
             comInfo = this.buildComInfo()
         )
 
-        val eventJson: JsonObject = Gson().toJsonTree(event).asJsonObject
-        val encryptedJson: String = jwtService.encode("event", eventJson.toString())
+        val eventJson : JsonObject = Gson().toJsonTree(event).asJsonObject
+        val encryptedJson : String = jwtService.encode("event", eventJson.toString())
 
         mqttService.bridge(MqttConnectionType.TO_RMS, topic = eventProperties.topic, encryptedJson)
     }

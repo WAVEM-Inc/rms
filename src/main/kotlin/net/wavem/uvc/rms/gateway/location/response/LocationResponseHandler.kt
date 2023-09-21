@@ -22,13 +22,13 @@ import org.springframework.stereotype.Component
 
 @Component
 class LocationResponseHandler(
-    private val log: MqttLogger,
-    private val locationProperties: LocationProperties,
-    private val mqttService: MqttService<String>,
-    private val jwtService: JwtService
+    private val log : MqttLogger,
+    private val locationProperties : LocationProperties,
+    private val mqttService : MqttService<String>,
+    private val jwtService : JwtService
 ) {
 
-    private fun buildHeader(): Header {
+    private fun buildHeader() : Header {
         return Header(
             robotCorpId = "roc0000001",
             workCorpId = "wco0000001",
@@ -38,8 +38,8 @@ class LocationResponseHandler(
         )
     }
 
-    private fun buildJobInfo(): LocationJobInfo {
-        val taskInfo: LocationTaskInfo = LocationTaskInfo(
+    private fun buildJobInfo() : LocationJobInfo {
+        val taskInfo : LocationTaskInfo = LocationTaskInfo(
             jobGroup = JobGroupType.SUPPLY.type,
             jobKind = JobKindType.MOVE.type,
             taskStatus = TaskStatusType.ASSIGNED.type
@@ -53,8 +53,8 @@ class LocationResponseHandler(
         )
     }
 
-    private fun buildLastInfo(): LocationLastInfo {
-        val locationPosition: LocationPosition = LocationPosition(
+    private fun buildLastInfo() : LocationLastInfo {
+        val locationPosition : LocationPosition = LocationPosition(
             xpos = 11.3245,
             ypos = 24.2214,
             heading = 45
@@ -71,14 +71,14 @@ class LocationResponseHandler(
     }
 
     fun handle() {
-        val location: Location = Location(
+        val location : Location = Location(
             header = this.buildHeader(),
             jobInfo = this.buildJobInfo(),
             locationLastInfo = this.buildLastInfo()
         )
 
-        val locationJSON: JsonObject = Gson().toJsonTree(location).asJsonObject
-        val encryptedJson: String = jwtService.encode("location", locationJSON.toString())
+        val locationJSON : JsonObject = Gson().toJsonTree(location).asJsonObject
+        val encryptedJson : String = jwtService.encode("location", locationJSON.toString())
 
 //        log.info(MqttConnectionType.TO_RMS, "decode test : ${jwtProvider.decode(encryptedJson)}")
         mqttService.bridge(MqttConnectionType.TO_RMS, locationProperties.topic, encryptedJson)

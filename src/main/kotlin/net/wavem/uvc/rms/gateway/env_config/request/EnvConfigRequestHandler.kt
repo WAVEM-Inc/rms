@@ -16,28 +16,28 @@ import java.io.InputStream
 
 @Component
 class EnvConfigRequestHandler(
-    val log: MqttLogger,
-    val envConfigProperties: EnvConfigProperties,
-    val mqttService: MqttService<String>,
-    val gson: Gson
+    val log : MqttLogger,
+    val envConfigProperties : EnvConfigProperties,
+    val mqttService : MqttService<String>,
+    val gson : Gson
 ) {
 
-    private fun renewMQTTIP(setInfoJson: JsonObject) {
-        val previousMqttConfigFile: ClassPathResource = ClassPathResource("mqtt.json")
-        val previousMqttConfigFileInputStream: InputStream = previousMqttConfigFile.inputStream
-        val previousMqttConfigFileText: String = previousMqttConfigFileInputStream.bufferedReader().use { it.readText() }
+    private fun renewMQTTIP(setInfoJson : JsonObject) {
+        val previousMqttConfigFile : ClassPathResource = ClassPathResource("mqtt.json")
+        val previousMqttConfigFileInputStream : InputStream = previousMqttConfigFile.inputStream
+        val previousMqttConfigFileText : String = previousMqttConfigFileInputStream.bufferedReader().use { it.readText() }
 
-        val mqttInfoJsonObject: JsonObject = gson.fromJson(previousMqttConfigFileText, JsonObject::class.java)
+        val mqttInfoJsonObject : JsonObject = gson.fromJson(previousMqttConfigFileText, JsonObject::class.java)
 
         log.info(MqttConnectionType.FROM_RMS, "setInfoJson : [$setInfoJson]")
 
-        val previousIP: String = mqttInfoJsonObject.get("ip").asString
-        val renewalIP: String = setInfoJson.get("mqttIP").asString
+        val previousIP : String = mqttInfoJsonObject.get("ip").asString
+        val renewalIP : String = setInfoJson.get("mqttIP").asString
 
         if (previousIP != renewalIP) {
             mqttInfoJsonObject.addProperty("ip", renewalIP)
 
-            val renewFileWriter: FileWriter = FileWriter(previousMqttConfigFile.file)
+            val renewFileWriter : FileWriter = FileWriter(previousMqttConfigFile.file)
             renewFileWriter.write(mqttInfoJsonObject.toString())
             renewFileWriter.close()
 
@@ -48,12 +48,12 @@ class EnvConfigRequestHandler(
         }
     }
 
-    fun handle(envConfig: EnvConfig) {
-        val envConfigJson: JsonObject = gson.toJsonTree(envConfig).asJsonObject
+    fun handle(envConfig : EnvConfig) {
+        val envConfigJson : JsonObject = gson.toJsonTree(envConfig).asJsonObject
         log.info(MqttConnectionType.FROM_RMS, "envConfigJson : [$envConfigJson]")
 
-        val header: Header? = envConfig.header
-        val setInfo: EnvConfigSetInfo? = envConfig.setInfo
+        val header : Header? = envConfig.header
+        val setInfo : EnvConfigSetInfo? = envConfig.setInfo
 
         if(header == null) {
             log.error(MqttConnectionType.FROM_RMS, "envConfig header is null skipping...")
@@ -63,10 +63,10 @@ class EnvConfigRequestHandler(
             return
         }
 
-        val headerJson: JsonObject = envConfigJson.getAsJsonObject(KEY_HEADER)
+        val headerJson : JsonObject = envConfigJson.getAsJsonObject(KEY_HEADER)
         log.info(MqttConnectionType.FROM_RMS, "envConfig headerJson : [$headerJson]")
 
-        val setInfoJson: JsonObject = envConfigJson.getAsJsonObject(KEY_SET_INFO)
+        val setInfoJson : JsonObject = envConfigJson.getAsJsonObject(KEY_SET_INFO)
         log.info(MqttConnectionType.FROM_RMS, "envConfigsetInfoJson : [$setInfoJson]")
 
         renewMQTTIP(setInfoJson)
@@ -79,7 +79,7 @@ class EnvConfigRequestHandler(
     }
 
     private companion object {
-        const val KEY_HEADER: String = "header"
-        const val KEY_SET_INFO: String = "setInfo"
+        const val KEY_HEADER : String = "header"
+        const val KEY_SET_INFO : String = "setInfo"
     }
 }

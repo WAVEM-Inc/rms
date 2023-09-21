@@ -8,11 +8,11 @@ import org.springframework.stereotype.Component
 
 @Component
 class RobotPoseResponseHandler(
-    private val robotPoseProperties: RobotPoseProperties,
-    private val mqttService: MqttService<Pose>
+    private val robotPoseProperties : RobotPoseProperties,
+    private val mqttService : MqttService<Pose>
 ) {
 
-    fun handle(pose: Pose) {
+    fun handle(pose : Pose) {
         mqttService.bridge(
             connectionType = MqttConnectionType.FROM_BRIDGE,
             topic = robotPoseProperties.fromBridge,

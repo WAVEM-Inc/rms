@@ -8,11 +8,11 @@ import org.springframework.stereotype.Component
 
 @Component
 class CmdVelResponseHandler(
-    private val cmdVelProperties: CmdVelProperties,
-    private val mqttService: MqttService<Twist>
+    private val cmdVelProperties : CmdVelProperties,
+    private val mqttService : MqttService<Twist>
 ) {
 
-    fun handle(twist: Twist) {
+    fun handle(twist : Twist) {
         mqttService.bridge(
             connectionType = MqttConnectionType.FROM_BRIDGE,
             topic = cmdVelProperties.fromBridge,

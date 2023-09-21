@@ -5,15 +5,15 @@ import net.wavem.uvc.ros.geometry_msgs.msg.vector3.Vector3
 import net.wavem.uvc.ros.std_msgs.msg.header.Header
 
 data class Imu(
-    val header: Header,
-    val orientation: Quaternion,
-    val orientation_covariance: DoubleArray = DoubleArray(9),
-    val angular_velocity: Vector3,
-    val angular_velocity_covariance: DoubleArray = DoubleArray(9),
-    val linear_acceleration: Vector3,
-    val linear_acceleration_covariance: DoubleArray = DoubleArray(9)
+    val header : Header,
+    val orientation : Quaternion,
+    val orientation_covariance : DoubleArray = DoubleArray(9),
+    val angular_velocity : Vector3,
+    val angular_velocity_covariance : DoubleArray = DoubleArray(9),
+    val linear_acceleration : Vector3,
+    val linear_acceleration_covariance : DoubleArray = DoubleArray(9)
 ) {
-    override fun equals(other: Any?): Boolean {
+    override fun equals(other : Any?) : Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
@@ -26,7 +26,7 @@ data class Imu(
         return true
     }
 
-    override fun hashCode(): Int {
+    override fun hashCode() : Int {
         var result = orientation_covariance.contentHashCode()
         result = 31 * result + angular_velocity_covariance.contentHashCode()
         result = 31 * result + linear_acceleration_covariance.contentHashCode()

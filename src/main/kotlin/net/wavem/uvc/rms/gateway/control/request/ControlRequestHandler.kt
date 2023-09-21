@@ -13,18 +13,18 @@ import org.springframework.stereotype.Component
 
 @Component
 class ControlRequestHandler(
-    val log: MqttLogger,
-    val controlProperties: ControlProperties,
-    val mqttService: MqttService<String>,
-    val gson: Gson
+    val log : MqttLogger,
+    val controlProperties : ControlProperties,
+    val mqttService : MqttService<String>,
+    val gson : Gson
 ) {
 
-    fun handle(control: Control) {
-        val controlJson: JsonObject = gson.toJsonTree(control).asJsonObject
+    fun handle(control : Control) {
+        val controlJson : JsonObject = gson.toJsonTree(control).asJsonObject
         log.info(MqttConnectionType.FROM_RMS, "controlJson : [$controlJson]")
 
-        val header: Header? = control.header
-        val controlCmd: ControlCmd? = control.controlCmd
+        val header : Header? = control.header
+        val controlCmd : ControlCmd? = control.controlCmd
 
         if(header == null) {
             log.error(MqttConnectionType.FROM_RMS, "control header is null skipping...")
@@ -34,10 +34,10 @@ class ControlRequestHandler(
             return
         }
 
-        val headerJson: JsonObject = controlJson.getAsJsonObject(KEY_HEADER)
+        val headerJson : JsonObject = controlJson.getAsJsonObject(KEY_HEADER)
         log.info(MqttConnectionType.FROM_RMS, "control headerJson : [$headerJson]")
 
-        val controlCmdJson: JsonObject = controlJson.getAsJsonObject(KEY_CONTROL_CMD)
+        val controlCmdJson : JsonObject = controlJson.getAsJsonObject(KEY_CONTROL_CMD)
         log.info(MqttConnectionType.FROM_RMS, "control controlCmdJson : [$controlCmdJson]")
 
         mqttService.bridge(
@@ -48,7 +48,7 @@ class ControlRequestHandler(
     }
 
     private companion object {
-        const val KEY_HEADER: String = "header"
-        const val KEY_CONTROL_CMD: String = "controlCmd"
+        const val KEY_HEADER : String = "header"
+        const val KEY_CONTROL_CMD : String = "controlCmd"
     }
 }
