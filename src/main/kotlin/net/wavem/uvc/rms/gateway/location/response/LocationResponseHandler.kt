@@ -4,7 +4,6 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import net.wavem.uvc.mqtt.application.MqttService
 import net.wavem.uvc.mqtt.domain.MqttConnectionType
-import net.wavem.uvc.mqtt.infra.MqttLogger
 import net.wavem.uvc.rms.common.domain.header.Header
 import net.wavem.uvc.rms.common.jwt.JwtService
 import net.wavem.uvc.rms.common.types.area.AreaClsfType
@@ -18,14 +17,18 @@ import net.wavem.uvc.rms.gateway.location.domain.job.LocationJobInfo
 import net.wavem.uvc.rms.gateway.location.domain.last_info.LocationLastInfo
 import net.wavem.uvc.rms.gateway.location.domain.position.LocationPosition
 import net.wavem.uvc.rms.gateway.location.domain.task.LocationTaskInfo
+import net.wavem.uvc.ros.RCLKotlin
+import net.wavem.uvc.ros.slam.application.SLAMGpsService
 import org.springframework.stereotype.Component
 
 @Component
 class LocationResponseHandler(
-    private val log : MqttLogger,
+    private val rclKotlin : RCLKotlin,
     private val locationProperties : LocationProperties,
     private val mqttService : MqttService<String>,
-    private val jwtService : JwtService
+    private val gson : Gson,
+    private val jwtService : JwtService,
+    private val slamGpsService: SLAMGpsService
 ) {
 
     private fun buildHeader() : Header {
@@ -74,13 +77,12 @@ class LocationResponseHandler(
         val location : Location = Location(
             header = this.buildHeader(),
             jobInfo = this.buildJobInfo(),
-            locationLastInfo = this.buildLastInfo()
+            lastInfo = this.buildLastInfo()
         )
 
         val locationJSON : JsonObject = Gson().toJsonTree(location).asJsonObject
         val encryptedJson : String = jwtService.encode("location", locationJSON.toString())
 
-//        log.info(MqttConnectionType.TO_RMS, "decode test : ${jwtProvider.decode(encryptedJson)}")
         mqttService.bridge(MqttConnectionType.TO_RMS, locationProperties.topic, encryptedJson)
     }
 }

@@ -4,7 +4,6 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import net.wavem.uvc.mqtt.application.MqttService
 import net.wavem.uvc.mqtt.domain.MqttConnectionType
-import net.wavem.uvc.mqtt.infra.MqttLogger
 import net.wavem.uvc.rms.common.application.TimeService
 import net.wavem.uvc.rms.common.domain.header.Header
 import net.wavem.uvc.rms.common.domain.job.result.JobResult
@@ -20,19 +19,35 @@ import net.wavem.uvc.rms.gateway.event.domain.Event
 import net.wavem.uvc.rms.gateway.event.domain.EventProperties
 import net.wavem.uvc.rms.gateway.event.domain.com_info.ComInfo
 import net.wavem.uvc.rms.gateway.event.domain.event_info.EventInfo
-import net.wavem.uvc.rms.gateway.event.domain.job.EventJobInfo
+import net.wavem.uvc.rms.gateway.event.domain.job.EventTaskInfo
 import net.wavem.uvc.rms.gateway.location.domain.position.LocationPosition
+import net.wavem.uvc.ros.RCLKotlin
+import net.wavem.uvc.ros.slam.application.SLAMGpsService
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import sensor_msgs.msg.dds.NavSatFix
+import sensor_msgs.msg.dds.NavSatFixPubSubType
+import us.ihmc.ros2.ROS2Subscription
 
 @Component
 class EventResponseHandler(
-    private val log : MqttLogger,
+    private val rclKotlin : RCLKotlin,
     private val eventProperties : EventProperties,
     private val mqttService : MqttService<String>,
     private val timeService : TimeService,
     private val gson : Gson,
-    private val jwtService : JwtService
+    private val jwtService : JwtService,
+    private val slamGpsService: SLAMGpsService
 ) {
+
+    private val logger : Logger = LoggerFactory.getLogger(this.javaClass)
+    private var rclGpsSubscription : ROS2Subscription<NavSatFix>? = null
+    private var rclNavSatFix : NavSatFix? = null
+
+    private fun setRCLNavSatFix(navSatFix : NavSatFix) {
+        this.rclNavSatFix = navSatFix
+    }
 
     private fun buildHeader() : Header {
         return Header(
@@ -55,8 +70,8 @@ class EventResponseHandler(
         )
     }
 
-    private fun buildJobInfo() : EventJobInfo {
-        return EventJobInfo(
+    private fun buildJobInfo() : EventTaskInfo {
+        return EventTaskInfo(
             jobPlanId = "job0000001",
             jobGroupId = 1,
             jobOrderId = 1,
@@ -67,9 +82,26 @@ class EventResponseHandler(
     }
 
     private fun buildLocationPosition() : LocationPosition {
+        if (rclKotlin.isRCLKotlinInitialized()) {
+            if (rclGpsSubscription == null) {
+                rclGpsSubscription = rclKotlin.getRCLNode().createSubscription(NavSatFixPubSubType(), { it ->
+                    val navSatFixCallback : NavSatFix = it.readNextData()
+                    setRCLNavSatFix(navSatFixCallback)
+                }, RCL_GPS_FIX_TOPIC)
+
+                logger.info("{$RCL_GPS_FIX_TOPIC} subscription registered")
+            }
+        } else {
+            logger.error("Failed to initialize RCLKotlin")
+        }
+
+        if (this.rclNavSatFix == null) {
+            logger.error("{$RCL_GPS_FIX_TOPIC} ")
+        }
+
         return LocationPosition(
-            xpos = 11.3245,
-            ypos = 24.2214,
+            xpos = rclNavSatFix?.latitude,
+            ypos = rclNavSatFix?.altitude,
             heading = 45
         )
     }
@@ -99,14 +131,18 @@ class EventResponseHandler(
     fun handle() {
         val event : Event = Event(
             header = this.buildHeader(),
-            jobInfo = this.buildJobInfo(),
+            taskInfo = this.buildJobInfo(),
             eventInfo = this.buildEventInfo(),
             comInfo = this.buildComInfo()
         )
 
-        val eventJson : JsonObject = Gson().toJsonTree(event).asJsonObject
+        val eventJson : JsonObject = gson.toJsonTree(event).asJsonObject
         val encryptedJson : String = jwtService.encode("event", eventJson.toString())
 
         mqttService.bridge(MqttConnectionType.TO_RMS, topic = eventProperties.topic, encryptedJson)
+    }
+
+    companion object {
+        const val RCL_GPS_FIX_TOPIC : String = "/gps/fix"
     }
 }
