@@ -22,7 +22,7 @@ import net.wavem.uvc.rms.gateway.event.domain.event_info.EventInfo
 import net.wavem.uvc.rms.gateway.event.domain.job.EventTaskInfo
 import net.wavem.uvc.rms.gateway.location.domain.position.LocationPosition
 import net.wavem.uvc.ros.RCLKotlin
-import net.wavem.uvc.ros.slam.application.SLAMGpsService
+import net.wavem.uvc.ros.slam.application.SLAMGPSSTransformService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -38,7 +38,7 @@ class EventResponseHandler(
     private val timeService : TimeService,
     private val gson : Gson,
     private val jwtService : JwtService,
-    private val slamGpsService: SLAMGpsService
+    private val slamGpsService: SLAMGPSSTransformService
 ) {
 
     private val logger : Logger = LoggerFactory.getLogger(this.javaClass)

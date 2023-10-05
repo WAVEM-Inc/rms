@@ -18,7 +18,7 @@ import net.wavem.uvc.rms.gateway.location.domain.last_info.LocationLastInfo
 import net.wavem.uvc.rms.gateway.location.domain.position.LocationPosition
 import net.wavem.uvc.rms.gateway.location.domain.task.LocationTaskInfo
 import net.wavem.uvc.ros.RCLKotlin
-import net.wavem.uvc.ros.slam.application.SLAMGpsService
+import net.wavem.uvc.ros.slam.application.SLAMGPSSTransformService
 import org.springframework.stereotype.Component
 
 @Component
@@ -28,7 +28,7 @@ class LocationResponseHandler(
     private val mqttService : MqttService<String>,
     private val gson : Gson,
     private val jwtService : JwtService,
-    private val slamGpsService: SLAMGpsService
+    private val slamGpsService: SLAMGPSSTransformService
 ) {
 
     private fun buildHeader() : Header {
