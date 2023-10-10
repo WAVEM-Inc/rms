@@ -22,7 +22,6 @@ import net.wavem.uvc.rms.gateway.event.domain.event_info.EventInfo
 import net.wavem.uvc.rms.gateway.event.domain.job.EventTaskInfo
 import net.wavem.uvc.rms.gateway.location.domain.position.LocationPosition
 import net.wavem.uvc.ros.RCLKotlin
-import net.wavem.uvc.ros.slam.application.SLAMGPSSTransformService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -37,8 +36,7 @@ class EventResponseHandler(
     private val mqttService : MqttService<String>,
     private val timeService : TimeService,
     private val gson : Gson,
-    private val jwtService : JwtService,
-    private val slamGpsService: SLAMGPSSTransformService
+    private val jwtService : JwtService
 ) {
 
     private val logger : Logger = LoggerFactory.getLogger(this.javaClass)
@@ -96,7 +94,9 @@ class EventResponseHandler(
         }
 
         if (this.rclNavSatFix == null) {
-            logger.error("{$RCL_GPS_FIX_TOPIC} ")
+            logger.error("{$RCL_GPS_FIX_TOPIC} callback is null")
+        } else {
+            logger.info("{$RCL_GPS_FIX_TOPIC} callback returned : ${rclNavSatFix.toString()}")
         }
 
         return LocationPosition(
