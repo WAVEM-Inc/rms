@@ -19,6 +19,8 @@ import net.wavem.uvc.rms.gateway.location.domain.position.LocationPosition
 import net.wavem.uvc.rms.gateway.location.domain.task.LocationTaskInfo
 import net.wavem.uvc.ros.RCLKotlin
 import net.wavem.uvc.ros.slam.application.SLAMGPSSTransformService
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
 @Component
@@ -30,6 +32,7 @@ class LocationResponseHandler(
     private val jwtService : JwtService,
     private val slamGpsService: SLAMGPSSTransformService
 ) {
+    private val logger : Logger = LoggerFactory.getLogger(this.javaClass)
 
     private fun buildHeader() : Header {
         return Header(
@@ -81,8 +84,10 @@ class LocationResponseHandler(
         )
 
         val locationJSON : JsonObject = Gson().toJsonTree(location).asJsonObject
+        logger.info("Location Response JSON : $locationJSON")
+
         val encryptedJson : String = jwtService.encode("location", locationJSON.toString())
 
-        mqttService.bridge(MqttConnectionType.TO_RMS, locationProperties.topic, encryptedJson)
+        mqttService.bridge(MqttConnectionType.TO_RMS, locationProperties.topic, locationJSON.toString())
     }
 }

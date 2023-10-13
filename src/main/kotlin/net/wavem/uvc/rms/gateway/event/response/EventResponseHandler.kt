@@ -100,8 +100,8 @@ class EventResponseHandler(
         }
 
         return LocationPosition(
-            xpos = rclNavSatFix?.latitude,
-            ypos = rclNavSatFix?.altitude,
+            xpos = 11.3245,
+            ypos = 24.2214,
             heading = 45
         )
     }
@@ -121,10 +121,11 @@ class EventResponseHandler(
     private fun buildComInfo() : ComInfo {
         return ComInfo(
             status = ComInfoStatusType.CONNECTED.type,
-            robotIP = "10.223.188.152",
-            port = "22",
-            mqttIP = mqttService.readMQTTYML().get("ip").asString,
+            robotIP = "192.168.1.100",
+            mqttIP = "192.168.1.200",
             mqttPort = mqttService.readMQTTYML().get("port").asString
+//            mqttIP = mqttService.readMQTTYML().get("ip").asString,
+//            mqttPort = mqttService.readMQTTYML().get("port").asString
         )
     }
 
@@ -137,12 +138,13 @@ class EventResponseHandler(
         )
 
         val eventJson : JsonObject = gson.toJsonTree(event).asJsonObject
+        logger.info("Event Response JSON : $eventJson")
         val encryptedJson : String = jwtService.encode("event", eventJson.toString())
 
-        mqttService.bridge(MqttConnectionType.TO_RMS, topic = eventProperties.topic, encryptedJson)
+        mqttService.bridge(MqttConnectionType.TO_RMS, topic = eventProperties.topic, eventJson.toString())
     }
 
     companion object {
-        const val RCL_GPS_FIX_TOPIC : String = "/gps/fix"
+        const val RCL_GPS_FIX_TOPIC : String = "/ublox/fix"
     }
 }

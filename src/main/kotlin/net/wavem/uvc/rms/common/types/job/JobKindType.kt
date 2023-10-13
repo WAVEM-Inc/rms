@@ -7,6 +7,5 @@ enum class JobKindType(
     UNLOAD("unload"),
     CHARGE("charge"),
     WAIT("wait"),
-    MOVE("move"),
-    PATROL("patrol")
+    MOVE("move")
 }

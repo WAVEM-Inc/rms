@@ -5,6 +5,5 @@ enum class EventCodeType(
 ) {
     STOP("stop"),
     ISOLATE("isolate"),
-    CALIBRATE("calibrate"),
     BROKEN("broken")
 }
