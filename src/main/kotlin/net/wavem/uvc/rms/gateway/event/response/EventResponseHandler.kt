@@ -102,7 +102,7 @@ class EventResponseHandler(
         return LocationPosition(
             xpos = 11.3245,
             ypos = 24.2214,
-            heading = 45
+            heading = 45.0
         )
     }
 
