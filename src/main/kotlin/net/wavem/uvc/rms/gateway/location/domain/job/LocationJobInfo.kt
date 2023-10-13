@@ -4,8 +4,8 @@ import net.wavem.uvc.rms.gateway.location.domain.task.LocationTaskInfo
 
 data class LocationJobInfo(
     val jobPlanId  : String?,
-    val jobGroupId : Int?,
-    val jobOrderId : Int?,
+    val jobGroupId : String?,
+    val jobOrderId : String?,
     val taskInfo : LocationTaskInfo?
 ) {
 }

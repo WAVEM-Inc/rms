@@ -108,9 +108,9 @@ class EventResponseHandler(
 
     private fun buildEventInfo() : EventInfo {
         return EventInfo(
-            eventId = "evt0000001",
+            eventId = "36a24578-3790-42f4-b456-118950e2aee8",
             eventCd = EventCodeType.STOP.type,
-            eventSubCd = "SUB001",
+            eventSubCd = "Lidar",
             areaClsf = AreaClsfType.INDOOR.type,
             floor = "1F",
             batteryLevel = 50,

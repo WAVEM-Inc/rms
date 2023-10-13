@@ -52,9 +52,9 @@ class LocationResponseHandler(
         )
 
         return LocationJobInfo(
-            jobPlanId = "job0000001",
-            jobGroupId = 1,
-            jobOrderId = 1,
+            jobPlanId = "36a24578-3790-42f4-b456-118950e2aee8",
+            jobGroupId = "36a24578-3790-42f4-b456-118950e2aee8",
+            jobOrderId = "36a24578-3790-42f4-b456-118950e2aee8",
             taskInfo = taskInfo
         )
     }
