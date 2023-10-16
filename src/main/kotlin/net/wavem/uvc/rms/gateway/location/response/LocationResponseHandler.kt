@@ -17,22 +17,27 @@ import net.wavem.uvc.rms.gateway.location.domain.job.LocationJobInfo
 import net.wavem.uvc.rms.gateway.location.domain.last_info.LocationLastInfo
 import net.wavem.uvc.rms.gateway.location.domain.position.LocationPosition
 import net.wavem.uvc.rms.gateway.location.domain.task.LocationTaskInfo
-import net.wavem.uvc.ros.RCLKotlin
-import net.wavem.uvc.ros.slam.application.SLAMGPSSTransformService
+import net.wavem.uvc.ros.application.topic.Subscription
+import net.wavem.uvc.ros.domain.sensor_msgs.NavSatFix
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
 @Component
 class LocationResponseHandler(
-    private val rclKotlin : RCLKotlin,
     private val locationProperties : LocationProperties,
     private val mqttService : MqttService<String>,
     private val gson : Gson,
-    private val jwtService : JwtService,
-    private val slamGpsService: SLAMGPSSTransformService
+    private val jwtService : JwtService
 ) {
+
     private val logger : Logger = LoggerFactory.getLogger(this.javaClass)
+    private val rclGpsSubscription : Subscription<NavSatFix> = Subscription()
+
+    init {
+        rclGpsSubscription.registerSubscription("/ublox/fix", NavSatFix::class)
+        logger.info("RCL {/ublox/fix} subscription registered")
+    }
 
     private fun buildHeader() : Header {
         return Header(
@@ -51,15 +56,41 @@ class LocationResponseHandler(
             taskStatus = TaskStatusType.ASSIGNED.type
         )
 
+        var jobPlanId : String = ""
+        val jobPlanIdFromYML : String? = System.getProperty("jobInfo.jobPlanId")
+        if (jobPlanIdFromYML != null) {
+            jobPlanId = jobPlanIdFromYML
+        }
+
+        var jobGroupId : String = ""
+        val jobGroupIdFromYML : String? = System.getProperty("jobInfo.jobGroupId")
+        if (jobGroupIdFromYML != null) {
+            jobGroupId = jobGroupIdFromYML
+        }
+
+        var jobOrderId : String = ""
+        val jobOrderIdFromYML : String? = System.getProperty("jobInfo.jobOrderId")
+        if (jobOrderIdFromYML != null) {
+            jobOrderId = jobOrderIdFromYML
+        }
+
         return LocationJobInfo(
-            jobPlanId = "36a24578-3790-42f4-b456-118950e2aee8",
-            jobGroupId = "36a24578-3790-42f4-b456-118950e2aee8",
-            jobOrderId = "36a24578-3790-42f4-b456-118950e2aee8",
+            jobPlanId = jobPlanId,
+            jobGroupId = jobGroupId,
+            jobOrderId = jobOrderId,
             taskInfo = taskInfo
         )
     }
 
     private fun buildLastInfo() : LocationLastInfo {
+        var xpos : Double = 0.0
+        var ypos : Double = 0.0
+
+        this.rclGpsSubscription.getDataObservable().subscribe {
+            val navSatFix : NavSatFix = NavSatFix.read(it)
+            logger.info("RCL {/ublox/fix} subscription callback : $navSatFix")
+        }
+
         val locationPosition : LocationPosition = LocationPosition(
             xpos = 11.3245,
             ypos = 24.2214,
@@ -83,8 +114,8 @@ class LocationResponseHandler(
             lastInfo = this.buildLastInfo()
         )
 
-        val locationJSON : JsonObject = Gson().toJsonTree(location).asJsonObject
-        logger.info("Location Response JSON : $locationJSON")
+        val locationJSON : JsonObject = gson.toJsonTree(location).asJsonObject
+//        logger.info("Location Response JSON : $locationJSON")
 
         val encryptedJson : String = jwtService.encode("location", locationJSON.toString())
 

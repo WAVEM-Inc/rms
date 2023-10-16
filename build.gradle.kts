@@ -13,9 +13,10 @@ repositories {
 }
 
 dependencies {
-    implementation ("us.ihmc:ros2-msg-to-pubsub-generator:0.23.1")
-    implementation ("us.ihmc:ros2-common-interfaces:0.23.1")
-    implementation ("us.ihmc:ihmc-ros2-library:0.23.1")
+    implementation("io.github.lambdaprime:jros2client:1.0")
+    implementation("io.github.pinorobotics:rtpstalk:4.0")
+    implementation(kotlin("reflect"))
+    implementation("io.reactivex:rxjava:1.3.8")
     implementation ("org.locationtech.proj4j:proj4j:1.2.2")
     implementation ("org.springframework.boot:spring-boot-starter-web")
     implementation ("org.springframework.boot:spring-boot-starter-thymeleaf")

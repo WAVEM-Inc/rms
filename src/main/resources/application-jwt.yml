@@ -1,6 +1,6 @@
 spring:
   config:
     activate:
-      on-profile: private
+      on-profile: jwt
   jwt:
     secret: wqlreasldfkjqawierqlkajsdilfjqwilkasfnipqklasdnfioqwnlemwnflaksdf

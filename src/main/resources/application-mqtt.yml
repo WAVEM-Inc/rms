@@ -31,3 +31,15 @@ config:
   topic: "hubilon/atcplus/rms/config"
   qos: 0
   retain: false
+
+jobInfo:
+  jobPlanId: ""
+  jobGroupId: ""
+  jobOrderId: ""
+  jobGroup: ""
+  jobKind: ""
+
+taskInfo:
+  jobGroup: ""
+  jobKind: ""
+  taskStatus: ""
