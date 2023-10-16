@@ -49,8 +49,11 @@ class Header() : Message {
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
 
+            val timeSize : Int = Time.getBufferSize()
+            println("Header timeSize : $timeSize")
             val time : Time = Time.read(data)
-            buf.position(Time.getBufferSize())
+            println("Header time : $time")
+            buf.position(timeSize)
 
             len = buf.getInt()
             var frame_id : kotlin.String = ""
