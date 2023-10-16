@@ -69,15 +69,24 @@ class NavSatFix() : Message {
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
 
+            val headerSize : Int = Header.getBufferSize()
+            println("NavSatFix headerSize : $headerSize")
             val header : Header = Header.read(data)
-            buf.position(Header.getBufferSize())
+            println("NavSatFix header : $header")
+            buf.position(headerSize)
 
+            val statusSize : Int = NavSatStatus.getBufferSize()
+            println("NavSatFix statusSize : $statusSize")
             val status : NavSatStatus = NavSatStatus.read(data)
-            buf.position(NavSatStatus.getBufferSize())
+            println("NavSatFix status : $status")
+            buf.position(statusSize)
 
             val latitude : Double = buf.getDouble()
+            println("NavSatFix latitude : $latitude")
             val longitude : Double = buf.getDouble()
+            println("NavSatFix longitude : $longitude")
             val altitude : Double = buf.getDouble()
+            println("NavSatFix altitude : $altitude")
 
             val position_covariance_size : Int = 9
             val position_covariance : DoubleArray = DoubleArray(position_covariance_size)
