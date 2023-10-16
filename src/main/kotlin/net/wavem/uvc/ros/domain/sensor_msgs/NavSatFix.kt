@@ -71,23 +71,30 @@ class NavSatFix() : Message {
 
             val header : Header = Header.read(data)
             println("NavSatFix header : $header")
+
             val headerSize : Int = Header.getBufferSize()
             println("NavSatFix headerSize : $headerSize")
-            buf.position(25)
+
+            buf.position(17)
 
             println("NavSatFix status buf position : ${buf.position()}")
+
             val status : NavSatStatus = NavSatStatus.read(data)
             println("NavSatFix status : $status")
+
             val statusSize : Int = NavSatStatus.getBufferSize()
             println("NavSatFix statusSize : $statusSize")
-            buf.position(statusSize)
+
+            buf.position(headerSize + statusSize)
 
             println("NavSatFix latitude buf position : ${buf.position()}")
 
             val latitude : Double = buf.getDouble()
             println("NavSatFix latitude : $latitude")
+
             val longitude : Double = buf.getDouble()
             println("NavSatFix longitude : $longitude")
+
             val altitude : Double = buf.getDouble()
             println("NavSatFix altitude : $altitude")
 
