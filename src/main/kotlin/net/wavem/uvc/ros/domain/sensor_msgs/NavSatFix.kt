@@ -82,7 +82,9 @@ class NavSatFix() : Message {
             val position_covariance_size : Int = 9
             val position_covariance : DoubleArray = DoubleArray(position_covariance_size)
             for (i in 0 .. position_covariance_size) {
-                position_covariance[i] = buf.getDouble()
+                val d : Double = buf.getDouble()
+                println("===== position covariance ===== : {$d}")
+                position_covariance[i] = d
             }
 
             val position_covariance_type : UByte = buf.get().toUByte()
