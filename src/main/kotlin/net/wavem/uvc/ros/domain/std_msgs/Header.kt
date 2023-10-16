@@ -43,7 +43,7 @@ class Header() : Message {
         var frame_id : kotlin.String = ""
 
         fun getBufferSize() : Int {
-            return (Time.getBufferSize() + len + frame_id.length)
+            return (Time.getBufferSize() + len + frame_id.length + 1)
         }
 
         fun read(data : ByteArray) : Header {
@@ -57,6 +57,7 @@ class Header() : Message {
             buf.position(timeSize)
 
             len = buf.getInt()
+            println("Header len : $len")
 
             while (len-- > 0) frame_id += Char(buf.get().toUShort())
 

@@ -40,7 +40,12 @@ class NavSatStatus() : Message {
             buf.order(ByteOrder.LITTLE_ENDIAN)
 
             val status : Byte = buf.get()
+            println("NavSatStatus status : $status")
+            println("NavSatStatus status pos : ${buf.position()}")
+
             val service : UShort = buf.getShort().toUShort()
+            println("NavSatStatus service : $service")
+            println("NavSatStatus service pos : ${buf.position()}")
 
             return NavSatStatus(
                 status = status,
