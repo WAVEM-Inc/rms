@@ -73,7 +73,7 @@ class NavSatFix() : Message {
             println("NavSatFix header : $header")
             val headerSize : Int = Header.getBufferSize()
             println("NavSatFix headerSize : $headerSize")
-            buf.position(headerSize)
+            buf.position(19)
 
             println("NavSatFix status buf position : ${buf.position()}")
             val status : NavSatStatus = NavSatStatus.read(data)
