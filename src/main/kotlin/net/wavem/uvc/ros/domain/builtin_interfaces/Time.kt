@@ -34,7 +34,7 @@ class Time() : Message {
     companion object {
 
         fun getBufferSize() : Int {
-            return (Int.SIZE_BITS * 2)
+            return (Int.SIZE_BYTES * 2)
         }
 
         fun read(data : ByteArray) : Time {
