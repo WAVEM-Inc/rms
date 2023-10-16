@@ -69,16 +69,16 @@ class NavSatFix() : Message {
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
 
-            val headerSize : Int = Header.getBufferSize()
-            println("NavSatFix headerSize : $headerSize")
             val header : Header = Header.read(data)
             println("NavSatFix header : $header")
+            val headerSize : Int = Header.getBufferSize()
+            println("NavSatFix headerSize : $headerSize")
             buf.position(headerSize)
 
-            val statusSize : Int = NavSatStatus.getBufferSize()
-            println("NavSatFix statusSize : $statusSize")
             val status : NavSatStatus = NavSatStatus.read(data)
             println("NavSatFix status : $status")
+            val statusSize : Int = NavSatStatus.getBufferSize()
+            println("NavSatFix statusSize : $statusSize")
             buf.position(statusSize)
 
             val latitude : Double = buf.getDouble()
