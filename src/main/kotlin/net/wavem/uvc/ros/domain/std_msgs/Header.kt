@@ -39,27 +39,32 @@ class Header() : Message {
 
     companion object {
 
-        var len : Int = 0
-        var frame_id : kotlin.String = ""
+        var gLen : Int = 0
+        var gFrameIdLen : Int = 0
 
         fun getBufferSize() : Int {
-            return (Time.getBufferSize() + len + frame_id.length + 1)
+            return (Time.getBufferSize() + gLen + gFrameIdLen)
         }
 
-        fun read(data : ByteArray) : Header {
+        fun read(data : ByteArray, position : Int = 0) : Header {
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
+            buf.position(position)
 
             val time : Time = Time.read(data)
-            println("Header time : $time")
+
             val timeSize : Int = Time.getBufferSize()
-            println("Header timeSize : $timeSize")
+
             buf.position(timeSize)
 
-            len = buf.getInt()
-            println("Header len : $len")
+            var len = buf.getInt()
+            gLen = len
 
+            var frame_id : kotlin.String = ""
+            
             while (len-- > 0) frame_id += Char(buf.get().toUShort())
+
+            gFrameIdLen = frame_id.length
 
             return Header(
                 stamp = time,

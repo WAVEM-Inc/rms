@@ -3,6 +3,7 @@ package net.wavem.uvc.ros.domain.sensor_msgs
 import id.jrosmessages.Message
 import id.xfunction.XJson
 import net.wavem.uvc.ros.domain.std_msgs.Header
+import net.wavem.uvc.ros.domain.builtin_interfaces.Time
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -66,52 +67,34 @@ class NavSatFix() : Message {
         const val COVARIANCE_TYPE_KNOWN : Byte = 3
 
         fun read(data : ByteArray) : NavSatFix {
-            val entireBuf : ByteBuffer = ByteBuffer.wrap(data)
-            entireBuf.order(ByteOrder.LITTLE_ENDIAN)
+            val buf : ByteBuffer = ByteBuffer.wrap(data)
+            buf.order(ByteOrder.LITTLE_ENDIAN)
 
             val header : Header = Header.read(data)
-            println("NavSatFix header : $header")
+            val headerBufferSize : Int = Header.getBufferSize()
 
-            val headerSize : Int = Header.getBufferSize()
-            println("NavSatFix headerSize : $headerSize")
+            buf.position(headerBufferSize)
 
-            entireBuf.position(15)
-            println("NavSatFix status buf position : ${entireBuf.position()}")
+            val status : NavSatStatus = NavSatStatus.read(data, headerBufferSize)
 
-            val statusData : ByteArray = ByteArray(entireBuf.remaining())
+            buf.position(headerBufferSize + Double.SIZE_BYTES)
 
-            val status : NavSatStatus = NavSatStatus.read(statusData)
-            println("NavSatFix status : $status")
+            val latitude : Double = buf.getDouble()
 
-            val statusSize : Int = NavSatStatus.getBufferSize()
-            println("NavSatFix statusSize : $statusSize")
+            val longitude : Double = buf.getDouble()
 
-            entireBuf.position(headerSize + statusSize)
-
-            val remainedData : ByteArray = ByteArray(entireBuf.remaining())
-            val remainedBuf : ByteBuffer = ByteBuffer.wrap(remainedData)
-            remainedBuf.order(ByteOrder.LITTLE_ENDIAN)
-
-            println("NavSatFix latitude buf position : ${entireBuf.position()}")
-
-            val latitude : Double = remainedBuf.getDouble()
-            println("NavSatFix latitude : $latitude")
-
-            val longitude : Double = remainedBuf.getDouble()
-            println("NavSatFix longitude : $longitude")
-
-            val altitude : Double = remainedBuf.getDouble()
-            println("NavSatFix altitude : $altitude")
+            val altitude : Double = buf.getDouble()
 
             val position_covariance_size : Int = 9
-            val position_covariance : DoubleArray = DoubleArray(position_covariance_size)
-            for (i in 0 .. position_covariance_size) {
-                val d : Double = remainedBuf.getDouble()
-                println("===== position covariance ===== : {$d}")
-                position_covariance[i] = d
-            }
 
-            val position_covariance_type : UByte = remainedBuf.get().toUByte()
+            val position_covariance : DoubleArray = DoubleArray(position_covariance_size)
+
+            for (i in 0 .. position_covariance_size - 1) {
+                val covariance : Double = buf.getDouble()
+                position_covariance[i] = covariance
+            }
+            
+            val position_covariance_type : UByte = buf.get().toUByte()
 
             return NavSatFix(
                 header = header,

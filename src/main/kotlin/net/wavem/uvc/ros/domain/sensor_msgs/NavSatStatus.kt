@@ -35,17 +35,16 @@ class NavSatStatus() : Message {
             return (Byte.SIZE_BYTES + UShort.SIZE_BYTES)
         }
 
-        fun read(data : ByteArray) : NavSatStatus {
+        fun read(data : ByteArray, position : Int = 0) : NavSatStatus {
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
+            buf.position(position)
 
             val status : Byte = buf.get()
-            println("NavSatStatus status : $status")
-            println("NavSatStatus status pos : ${buf.position()}")
 
+            buf.position(position + 2)
+            
             val service : UShort = buf.getShort().toUShort()
-            println("NavSatStatus service : $service")
-            println("NavSatStatus service pos : ${buf.position()}")
 
             return NavSatStatus(
                 status = status,

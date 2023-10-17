@@ -19,6 +19,7 @@ import net.wavem.uvc.rms.gateway.location.domain.position.LocationPosition
 import net.wavem.uvc.rms.gateway.location.domain.task.LocationTaskInfo
 import net.wavem.uvc.ros.application.topic.Subscription
 import net.wavem.uvc.ros.domain.sensor_msgs.NavSatFix
+import net.wavem.uvc.ros.domain.sensor_msgs.BatteryState
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -33,10 +34,33 @@ class LocationResponseHandler(
 
     private val logger : Logger = LoggerFactory.getLogger(this.javaClass)
     private val rclGpsSubscription : Subscription<NavSatFix> = Subscription()
+    private val rclBatteryStateSubscription : Subscription<BatteryState> = Subscription()
+
+    private var xpos : Double = 0.0
+    private var ypos : Double = 0.0
+
+    fun getXpos() : Double {
+        return this.xpos
+    }
+
+    fun setXpos(xpos : Double) {
+        this.xpos = xpos
+    }
+
+    fun getYpos() : Double {
+        return this.ypos
+    }
+
+    fun setYpos(ypos : Double) {
+        this.ypos = ypos
+    }
 
     init {
-        rclGpsSubscription.registerSubscription("/ublox/fix", NavSatFix::class)
+        this.rclGpsSubscription.registerSubscription("/ublox/fix", NavSatFix::class)
         logger.info("RCL {/ublox/fix} subscription registered")
+
+        this.rclBatteryStateSubscription.registerSubscription("/battery_state", BatteryState::class)
+        logger.info("RCL {/battery_state} subscription registered")
     }
 
     private fun buildHeader() : Header {
@@ -83,17 +107,23 @@ class LocationResponseHandler(
     }
 
     private fun buildLastInfo() : LocationLastInfo {
-        var xpos : Double = 0.0
-        var ypos : Double = 0.0
-
         this.rclGpsSubscription.getDataObservable().subscribe {
             val navSatFix : NavSatFix = NavSatFix.read(it)
             logger.info("RCL {/ublox/fix} subscription callback : $navSatFix")
+            this.setXpos(navSatFix.latitude)
+            this.setYpos(navSatFix.longitude)
+        }
+
+        // logger.info("Location NavSatFix lon : ${this.getXpos()}, lat : ${this.getYpos()}")
+
+        this.rclBatteryStateSubscription.getDataObservable().subscribe {
+            val batteryState : BatteryState = BatteryState.read(it)
+            logger.info("RCL {/battery_state} subscription callback : $batteryState")
         }
 
         val locationPosition : LocationPosition = LocationPosition(
-            xpos = 11.3245,
-            ypos = 24.2214,
+            xpos = xpos,
+            ypos = ypos,
             heading = 45.0
         )
 
