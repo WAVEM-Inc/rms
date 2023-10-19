@@ -14,8 +14,12 @@ class Time() : Message {
         this.nanosec = nanosec
     }
 
+    fun getSize() : Int {
+        return (Int.SIZE_BYTES * 2)
+    }
+
     fun write() : ByteArray {
-        val buf : ByteBuffer = ByteBuffer.allocate(Integer.BYTES * 2)
+        val buf : ByteBuffer = ByteBuffer.allocate(this.getSize())
         buf.order(ByteOrder.LITTLE_ENDIAN)
 
         buf.putInt(this.sec)

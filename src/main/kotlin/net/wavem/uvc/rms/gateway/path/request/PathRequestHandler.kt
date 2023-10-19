@@ -60,26 +60,31 @@ class PathRequestHandler(
         val goal_waypoints_list : MutableList<Pose> = mutableListOf()
 
         for (locationJson in locationList) {
+            var count : Int = 0
+
             val location : JsonObject = locationJson.asJsonObject
-            log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList : $location")
+            log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList[$count] : $location")
 
             val xpos : Double = location.get("xpos").asDouble
             val ypos : Double = location.get("ypos").asDouble
 
-            log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoinst xpos : $xpos, ypos : $ypos")
+            log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoinst[$count] xpos : $xpos, ypos : $ypos")
 
             val position : Point = Point(0.0, 0.0, 0.0)
             val orientation : Quaternion = Quaternion(xpos, ypos, 0.0, 0.0)
 
             val goal_waypoints : Pose = Pose(position, orientation)
             goal_waypoints_list.add(goal_waypoints)
+
+            log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints_list[$count] pose ${goal_waypoints_list.get(count).toString()}")
+            count++
         }
 
         log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints_list : $goal_waypoints_list")
 
         val goalWaypointsStamped : GoalWaypointsStamped = GoalWaypointsStamped(header, goal_waypoints_list)
-        goalWaypointsStamped.write()
-        //    this.rclGoalWaypointsPublisher.publish(goalWaypointsStamped.write())
+        // goalWaypointsStamped.write()
+           this.rclGoalWaypointsPublisher.publish(goalWaypointsStamped.write())
     }
 
     fun handle(path : Path) {

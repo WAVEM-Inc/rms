@@ -8,7 +8,6 @@ import java.nio.ByteOrder
 
 class GoalWaypointsStamped() : Message {
     var header : Header = Header()
-    var goal_waypoints : Pose = Pose()
     var goal_waypoints_list : MutableList<Pose> = mutableListOf()
 
     constructor(header : Header, goal_waypoints_list : MutableList<Pose>) : this() {
@@ -17,17 +16,21 @@ class GoalWaypointsStamped() : Message {
     }
 
     fun write() : ByteArray {
-        val buf : ByteBuffer = ByteBuffer.allocate(120)
+        val buf : ByteBuffer = ByteBuffer.allocate(this.header.size + 1024)
         buf.order(ByteOrder.LITTLE_ENDIAN)
 
         println("GoalWaypointsStamped header : ${this.header.toString()}")
         val headerBytes : ByteArray = this.header.write()
         buf.put(headerBytes)
 
+        buf.putInt(this.goal_waypoints_list.size)
+        println("GoalWaypointsStamped goal_waypoints_list size : ${this.goal_waypoints_list.size}")
+
         for (pose in this.goal_waypoints_list) {
             println("GoalWaypointsStamped pose : ${pose.toString()}")
             val poseBytes : ByteArray = pose.write()
             buf.put(poseBytes)
+            println("GoalWaypointsStamped pose added")
         }
 
         return buf.array()

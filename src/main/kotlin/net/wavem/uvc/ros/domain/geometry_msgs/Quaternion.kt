@@ -22,7 +22,7 @@ class Quaternion() : Message {
     }
 
     fun write() : ByteArray {
-        val buf : ByteBuffer = ByteBuffer.allocate(Integer.BYTES * 2)
+        val buf : ByteBuffer = ByteBuffer.allocate(Double.SIZE_BYTES * 4)
         buf.order(ByteOrder.LITTLE_ENDIAN)
 
         buf.putDouble(this.x)

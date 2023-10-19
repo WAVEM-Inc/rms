@@ -17,8 +17,9 @@ class Point() : Message {
     }
 
     fun write() : ByteArray {
-        val buf : ByteBuffer = ByteBuffer.allocate(Integer.BYTES * 2)
+        val buf : ByteBuffer = ByteBuffer.allocate(Double.SIZE_BYTES * 3)
         buf.order(ByteOrder.LITTLE_ENDIAN)
+        
         buf.putDouble(this.x)
         buf.putDouble(this.y)
         buf.putDouble(this.z)

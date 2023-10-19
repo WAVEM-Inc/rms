@@ -11,6 +11,8 @@ class Header() : Message {
     var stamp : Time = Time()
     var frame_id : kotlin.String = ""
 
+    var size : Int = 0
+
     constructor(stamp : Time, frame_id : kotlin.String) : this() {
         this.stamp = stamp
         this.frame_id = frame_id
@@ -18,7 +20,9 @@ class Header() : Message {
 
     fun write() : ByteArray {
         val frameIdLen : Int = this.frame_id.length + 1
-        val buf : ByteBuffer = ByteBuffer.allocate(Integer.BYTES * 2)
+        size = this.stamp.getSize() + (frameIdLen * 2)
+
+        val buf : ByteBuffer = ByteBuffer.allocate(size)
         buf.order(ByteOrder.LITTLE_ENDIAN)
 
         val timeBytes : ByteArray = this.stamp.write()
