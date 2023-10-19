@@ -59,12 +59,14 @@ class PathRequestHandler(
         val header : net.wavem.uvc.ros.domain.std_msgs.Header = net.wavem.uvc.ros.domain.std_msgs.Header(stamp, "gts")
         val goal_waypoints_list : Array<Pose> = arrayOf()
 
-        for (i in 0..<locationList.size() - 1) {
+        for (i in 0..locationList.size() - 1) {
             val location : JsonObject = locationList[i].asJsonObject
             log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList[$i] : $location")
 
             val xpos : Double = location.get("xpos").asDouble
             val ypos : Double = location.get("ypos").asDouble
+
+            log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoinst xpos : $xpos, ypos : $ypos")
 
             val position : Point = Point(0.0, 0.0, 0.0)
             val orientation : Quaternion = Quaternion(xpos, ypos, 0.0, 0.0)
