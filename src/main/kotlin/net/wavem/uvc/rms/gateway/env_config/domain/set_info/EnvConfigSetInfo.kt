@@ -6,6 +6,7 @@ data class EnvConfigSetInfo(
     val mqttPort : String?,
     val robotCorpId : String?,
     val workCorpId : String?,
-    val workSiteId : String?
+    val workSiteId : String?,
+    val batteryEvent : String?
 ) {
 }
