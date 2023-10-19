@@ -25,7 +25,6 @@
 * <img src="https://img.shields.io/badge/kotlin 1.9-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white">
 * <img src="https://img.shields.io/badge/spring boot 3.1.3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">
 * <img src="https://img.shields.io/badge/mqtt-660066?style=for-the-badge&logo=mqtt&logoColor=white">
-  <img src="https://img.shields.io/badge/Intellij IDEA-000000?style=for-the-badge&logo=intellijidea&logoColor=white">
 * <img src="https://img.shields.io/badge/ubuntu 20.04-E95420?style=for-the-badge&logo=ubuntu&logoColor=white">
 
 ## 2. SetUp Installation
