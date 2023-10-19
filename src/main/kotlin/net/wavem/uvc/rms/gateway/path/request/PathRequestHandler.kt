@@ -57,11 +57,11 @@ class PathRequestHandler(
 
         val stamp : Time = Time(currentTime.epochSecond.toInt(), currentTime.nano)
         val header : net.wavem.uvc.ros.domain.std_msgs.Header = net.wavem.uvc.ros.domain.std_msgs.Header(stamp, "gts")
-        val goal_waypoints_list : Array<Pose> = arrayOf()
+        val goal_waypoints_list : MutableList<Pose> = mutableListOf()
 
-        for (i in 0..locationList.size() - 1) {
-            val location : JsonObject = locationList[i].asJsonObject
-            log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList[$i] : $location")
+        for (locationJson in locationList) {
+            val location : JsonObject = locationJson.asJsonObject
+            log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList : $location")
 
             val xpos : Double = location.get("xpos").asDouble
             val ypos : Double = location.get("ypos").asDouble
@@ -72,13 +72,13 @@ class PathRequestHandler(
             val orientation : Quaternion = Quaternion(xpos, ypos, 0.0, 0.0)
 
             val goal_waypoints : Pose = Pose(position, orientation)
-            goal_waypoints_list[i] = goal_waypoints
+            goal_waypoints_list.add(goal_waypoints)
         }
 
         log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints_list : $goal_waypoints_list")
 
-        val goalWaypointsStamped : GoalWaypointsStamped = GoalWaypointsStamped(header, goal_waypoints_list)
-        this.rclGoalWaypointsPublisher.publish(goalWaypointsStamped.write())
+//        val goalWaypointsStamped : GoalWaypointsStamped = GoalWaypointsStamped(header, goal_waypoints_list)
+//        this.rclGoalWaypointsPublisher.publish(goalWaypointsStamped.write())
     }
 
     fun handle(path : Path) {

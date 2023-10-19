@@ -9,9 +9,9 @@ import java.nio.ByteOrder
 class GoalWaypointsStamped() : Message {
     var header : Header = Header()
     var goal_waypoints : Pose = Pose()
-    var goal_waypoints_list : Array<Pose> = arrayOf()
+    var goal_waypoints_list : MutableList<Pose> = mutableListOf()
 
-    constructor(header : Header, goal_waypoints_list : Array<Pose>) : this() {
+    constructor(header : Header, goal_waypoints_list : MutableList<Pose>) : this() {
         this.header = header
         this.goal_waypoints_list = goal_waypoints_list
     }
