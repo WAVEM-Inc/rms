@@ -12,13 +12,14 @@ import net.wavem.uvc.rms.gateway.path.domain.PathProperties
 import net.wavem.uvc.rms.gateway.path.domain.job.info.PathJobInfo
 import net.wavem.uvc.rms.gateway.path.domain.job.path.PathJobPath
 import net.wavem.uvc.ros.application.topic.Publisher
-import net.wavem.uvc.ros.domain.gps_navigation_msgs.GoalWaypointsStamped
 import net.wavem.uvc.ros.domain.builtin_interfaces.Time
+import net.wavem.uvc.ros.domain.geometry_msgs.Point
+import net.wavem.uvc.ros.domain.geometry_msgs.Pose
+import net.wavem.uvc.ros.domain.geometry_msgs.Quaternion
+import net.wavem.uvc.ros.domain.gps_navigation_msgs.GoalWaypointsStamped
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import java.text.SimpleDateFormat
-import java.sql.Date
 import java.time.Instant
 
 @Component
@@ -54,12 +55,28 @@ class PathRequestHandler(
 
         val currentTime : Instant = Instant.now()
 
-        val stamp : Time = Time(currentTime.epochSecond.toInt(), currentTime.nano.toInt())
-        val header : Header = Header(stamp, "gps_slam_navigation")
+        val stamp : Time = Time(currentTime.epochSecond.toInt(), currentTime.nano)
+        val header : net.wavem.uvc.ros.domain.std_msgs.Header = net.wavem.uvc.ros.domain.std_msgs.Header(stamp, "gts")
+        val goal_waypoints_list : Array<Pose> = arrayOf()
 
-        for (i in 0 .. locationList.size() - 1) {
-            log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList[$i] : ${locationList[i]}")
+        for (i in 0..<locationList.size() - 1) {
+            val location : JsonObject = locationList[i].asJsonObject
+            log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList[$i] : $location")
+
+            val xpos : Double = location.get("xpos").asDouble
+            val ypos : Double = location.get("ypos").asDouble
+
+            val position : Point = Point(0.0, 0.0, 0.0)
+            val orientation : Quaternion = Quaternion(xpos, ypos, 0.0, 0.0)
+
+            val goal_waypoints : Pose = Pose(position, orientation)
+            goal_waypoints_list[i] = goal_waypoints
         }
+
+        log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints_list : $goal_waypoints_list")
+
+        val goalWaypointsStamped : GoalWaypointsStamped = GoalWaypointsStamped(header, goal_waypoints_list)
+        this.rclGoalWaypointsPublisher.publish(goalWaypointsStamped.write())
     }
 
     fun handle(path : Path) {
