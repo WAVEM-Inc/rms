@@ -2,14 +2,13 @@ package net.wavem.uvc.mqtt.infra
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import lombok.RequiredArgsConstructor
-import net.wavem.uvc.mqtt.application.MqttService
-import net.wavem.uvc.mqtt.domain.MqttConnectionType
+import net.wavem.uvc.mqtt.application.MQTTService
+import net.wavem.uvc.mqtt.domain.MQTTConnectionType
 import net.wavem.uvc.rms.gateway.control.domain.Control
 import net.wavem.uvc.rms.gateway.control.request.ControlRequestHandler
 import net.wavem.uvc.rms.gateway.env_config.domain.EnvConfig
 import net.wavem.uvc.rms.gateway.env_config.request.EnvConfigRequestHandler
 import net.wavem.uvc.rms.gateway.event.domain.Event
-import net.wavem.uvc.rms.gateway.event.response.EventResponseHandler
 import net.wavem.uvc.rms.gateway.location.domain.Location
 import net.wavem.uvc.rms.gateway.path.domain.Path
 import net.wavem.uvc.rms.gateway.path.request.PathRequestHandler
@@ -38,9 +37,9 @@ import org.springframework.messaging.handler.annotation.Header
 
 @Configuration
 @RequiredArgsConstructor
-class MqttConfiguration(
-    private val log : MqttLogger,
-    private val mqttService : MqttService<Any>,
+class MQTTConfiguration(
+    private val log : MQTTLogger,
+    private val mqttService : MQTTService<Any>,
     private val objectMapper : ObjectMapper,
     private val pathRequestHandler : PathRequestHandler,
     private val controlRequestHandler : ControlRequestHandler,
@@ -90,7 +89,7 @@ class MqttConfiguration(
                 pathRequestHandler.handle(it.payload as Path)
             }
         } catch (e : MqttException) {
-            log.error(MqttConnectionType.TO_RMS, "mqtt pathRequestToBridge error occurred ${e.message}")
+            log.error(MQTTConnectionType.TO_RMS, "mqtt pathRequestToBridge error occurred ${e.message}")
             e.printStackTrace()
         }
     }
@@ -106,7 +105,7 @@ class MqttConfiguration(
                 controlRequestHandler.handle(it.payload as Control)
             }
         } catch (e : MqttException) {
-            log.error(MqttConnectionType.TO_RMS, "mqtt controlRequestToBridge error occurred ${e.message}")
+            log.error(MQTTConnectionType.TO_RMS, "mqtt controlRequestToBridge error occurred ${e.message}")
             e.printStackTrace()
         }
     }
@@ -122,7 +121,7 @@ class MqttConfiguration(
                 envConfigRequestHandler.handle(it.payload as EnvConfig)
             }
         } catch (e : MqttException) {
-            log.error(MqttConnectionType.TO_RMS, "mqtt envConfigRequestToBridge error occurred ${e.message}")
+            log.error(MQTTConnectionType.TO_RMS, "mqtt envConfigRequestToBridge error occurred ${e.message}")
             e.printStackTrace()
         }
     }

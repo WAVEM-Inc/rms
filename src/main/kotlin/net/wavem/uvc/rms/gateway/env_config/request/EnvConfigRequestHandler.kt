@@ -2,9 +2,9 @@ package net.wavem.uvc.rms.gateway.env_config.request
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import net.wavem.uvc.mqtt.application.MqttService
-import net.wavem.uvc.mqtt.domain.MqttConnectionType
-import net.wavem.uvc.mqtt.infra.MqttLogger
+import net.wavem.uvc.mqtt.application.MQTTService
+import net.wavem.uvc.mqtt.domain.MQTTConnectionType
+import net.wavem.uvc.mqtt.infra.MQTTLogger
 import net.wavem.uvc.rms.common.domain.header.Header
 import net.wavem.uvc.rms.gateway.env_config.domain.EnvConfig
 import net.wavem.uvc.rms.gateway.env_config.domain.EnvConfigProperties
@@ -16,9 +16,9 @@ import java.io.InputStream
 
 @Component
 class EnvConfigRequestHandler(
-    val log : MqttLogger,
+    val log : MQTTLogger,
     val envConfigProperties : EnvConfigProperties,
-    val mqttService : MqttService<String>,
+    val mqttService : MQTTService<String>,
     val gson : Gson
 ) {
 
@@ -29,7 +29,7 @@ class EnvConfigRequestHandler(
 
         val mqttInfoJsonObject : JsonObject = gson.fromJson(previousMqttConfigFileText, JsonObject::class.java)
 
-        log.info(MqttConnectionType.FROM_RMS, "setInfoJson : [$setInfoJson]")
+        log.info(MQTTConnectionType.FROM_RMS, "setInfoJson : [$setInfoJson]")
 
         val previousIP : String = mqttInfoJsonObject.get("ip").asString
         val renewalIP : String = setInfoJson.get("mqttIP").asString
@@ -41,38 +41,38 @@ class EnvConfigRequestHandler(
             renewFileWriter.write(mqttInfoJsonObject.toString())
             renewFileWriter.close()
 
-            log.info(MqttConnectionType.FROM_RMS, "======= MQTT IP Address {$previousIP} -> {$renewalIP} =======")
-            log.warn(MqttConnectionType.FROM_RMS, "Server Rebooting Required...")
+            log.info(MQTTConnectionType.FROM_RMS, "======= MQTT IP Address {$previousIP} -> {$renewalIP} =======")
+            log.warn(MQTTConnectionType.FROM_RMS, "Server Rebooting Required...")
         } else {
-            log.warn(MqttConnectionType.FROM_RMS, "MQTT IP Address is equals to renewalIP {$previousIP} / {$renewalIP}")
+            log.warn(MQTTConnectionType.FROM_RMS, "MQTT IP Address is equals to renewalIP {$previousIP} / {$renewalIP}")
         }
     }
 
     fun handle(envConfig : EnvConfig) {
         val envConfigJson : JsonObject = gson.toJsonTree(envConfig).asJsonObject
-        log.info(MqttConnectionType.FROM_RMS, "envConfigJson : [$envConfigJson]")
+        log.info(MQTTConnectionType.FROM_RMS, "envConfigJson : [$envConfigJson]")
 
         val header : Header? = envConfig.header
         val setInfo : EnvConfigSetInfo? = envConfig.setInfo
 
         if(header == null) {
-            log.error(MqttConnectionType.FROM_RMS, "envConfig header is null skipping...")
+            log.error(MQTTConnectionType.FROM_RMS, "envConfig header is null skipping...")
             return
         } else if(setInfo == null) {
-            log.error(MqttConnectionType.FROM_RMS, "envConfig setInfo is null skipping...")
+            log.error(MQTTConnectionType.FROM_RMS, "envConfig setInfo is null skipping...")
             return
         }
 
         val headerJson : JsonObject = envConfigJson.getAsJsonObject(KEY_HEADER)
-        log.info(MqttConnectionType.FROM_RMS, "envConfig headerJson : [$headerJson]")
+        log.info(MQTTConnectionType.FROM_RMS, "envConfig headerJson : [$headerJson]")
 
         val setInfoJson : JsonObject = envConfigJson.getAsJsonObject(KEY_SET_INFO)
-        log.info(MqttConnectionType.FROM_RMS, "envConfigsetInfoJson : [$setInfoJson]")
+        log.info(MQTTConnectionType.FROM_RMS, "envConfigsetInfoJson : [$setInfoJson]")
 
         renewMQTTIP(setInfoJson)
 
         mqttService.bridge(
-            MqttConnectionType.TO_BRIDGE,
+            MQTTConnectionType.TO_BRIDGE,
             "/test/config",
             envConfigJson.toString()
         )

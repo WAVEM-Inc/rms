@@ -1,6 +1,6 @@
 package net.wavem.uvc.mqtt.domain
 
-enum class MqttConnectionType(
+enum class MQTTConnectionType(
     val type : String
 ) {
     TO_BRIDGE("TO_ROS"),

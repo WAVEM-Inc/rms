@@ -2,8 +2,8 @@ package net.wavem.uvc.rms.gateway.event.response
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import net.wavem.uvc.mqtt.application.MqttService
-import net.wavem.uvc.mqtt.domain.MqttConnectionType
+import net.wavem.uvc.mqtt.application.MQTTService
+import net.wavem.uvc.mqtt.domain.MQTTConnectionType
 import net.wavem.uvc.rms.common.application.TimeService
 import net.wavem.uvc.rms.common.application.UUIDService
 import net.wavem.uvc.rms.common.domain.header.Header
@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component
 @Component
 class EventResponseHandler(
     private val eventProperties : EventProperties,
-    private val mqttService : MqttService<String>,
+    private val mqttService : MQTTService<String>,
     private val timeService : TimeService,
     private val gson : Gson,
     private val jwtService : JwtService,
@@ -129,7 +129,7 @@ class EventResponseHandler(
 //        logger.info("Event Response JSON : $eventJson")
         val encryptedJson : String = jwtService.encode("event", eventJson.toString())
 
-        mqttService.bridge(MqttConnectionType.TO_RMS, topic = eventProperties.topic, eventJson.toString())
+        mqttService.bridge(MQTTConnectionType.TO_RMS, topic = eventProperties.topic, eventJson.toString())
     }
 
     companion object {

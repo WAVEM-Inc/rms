@@ -2,8 +2,8 @@ package net.wavem.uvc.rms.gateway.location.response
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import net.wavem.uvc.mqtt.application.MqttService
-import net.wavem.uvc.mqtt.domain.MqttConnectionType
+import net.wavem.uvc.mqtt.application.MQTTService
+import net.wavem.uvc.mqtt.domain.MQTTConnectionType
 import net.wavem.uvc.rms.common.domain.header.Header
 import net.wavem.uvc.rms.common.jwt.JwtService
 import net.wavem.uvc.rms.common.types.area.AreaClsfType
@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component
 @Component
 class LocationResponseHandler(
     private val locationProperties : LocationProperties,
-    private val mqttService : MqttService<String>,
+    private val mqttService : MQTTService<String>,
     private val gson : Gson,
     private val jwtService : JwtService
 ) {
@@ -149,6 +149,6 @@ class LocationResponseHandler(
 
         val encryptedJson : String = jwtService.encode("location", locationJSON.toString())
 
-        mqttService.bridge(MqttConnectionType.TO_RMS, locationProperties.topic, locationJSON.toString())
+        mqttService.bridge(MQTTConnectionType.TO_RMS, locationProperties.topic, locationJSON.toString())
     }
 }

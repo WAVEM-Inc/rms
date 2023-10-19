@@ -1,24 +1,36 @@
 package net.wavem.uvc.rms.gateway.path.request
 
 import com.google.gson.Gson
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import net.wavem.uvc.mqtt.domain.MqttConnectionType
-import net.wavem.uvc.mqtt.infra.MqttLogger
+import net.wavem.uvc.mqtt.domain.MQTTConnectionType
+import net.wavem.uvc.mqtt.infra.MQTTLogger
 import net.wavem.uvc.rms.common.application.UUIDService
 import net.wavem.uvc.rms.common.domain.header.Header
 import net.wavem.uvc.rms.gateway.path.domain.Path
 import net.wavem.uvc.rms.gateway.path.domain.PathProperties
 import net.wavem.uvc.rms.gateway.path.domain.job.info.PathJobInfo
 import net.wavem.uvc.rms.gateway.path.domain.job.path.PathJobPath
+import net.wavem.uvc.ros.application.topic.Publisher
+import net.wavem.uvc.ros.domain.gps_navigation_msgs.GoalWaypointsStamped
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
 @Component
 class PathRequestHandler(
-    val log : MqttLogger,
+    val log : MQTTLogger,
     val pathProperties : PathProperties,
     private val gson : Gson,
     private val uuidService : UUIDService
 ) {
+    private val logger : Logger = LoggerFactory.getLogger(this.javaClass)
+    private val rclGoalWaypointsPublisher : Publisher<GoalWaypointsStamped> = Publisher()
+
+    init {
+        this.rclGoalWaypointsPublisher.registerPublisher("/gps_slam_navigation/waypoints", GoalWaypointsStamped::class)
+        logger.info("RCL {/gps_slam_navigation/waypoints} subscription registered")
+    }
 
     private fun setJobInfoByJson(jobInfoJson : JsonObject) {
         val jobPlanId : String = jobInfoJson.get("jobPlanId").asString
@@ -31,34 +43,40 @@ class PathRequestHandler(
         System.setProperty("jobInfo.jobOrderId", jobOrderId)
     }
 
+    private fun publishPathLocationList(jobPathJson : JsonObject) {
+        val locationList : JsonArray = jobPathJson.getAsJsonObject("locationList").asJsonArray
+        log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList : $locationList")
+    }
+
     fun handle(path : Path) {
         val pathJson : JsonObject = gson.toJsonTree(path).asJsonObject
-        log.info(MqttConnectionType.FROM_RMS, "pathJson  : $pathJson")
+        log.info(MQTTConnectionType.FROM_RMS, "pathJson : $pathJson")
 
         val header : Header? = path.header
         val jobInfo : PathJobInfo? = path.jobInfo
         val jobPath : PathJobPath? = path.jobPath
 
         if(header == null) {
-            log.error(MqttConnectionType.FROM_RMS, "path header is null skipping...")
+            log.error(MQTTConnectionType.FROM_RMS, "path header is null skipping...")
             return
         } else if (jobInfo == null) {
-            log.error(MqttConnectionType.FROM_RMS, "path jobInfo is null skipping...")
+            log.error(MQTTConnectionType.FROM_RMS, "path jobInfo is null skipping...")
             return
         } else if (jobPath == null) {
-            log.error(MqttConnectionType.FROM_RMS, "path jobPath is null skipping...")
+            log.error(MQTTConnectionType.FROM_RMS, "path jobPath is null skipping...")
             return
         }
 
         val headerJson : JsonObject = pathJson.getAsJsonObject(KEY_HEADER)
-        log.info(MqttConnectionType.FROM_RMS, "path headerJson : $headerJson")
+        log.info(MQTTConnectionType.FROM_RMS, "path headerJson : $headerJson")
 
         val jobInfoJson : JsonObject = pathJson.getAsJsonObject(KEY_JOB_INFO)
-        log.info(MqttConnectionType.FROM_RMS, "path jobInfoJson : $jobInfoJson")
+        log.info(MQTTConnectionType.FROM_RMS, "path jobInfoJson : $jobInfoJson")
         this.setJobInfoByJson(jobInfoJson)
 
         val jobPathJson : JsonObject = pathJson.getAsJsonObject(KEY_JOB_PATH)
-        log.info(MqttConnectionType.FROM_RMS, "path jobPathJson : $jobPathJson")
+        log.info(MQTTConnectionType.FROM_RMS, "path jobPathJson : $jobPathJson")
+        this.publishPathLocationList(jobPathJson)
     }
 
     private companion object {
