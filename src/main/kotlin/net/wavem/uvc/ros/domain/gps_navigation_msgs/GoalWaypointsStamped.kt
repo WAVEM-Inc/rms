@@ -11,6 +11,11 @@ class GoalWaypointsStamped() : Message {
     var goal_waypoints : Pose = Pose()
     var goal_waypoints_list : Array<Pose> = arrayOf()
 
+    constructor(header : Header, goal_waypoints_list : Array<Pose>) : this() {
+        this.header = header
+        this.goal_waypoints_list = goal_waypoints_list
+    }
+
     fun write() : ByteArray {
         val buf : ByteBuffer = ByteBuffer.allocate(Integer.BYTES * 2)
         buf.order(ByteOrder.LITTLE_ENDIAN)

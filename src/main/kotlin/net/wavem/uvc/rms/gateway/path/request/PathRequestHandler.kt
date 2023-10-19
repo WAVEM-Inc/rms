@@ -13,9 +13,13 @@ import net.wavem.uvc.rms.gateway.path.domain.job.info.PathJobInfo
 import net.wavem.uvc.rms.gateway.path.domain.job.path.PathJobPath
 import net.wavem.uvc.ros.application.topic.Publisher
 import net.wavem.uvc.ros.domain.gps_navigation_msgs.GoalWaypointsStamped
+import net.wavem.uvc.ros.domain.builtin_interfaces.Time
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.text.SimpleDateFormat
+import java.sql.Date
+import java.time.Instant
 
 @Component
 class PathRequestHandler(
@@ -44,8 +48,18 @@ class PathRequestHandler(
     }
 
     private fun publishPathLocationList(jobPathJson : JsonObject) {
-        val locationList : JsonArray = jobPathJson.getAsJsonObject("locationList").asJsonArray
+        log.info(MQTTConnectionType.FROM_RMS, "path jobPath $jobPathJson")
+        val locationList : JsonArray = jobPathJson.getAsJsonArray("locationList")
         log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList : $locationList")
+
+        val currentTime : Instant = Instant.now()
+
+        val stamp : Time = Time(currentTime.epochSecond.toInt(), currentTime.nano.toInt())
+        val header : Header = Header(stamp, "gps_slam_navigation")
+
+        for (i in 0 .. locationList.size() - 1) {
+            log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList[$i] : ${locationList[i]}")
+        }
     }
 
     fun handle(path : Path) {
