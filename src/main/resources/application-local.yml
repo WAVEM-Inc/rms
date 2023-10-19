@@ -1,0 +1,13 @@
+logging:
+  level:
+    root: warn
+    net.wavem.uvc: debug
+
+spring:
+  main:
+    web-application-type: none
+  config:
+    activate:
+      on-profile: local
+  thymeleaf:
+    check-template-location: false

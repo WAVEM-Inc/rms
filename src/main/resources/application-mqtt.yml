@@ -1,0 +1,45 @@
+spring:
+  config:
+    activate:
+      on-profile: mqtt
+
+rms:
+  toROS: "hubilon/atcplus/rms/"
+  fromROS: "hubilon/atcplus/ros/"
+
+location:
+  topic: "hubilon/atcplus/ros/location"
+  qos: 0
+  retain: false
+
+event:
+  topic: "hubilon/atcplus/ros/event"
+  qos: 0
+  retain: false
+
+path:
+  topic: "hubilon/atcplus/rms/path"
+  qos: 0
+  retain: false
+
+control:
+  topic: "hubilon/atcplus/rms/control"
+  qos: 1
+  retain: false
+
+config:
+  topic: "hubilon/atcplus/rms/config"
+  qos: 0
+  retain: false
+
+jobInfo:
+  jobPlanId: ""
+  jobGroupId: ""
+  jobOrderId: ""
+  jobGroup: ""
+  jobKind: ""
+
+taskInfo:
+  jobGroup: ""
+  jobKind: ""
+  taskStatus: ""
