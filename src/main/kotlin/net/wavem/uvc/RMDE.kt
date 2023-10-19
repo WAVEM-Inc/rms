@@ -8,8 +8,8 @@ import org.springframework.scheduling.annotation.EnableScheduling
 @EnableScheduling
 @SpringBootApplication
 @ConfigurationPropertiesScan
-class MDEApplication
+class RMDEApplication
 
 fun main(args : Array<String>) {
-    runApplication<MDEApplication>(*args)
+    runApplication<RMDEApplication>(*args)
 }
