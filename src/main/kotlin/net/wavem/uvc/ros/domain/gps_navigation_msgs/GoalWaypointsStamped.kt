@@ -17,8 +17,18 @@ class GoalWaypointsStamped() : Message {
     }
 
     fun write() : ByteArray {
-        val buf : ByteBuffer = ByteBuffer.allocate(Integer.BYTES * 2)
+        val buf : ByteBuffer = ByteBuffer.allocate(120)
         buf.order(ByteOrder.LITTLE_ENDIAN)
+
+        println("GoalWaypointsStamped header : ${this.header.toString()}")
+        val headerBytes : ByteArray = this.header.write()
+        buf.put(headerBytes)
+
+        for (pose in this.goal_waypoints_list) {
+            println("GoalWaypointsStamped pose : ${pose.toString()}")
+            val poseBytes : ByteArray = pose.write()
+            buf.put(poseBytes)
+        }
 
         return buf.array()
     }

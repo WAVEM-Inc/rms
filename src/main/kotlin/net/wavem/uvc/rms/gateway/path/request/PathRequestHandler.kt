@@ -77,8 +77,9 @@ class PathRequestHandler(
 
         log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints_list : $goal_waypoints_list")
 
-//        val goalWaypointsStamped : GoalWaypointsStamped = GoalWaypointsStamped(header, goal_waypoints_list)
-//        this.rclGoalWaypointsPublisher.publish(goalWaypointsStamped.write())
+       val goalWaypointsStamped : GoalWaypointsStamped = GoalWaypointsStamped(header, goal_waypoints_list)
+       goalWaypointsStamped.write()
+    //    this.rclGoalWaypointsPublisher.publish(goalWaypointsStamped.write())
     }
 
     fun handle(path : Path) {

@@ -18,7 +18,7 @@ class Header() : Message {
 
     fun write() : ByteArray {
         val frameIdLen : Int = this.frame_id.length + 1
-        val buf : ByteBuffer = ByteBuffer.allocate(Integer.BYTES * 2)
+        val buf : ByteBuffer = ByteBuffer.allocate(Integer.BYTES * 2 + frameIdLen)
         buf.order(ByteOrder.LITTLE_ENDIAN)
 
         val timeBytes : ByteArray = this.stamp.write()
