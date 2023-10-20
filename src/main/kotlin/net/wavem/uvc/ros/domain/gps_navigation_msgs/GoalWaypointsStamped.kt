@@ -30,11 +30,14 @@ class GoalWaypointsStamped() : Message {
         buf.putInt(goal_waypoints_list_size)
         println("GoalWaypointsStamped goal_waypoints_list size : ${goal_waypoints_list_size}")
 
-        for (pose in this.goal_waypoints_list) {
+        for ((index, pose) in this.goal_waypoints_list.withIndex()) {
             println("GoalWaypointsStamped pose : ${pose.toString()}")
 
             val poseBytes : ByteArray = pose.write()
-            buf.putInt(poseBytes.size)
+
+            if (index == 0) {
+                buf.putInt(goal_waypoints_list_size * poseBytes.size)
+            }
             buf.put(poseBytes)
             
             println("GoalWaypointsStamped pose added")
