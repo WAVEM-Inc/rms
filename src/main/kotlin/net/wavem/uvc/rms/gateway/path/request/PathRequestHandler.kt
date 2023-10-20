@@ -12,6 +12,7 @@ import net.wavem.uvc.rms.gateway.path.domain.PathProperties
 import net.wavem.uvc.rms.gateway.path.domain.job.info.PathJobInfo
 import net.wavem.uvc.rms.gateway.path.domain.job.path.PathJobPath
 import net.wavem.uvc.ros.application.topic.Publisher
+import net.wavem.uvc.ros.application.topic.Subscription
 import net.wavem.uvc.ros.domain.builtin_interfaces.Time
 import net.wavem.uvc.ros.domain.geometry_msgs.Point
 import net.wavem.uvc.ros.domain.geometry_msgs.Pose
@@ -33,8 +34,9 @@ class PathRequestHandler(
     private val rclGoalWaypointsPublisher : Publisher<GoalWaypointsStamped> = Publisher()
 
     init {
-        this.rclGoalWaypointsPublisher.registerPublisher("/gps_slam_navigation/waypoints", GoalWaypointsStamped::class)
-        logger.info("RCL {/gps_slam_navigation/waypoints} subscription registered")
+        val rclGoalWaypointsTopic : String = "/gps_slam_navigation/waypoints"
+        this.rclGoalWaypointsPublisher.registerPublisher(rclGoalWaypointsTopic, GoalWaypointsStamped::class)
+        logger.info("RCL {$rclGoalWaypointsTopic} subscription registered")
     }
 
     private fun setJobInfoByJson(jobInfoJson : JsonObject) {
@@ -59,15 +61,14 @@ class PathRequestHandler(
         val header : net.wavem.uvc.ros.domain.std_msgs.Header = net.wavem.uvc.ros.domain.std_msgs.Header(stamp, "gts")
         val goal_waypoints_list : MutableList<Pose> = mutableListOf()
 
-        var count : Int = 0
-        for (locationJson in locationList) {
+        for ((index, locationJson) in locationList.withIndex()) {
             val location : JsonObject = locationJson.asJsonObject
-            log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList[$count] : $location")
+            log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList[$index] : $location")
 
             val xpos : Double = location.get("xpos").asDouble
             val ypos : Double = location.get("ypos").asDouble
 
-            log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoinst[$count] xpos : $xpos, ypos : $ypos")
+            log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints[$index] xpos : $xpos, ypos : $ypos")
 
             val position : Point = Point(0.0, 0.0, 0.0)
             val orientation : Quaternion = Quaternion(xpos, ypos, 0.0, 0.0)
@@ -75,8 +76,7 @@ class PathRequestHandler(
             val goal_waypoints : Pose = Pose(position, orientation)
             goal_waypoints_list.add(goal_waypoints)
 
-            log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints_list[$count] pose ${goal_waypoints_list.get(count).toString()}")
-            count++
+            log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints_list[$index] pose ${goal_waypoints_list.get(index).toString()}")
         }
 
         log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints_list : $goal_waypoints_list")
