@@ -59,9 +59,8 @@ class PathRequestHandler(
         val header : net.wavem.uvc.ros.domain.std_msgs.Header = net.wavem.uvc.ros.domain.std_msgs.Header(stamp, "gts")
         val goal_waypoints_list : MutableList<Pose> = mutableListOf()
 
+        var count : Int = 0
         for (locationJson in locationList) {
-            var count : Int = 0
-
             val location : JsonObject = locationJson.asJsonObject
             log.info(MQTTConnectionType.FROM_RMS, "path jobPath locationList[$count] : $location")
 
