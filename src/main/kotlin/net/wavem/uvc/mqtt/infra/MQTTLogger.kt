@@ -13,8 +13,8 @@ class MQTTLogger {
         val loggingMessage : String = "$MQTT_TO_BRIDGE $message"
 
         when (type) {
-            MQTTConnectionType.TO_BRIDGE -> logger.info(loggingMessage)
-            MQTTConnectionType.FROM_BRIDGE -> logger.info(loggingMessage)
+            MQTTConnectionType.TO_UVC -> logger.info(loggingMessage)
+            MQTTConnectionType.FROM_UVC -> logger.info(loggingMessage)
             MQTTConnectionType.TO_RMS -> logger.info(loggingMessage)
             MQTTConnectionType.FROM_RMS -> logger.info(loggingMessage)
         }
@@ -24,8 +24,8 @@ class MQTTLogger {
         val loggingMessage : String = "$MQTT_TO_BRIDGE $message"
 
         when (type) {
-            MQTTConnectionType.TO_BRIDGE -> logger.warn(loggingMessage)
-            MQTTConnectionType.FROM_BRIDGE -> logger.warn(loggingMessage)
+            MQTTConnectionType.TO_UVC -> logger.warn(loggingMessage)
+            MQTTConnectionType.FROM_UVC -> logger.warn(loggingMessage)
             MQTTConnectionType.TO_RMS -> logger.warn(loggingMessage)
             MQTTConnectionType.FROM_RMS -> logger.warn(loggingMessage)
         }
@@ -35,8 +35,8 @@ class MQTTLogger {
         val loggingMessage : String = "$MQTT_TO_BRIDGE $message"
 
         when (type) {
-            MQTTConnectionType.TO_BRIDGE -> logger.error(loggingMessage)
-            MQTTConnectionType.FROM_BRIDGE -> logger.error(loggingMessage)
+            MQTTConnectionType.TO_UVC -> logger.error(loggingMessage)
+            MQTTConnectionType.FROM_UVC -> logger.error(loggingMessage)
             MQTTConnectionType.TO_RMS -> logger.error(loggingMessage)
             MQTTConnectionType.FROM_RMS -> logger.error(loggingMessage)
         }

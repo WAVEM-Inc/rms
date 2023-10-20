@@ -72,7 +72,7 @@ class EnvConfigRequestHandler(
         renewMQTTIP(setInfoJson)
 
         mqttService.bridge(
-            MQTTConnectionType.TO_BRIDGE,
+            MQTTConnectionType.TO_UVC,
             "/test/config",
             envConfigJson.toString()
         )

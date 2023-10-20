@@ -17,7 +17,7 @@ class GoalWaypointsStamped() : Message {
 
     fun write() : ByteArray {
         val goal_waypoints_list_size : Int = this.goal_waypoints_list.size
-        val buf : ByteBuffer = ByteBuffer.allocate(this.header.size + 1024)
+        val buf : ByteBuffer = ByteBuffer.allocate(this.header.size + (goal_waypoints_list_size * Double.SIZE_BYTES * 7))
         buf.order(ByteOrder.LITTLE_ENDIAN)
 
         println("GoalWaypointsStamped header : ${this.header.toString()}")

@@ -41,7 +41,7 @@ class ControlRequestHandler(
         log.info(MQTTConnectionType.FROM_RMS, "control controlCmdJson : [$controlCmdJson]")
 
         mqttService.bridge(
-            MQTTConnectionType.TO_BRIDGE,
+            MQTTConnectionType.TO_UVC,
             "/test/control",
             controlJson.toString()
         )
