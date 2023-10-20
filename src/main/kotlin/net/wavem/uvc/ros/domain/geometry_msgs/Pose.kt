@@ -15,13 +15,15 @@ class Pose() : Message {
     }
 
     fun write() : ByteArray {
-        val buf : ByteBuffer = ByteBuffer.allocate(Double.SIZE_BYTES * 7)
+        val buf : ByteBuffer = ByteBuffer.allocate(Double.SIZE_BYTES * 7 + Int.SIZE_BYTES * 2)
         buf.order(ByteOrder.LITTLE_ENDIAN)
 
         val positionBytes : ByteArray = this.position.write()
+        buf.putInt(positionBytes.size)
         buf.put(positionBytes)
 
         val orientationBytes : ByteArray = this.orientation.write()
+        buf.putInt(positionBytes.size)
         buf.put(orientationBytes)
 
         return buf.array()
