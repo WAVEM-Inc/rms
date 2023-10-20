@@ -12,12 +12,13 @@ import net.wavem.uvc.rms.gateway.path.domain.PathProperties
 import net.wavem.uvc.rms.gateway.path.domain.job.info.PathJobInfo
 import net.wavem.uvc.rms.gateway.path.domain.job.path.PathJobPath
 import net.wavem.uvc.ros.application.topic.Publisher
-import net.wavem.uvc.ros.application.topic.Subscription
 import net.wavem.uvc.ros.domain.builtin_interfaces.Time
 import net.wavem.uvc.ros.domain.geometry_msgs.Point
 import net.wavem.uvc.ros.domain.geometry_msgs.Pose
 import net.wavem.uvc.ros.domain.geometry_msgs.Quaternion
-import net.wavem.uvc.ros.domain.gps_navigation_msgs.GoalWaypointsStamped
+import net.wavem.uvc.ros.domain.gts_navigation_msgs.GoalWaypoints
+import net.wavem.uvc.ros.domain.sensor_msgs.NavSatFix
+import net.wavem.uvc.ros.domain.sensor_msgs.NavSatStatus
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -31,11 +32,11 @@ class PathRequestHandler(
     private val uuidService : UUIDService
 ) {
     private val logger : Logger = LoggerFactory.getLogger(this.javaClass)
-    private val rclGoalWaypointsPublisher : Publisher<GoalWaypointsStamped> = Publisher()
+    private val rclGoalWaypointsPublisher : Publisher<GoalWaypoints> = Publisher()
 
     init {
-        val rclGoalWaypointsTopic : String = "/gps_slam_navigation/waypoints"
-        this.rclGoalWaypointsPublisher.registerPublisher(rclGoalWaypointsTopic, GoalWaypointsStamped::class)
+        val rclGoalWaypointsTopic : String = "/gts_navigation/waypoints"
+        this.rclGoalWaypointsPublisher.registerPublisher(rclGoalWaypointsTopic, GoalWaypoints::class)
         logger.info("RCL {$rclGoalWaypointsTopic} subscription registered")
     }
 
@@ -59,7 +60,7 @@ class PathRequestHandler(
 
         val stamp : Time = Time(currentTime.epochSecond.toInt(), currentTime.nano)
         val header : net.wavem.uvc.ros.domain.std_msgs.Header = net.wavem.uvc.ros.domain.std_msgs.Header(stamp, "gts")
-        val goal_waypoints_list : MutableList<Pose> = mutableListOf()
+        val goal_waypoints_list : MutableList<NavSatFix> = mutableListOf()
 
         for ((index, locationJson) in locationList.withIndex()) {
             val location : JsonObject = locationJson.asJsonObject
@@ -70,19 +71,19 @@ class PathRequestHandler(
 
             log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints[$index] xpos : $xpos, ypos : $ypos")
 
-            val position : Point = Point(0.0, 0.0, 0.0)
-            val orientation : Quaternion = Quaternion(xpos, ypos, 0.0, 0.0)
+            val status : NavSatStatus = NavSatStatus(2, 4u)
+            val position_covariance : DoubleArray = doubleArrayOf(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
 
-            val goal_waypoints : Pose = Pose(position, orientation)
+            val goal_waypoints : NavSatFix = NavSatFix(header, status, 37.1234, 127.1234521, 1.2342, position_covariance, 1u)
             goal_waypoints_list.add(goal_waypoints)
 
-            log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints_list[$index] pose ${goal_waypoints_list.get(index).toString()}")
+            log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints_list[$index] pose ${goal_waypoints_list[index].toString()}")
         }
 
         log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints_list : $goal_waypoints_list")
 
-        val goalWaypointsStamped : GoalWaypointsStamped = GoalWaypointsStamped(header, goal_waypoints_list)
-        this.rclGoalWaypointsPublisher.publish(goalWaypointsStamped.write())
+        val goalWaypoints : GoalWaypoints = GoalWaypoints(goal_waypoints_list)
+        this.rclGoalWaypointsPublisher.publish(goalWaypoints.write())
     }
 
     fun handle(path : Path) {
