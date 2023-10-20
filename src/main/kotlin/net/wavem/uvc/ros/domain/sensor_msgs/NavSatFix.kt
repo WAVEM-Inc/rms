@@ -35,31 +35,6 @@ class NavSatFix() : Message {
         this.position_covariance_type = position_covariance_type
     }
 
-    fun write() : ByteArray {
-        val buf : ByteBuffer = ByteBuffer.allocate(16 + (Byte.SIZE_BYTES + UShort.SIZE_BYTES) + (Double.SIZE_BYTES * 3) + Int.SIZE_BYTES + (Double.SIZE_BYTES * 9) + UByte.SIZE_BYTES)
-        buf.order(ByteOrder.LITTLE_ENDIAN)
-
-        val headerBytes : ByteArray = this.header.write()
-        buf.put(headerBytes)
-
-        val navSatStatusBytes : ByteArray = this.status.write()
-        buf.put(navSatStatusBytes)
-
-        buf.putDouble(this.latitude)
-        buf.putDouble(this.longitude)
-        buf.putDouble(this.altitude)
-
-        buf.putInt(Double.SIZE_BYTES * 9)
-
-        for (covariance in position_covariance) {
-            buf.putDouble(covariance)
-        }
-
-        buf.put(this.position_covariance_type.toByte())
-
-        return buf.array()
-    }
-
     override fun equals(other : Any?) : Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

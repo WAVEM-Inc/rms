@@ -21,16 +21,6 @@ class NavSatStatus() : Message {
         )
     }
 
-    fun write() : ByteArray {
-        val buf : ByteBuffer = ByteBuffer.allocate(Byte.SIZE_BYTES + UShort.SIZE_BYTES)
-        buf.order(ByteOrder.LITTLE_ENDIAN)
-
-        buf.put(this.status)
-        buf.putShort(this.service.toShort())
-
-        return buf.array()
-    }
-
     companion object {
         const val STATUS_NO_FIX : Byte = -1
         const val STATUS_FIX : Byte = 0

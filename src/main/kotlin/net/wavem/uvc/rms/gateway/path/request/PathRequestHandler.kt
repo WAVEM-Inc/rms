@@ -60,7 +60,7 @@ class PathRequestHandler(
 
         val stamp : Time = Time(currentTime.epochSecond.toInt(), currentTime.nano)
         val header : net.wavem.uvc.ros.domain.std_msgs.Header = net.wavem.uvc.ros.domain.std_msgs.Header(stamp, "gts")
-        val goal_waypoints_list : MutableList<NavSatFix> = mutableListOf()
+        val goal_waypoints_list : MutableList<Point> = mutableListOf()
 
         for ((index, locationJson) in locationList.withIndex()) {
             val location : JsonObject = locationJson.asJsonObject
@@ -71,10 +71,7 @@ class PathRequestHandler(
 
             log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints[$index] xpos : $xpos, ypos : $ypos")
 
-            val status : NavSatStatus = NavSatStatus(2, 4u)
-            val position_covariance : DoubleArray = doubleArrayOf(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
-
-            val goal_waypoints : NavSatFix = NavSatFix(header, status, 37.1234, 127.1234521, 1.2342, position_covariance, 1u)
+            val goal_waypoints : Point = Point(xpos, ypos, 45.0)
             goal_waypoints_list.add(goal_waypoints)
 
             log.info(MQTTConnectionType.FROM_RMS, "path goal_waypoints_list[$index] pose ${goal_waypoints_list[index].toString()}")
