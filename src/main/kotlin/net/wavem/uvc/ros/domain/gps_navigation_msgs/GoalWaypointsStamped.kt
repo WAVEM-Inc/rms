@@ -20,27 +20,21 @@ class GoalWaypointsStamped() : Message {
     fun write() : ByteArray {
         val goal_waypoints_list_size : Int = this.goal_waypoints_list.size
         val buf : ByteBuffer = ByteBuffer.allocate(16 + (goal_waypoints_list_size * Double.SIZE_BYTES * 7 * (Int.SIZE_BYTES * 3)) + (goal_waypoints_list_size * 4))
-        // val buf : ByteBuffer = ByteBuffer.allocate(1024)
         buf.order(ByteOrder.LITTLE_ENDIAN)
 
-        println("GoalWaypointsStamped header : ${this.header.toString()}")
         val headerBytes : ByteArray = this.header.write()
         buf.put(headerBytes)
 
         buf.putInt(goal_waypoints_list_size)
-        println("GoalWaypointsStamped goal_waypoints_list size : ${goal_waypoints_list_size}")
 
         for ((index, pose) in this.goal_waypoints_list.withIndex()) {
-            println("GoalWaypointsStamped pose : ${pose.toString()}")
-
             val poseBytes : ByteArray = pose.write()
+            val poseBytesSize : Int = poseBytes.size
 
             if (index == 0) {
-                buf.putInt(goal_waypoints_list_size * poseBytes.size)
+                buf.putInt(poseBytesSize * goal_waypoints_list_size)
             }
             buf.put(poseBytes)
-            
-            println("GoalWaypointsStamped pose added")
         }
 
         return buf.array()
