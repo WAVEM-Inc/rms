@@ -93,15 +93,13 @@ class LocationResponseHandler(
 
         this.rclGPSSubscription.getDataObservable().subscribe {
             val navSatFix : NavSatFix = NavSatFix.read(it)
-            logger.info("RCL {/ublox/fix} subscription callback : $navSatFix")
-            locationPositionDTO.setXpos(navSatFix.latitude)
-            locationPositionDTO.setYpos(navSatFix.longitude)
-            locationPositionDTO.setHeading(45.0)
+            locationPositionDTO.xpos = navSatFix.latitude
+            locationPositionDTO.ypos = navSatFix.longitude
+            locationPositionDTO.heading = 45.0
         }
 
         this.rclBatteryStateSubscription.getDataObservable().subscribe {
             val batteryState : BatteryState = BatteryState.read(it)
-            logger.info("RCL {/battery_state} subscription callback : $batteryState")
         }
 
         val locationPosition : LocationPosition = locationPositionDTO.build()

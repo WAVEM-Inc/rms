@@ -20,19 +20,23 @@ class SensorStatus() : Message {
         fun read(data : ByteArray) : SensorStatus {
             val buf : ByteBuffer = ByteBuffer.wrap(data)
             buf.order(ByteOrder.LITTLE_ENDIAN)
-
+    
             val header : Header = Header.read(data)
             val headerBufferSize : Int = Header.getBufferSize()
-
-            buf.position(headerBufferSize)
-
+            println("SensorStatus Header : $header")
+    
+            // buf.position(headerBufferSize)
+    
             val status_code : Int = buf.getInt()
-
+            println("SensorStatus status_code : $status_code")
+    
             var status_message_len : Int = buf.getInt()
+            println("SensorStatus status_message_len : $status_message_len")
+    
             var status_message : String = ""
-
+    
             while (status_message_len-- > 0) status_message += Char(buf.get().toUShort())
-
+    
             return SensorStatus(
                 header = header,
                 status_code = status_code,

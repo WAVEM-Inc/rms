@@ -24,9 +24,9 @@ import net.wavem.uvc.rms.gateway.event.dto.EventInfoDTO
 import net.wavem.uvc.rms.gateway.location.domain.position.LocationPosition
 import net.wavem.uvc.rms.gateway.location.dto.LocationPositionDTO
 import net.wavem.uvc.ros.application.topic.Subscription
-import net.wavem.uvc.ros.domain.robot_status_msgs.SensorStatus
 import net.wavem.uvc.ros.domain.sensor_msgs.BatteryState
 import net.wavem.uvc.ros.domain.sensor_msgs.NavSatFix
+import net.wavem.uvc.ros.domain.robot_status_msgs.SensorStatus
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -135,10 +135,9 @@ class EventResponseHandler(
 
         this.rclGPSSubscription.getDataObservable().subscribe {
             val navSatFix : NavSatFix = NavSatFix.read(it)
-            logger.info("RCL {/ublox/fix} subscription callback : $navSatFix")
-            locationPositionDTO.setXpos(navSatFix.latitude)
-            locationPositionDTO.setYpos(navSatFix.longitude)
-            locationPositionDTO.setHeading(45.0)
+            locationPositionDTO.xpos = navSatFix.latitude
+            locationPositionDTO.ypos = navSatFix.longitude
+            locationPositionDTO.heading = 45.0
         }
 
         return locationPositionDTO.build()
