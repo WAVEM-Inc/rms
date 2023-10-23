@@ -4,8 +4,10 @@ import json
 from rclpy.node import Node
 from rclpy.subscription import Subscription
 from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import qos_profile_system_default
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from sensor_msgs.msg import NavSatFix
+from robot_status_msgs.msg import SensorStatus
 
 from mqtt import broker
 from rms.response.event.domain.event import Event
@@ -43,6 +45,24 @@ class EventResponseHandler():
             callback_group = self.gps_subscription_cb_group
         )
 
+        self.imu_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.imu_status_subscription: Subscription = self.rclpy_node.create_subscription(
+            msg_type = SensorStatus,
+            topic = "/imu/status",
+            callback = self.rclpy_imu_status_subscription_cb,
+            qos_profile = qos_profile_system_default,
+            callback_group = self.imu_status_subscription_cb_group
+        )
+
+        self.scan_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.scan_status_subscription: Subscription = self.rclpy_node.create_subscription(
+            msg_type = SensorStatus,
+            topic = "/scan/status",
+            callback = self.rclpy_scan_status_subscription_cb,
+            qos_profile = qos_profile_system_default,
+            callback_group = self.imu_status_subscription_cb_group
+        )
+
         self.mqtt_broker: broker.mqtt_broker = mqtt_broker
         self.uuid_service: UUIDService = UUIDService()
         self.time_service: TimeService = TimeService()
@@ -51,6 +71,24 @@ class EventResponseHandler():
         self.location_ypos: float = 0.0
         self.heading: float = 45.0
     
+
+    def rclpy_imu_status_subscription_cb(self, imu_status_cb: SensorStatus) -> None:
+        self.rclpy_node.get_logger().info(
+            'IMU Status\n\tcode : "%d"\n\tmessage : "%s"' % (
+                imu_status_cb.status_code,
+                imu_status_cb.status_message
+            )
+        )
+
+    
+    def rclpy_scan_status_subscription_cb(self, scan_status_cb: SensorStatus) -> None:
+        self.rclpy_node.get_logger().info(
+            'SCAN Status\n\tcode : "%d"\n\tmessage : "%s"' % (
+                scan_status_cb.status_code,
+                scan_status_cb.status_message
+            )
+        )
+
 
     def rclpy_gps_subscription_cb(self, gps_cb: NavSatFix) -> None:
         self.rclpy_node.get_logger().info(
