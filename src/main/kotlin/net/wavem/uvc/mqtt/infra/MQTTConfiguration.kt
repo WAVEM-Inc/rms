@@ -5,12 +5,15 @@ import lombok.RequiredArgsConstructor
 import net.wavem.uvc.mqtt.application.MQTTService
 import net.wavem.uvc.mqtt.domain.MQTTConnectionType
 import net.wavem.uvc.rms.gateway.control.domain.Control
+import net.wavem.uvc.rms.gateway.control.domain.ControlProperties
 import net.wavem.uvc.rms.gateway.control.request.ControlRequestHandler
 import net.wavem.uvc.rms.gateway.env_config.domain.EnvConfig
+import net.wavem.uvc.rms.gateway.env_config.domain.EnvConfigProperties
 import net.wavem.uvc.rms.gateway.env_config.request.EnvConfigRequestHandler
 import net.wavem.uvc.rms.gateway.event.domain.Event
 import net.wavem.uvc.rms.gateway.location.domain.Location
 import net.wavem.uvc.rms.gateway.path.domain.Path
+import net.wavem.uvc.rms.gateway.path.domain.PathProperties
 import net.wavem.uvc.rms.gateway.path.request.PathRequestHandler
 import org.eclipse.paho.client.mqttv3.MqttAsyncClient
 import org.eclipse.paho.client.mqttv3.MqttClient
@@ -41,9 +44,12 @@ class MQTTConfiguration(
     private val log : MQTTLogger,
     private val mqttService : MQTTService<Any>,
     private val objectMapper : ObjectMapper,
+    private val pathProperties : PathProperties,
     private val pathRequestHandler : PathRequestHandler,
+    private val controlProperties : ControlProperties,
     private val controlRequestHandler : ControlRequestHandler,
-    private val envConfigRequestHandler : EnvConfigRequestHandler,
+    private val envConfigProperties : EnvConfigProperties,
+    private val envConfigRequestHandler : EnvConfigRequestHandler
 ) {
 
     private val logger : Logger = LoggerFactory.getLogger(this.javaClass)
@@ -80,8 +86,8 @@ class MQTTConfiguration(
 
     @Bean
     fun pathRequestToBridge() : StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        "hubilon/atcplus/rms/path",
-        2,
+        pathProperties.topic,
+        pathProperties.qos
     )) {
         try {
             transform(Transformers.fromJson(Path::class.java))
@@ -96,8 +102,8 @@ class MQTTConfiguration(
 
     @Bean
     fun controlRequestToBridge() : StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        "hubilon/atcplus/rms/control",
-        1
+        controlProperties.topic,
+        controlProperties.qos
     )) {
         try {
             transform(Transformers.fromJson(Control::class.java))
@@ -112,8 +118,8 @@ class MQTTConfiguration(
 
     @Bean
     fun envConfigRequestToBridge() : StandardIntegrationFlow = integrationFlow(mqttChannelAdapter(
-        "hubilon/atcplus/rms/config",
-        0
+        envConfigProperties.topic,
+        envConfigProperties.qos
     )) {
         try {
             transform(Transformers.fromJson(EnvConfig::class.java))

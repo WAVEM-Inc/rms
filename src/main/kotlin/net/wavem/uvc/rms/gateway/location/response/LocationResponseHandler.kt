@@ -5,7 +5,6 @@ import com.google.gson.JsonObject
 import net.wavem.uvc.mqtt.application.MQTTService
 import net.wavem.uvc.mqtt.domain.MQTTConnectionType
 import net.wavem.uvc.rms.common.domain.header.Header
-import net.wavem.uvc.rms.common.jwt.JwtService
 import net.wavem.uvc.rms.common.types.area.AreaClsfType
 import net.wavem.uvc.rms.common.types.header.RobotType
 import net.wavem.uvc.rms.common.types.job.JobGroupType
@@ -17,6 +16,7 @@ import net.wavem.uvc.rms.gateway.location.domain.job.LocationJobInfo
 import net.wavem.uvc.rms.gateway.location.domain.last_info.LocationLastInfo
 import net.wavem.uvc.rms.gateway.location.domain.position.LocationPosition
 import net.wavem.uvc.rms.gateway.location.domain.task.LocationTaskInfo
+import net.wavem.uvc.rms.gateway.location.dto.LocationPositionDTO
 import net.wavem.uvc.ros.application.topic.Subscription
 import net.wavem.uvc.ros.domain.sensor_msgs.NavSatFix
 import net.wavem.uvc.ros.domain.sensor_msgs.BatteryState
@@ -28,39 +28,21 @@ import org.springframework.stereotype.Component
 class LocationResponseHandler(
     private val locationProperties : LocationProperties,
     private val mqttService : MQTTService<String>,
-    private val gson : Gson,
-    private val jwtService : JwtService
+    private val gson : Gson
 ) {
 
     private val logger : Logger = LoggerFactory.getLogger(this.javaClass)
-    private val rclGpsSubscription : Subscription<NavSatFix> = Subscription()
+    private val rclGPSSubscription : Subscription<NavSatFix> = Subscription()
     private val rclBatteryStateSubscription : Subscription<BatteryState> = Subscription()
 
-    private var xpos : Double = 0.0
-    private var ypos : Double = 0.0
-
-    fun getXpos() : Double {
-        return this.xpos
-    }
-
-    fun setXpos(xpos : Double) {
-        this.xpos = xpos
-    }
-
-    fun getYpos() : Double {
-        return this.ypos
-    }
-
-    fun setYpos(ypos : Double) {
-        this.ypos = ypos
-    }
-
     init {
-        this.rclGpsSubscription.registerSubscription("/ublox/fix", NavSatFix::class)
-        logger.info("RCL {/ublox/fix} subscription registered")
+        val rclGPSSubscriptionTopic : String = "/ublox/fix"
+        this.rclGPSSubscription.registerSubscription(rclGPSSubscriptionTopic, NavSatFix::class)
+        logger.info("RCL {$rclGPSSubscriptionTopic} subscription registered")
 
-        this.rclBatteryStateSubscription.registerSubscription("/battery_state", BatteryState::class)
-        logger.info("RCL {/battery_state} subscription registered")
+        val rclBatteryStateSubscriptionTopic : String = "/battery_state"
+        this.rclBatteryStateSubscription.registerSubscription(rclBatteryStateSubscriptionTopic, BatteryState::class)
+        logger.info("RCL {$rclBatteryStateSubscriptionTopic} subscription registered")
     }
 
     private fun buildHeader() : Header {
@@ -107,25 +89,22 @@ class LocationResponseHandler(
     }
 
     private fun buildLastInfo() : LocationLastInfo {
-        this.rclGpsSubscription.getDataObservable().subscribe {
+        val locationPositionDTO : LocationPositionDTO = LocationPositionDTO()
+
+        this.rclGPSSubscription.getDataObservable().subscribe {
             val navSatFix : NavSatFix = NavSatFix.read(it)
             logger.info("RCL {/ublox/fix} subscription callback : $navSatFix")
-            this.setXpos(navSatFix.latitude)
-            this.setYpos(navSatFix.longitude)
+            locationPositionDTO.setXpos(navSatFix.latitude)
+            locationPositionDTO.setYpos(navSatFix.longitude)
+            locationPositionDTO.setHeading(45.0)
         }
-
-        // logger.info("Location NavSatFix lon : ${this.getXpos()}, lat : ${this.getYpos()}")
 
         this.rclBatteryStateSubscription.getDataObservable().subscribe {
             val batteryState : BatteryState = BatteryState.read(it)
             logger.info("RCL {/battery_state} subscription callback : $batteryState")
         }
 
-        val locationPosition : LocationPosition = LocationPosition(
-            xpos = xpos,
-            ypos = ypos,
-            heading = 45.0
-        )
+        val locationPosition : LocationPosition = locationPositionDTO.build()
 
         return LocationLastInfo(
             location = locationPosition,
@@ -145,9 +124,6 @@ class LocationResponseHandler(
         )
 
         val locationJSON : JsonObject = gson.toJsonTree(location).asJsonObject
-//        logger.info("Location Response JSON : $locationJSON")
-
-        val encryptedJson : String = jwtService.encode("location", locationJSON.toString())
 
         mqttService.bridge(MQTTConnectionType.TO_RMS, locationProperties.topic, locationJSON.toString())
     }

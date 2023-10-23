@@ -26,10 +26,8 @@ import java.time.Instant
 
 @Component
 class PathRequestHandler(
-    val log : MQTTLogger,
-    val pathProperties : PathProperties,
-    private val gson : Gson,
-    private val uuidService : UUIDService
+    private val log : MQTTLogger,
+    private val gson : Gson
 ) {
     private val logger : Logger = LoggerFactory.getLogger(this.javaClass)
     private val rclGoalWaypointsPublisher : Publisher<GoalWaypoints> = Publisher()
@@ -59,7 +57,6 @@ class PathRequestHandler(
         val currentTime : Instant = Instant.now()
 
         val stamp : Time = Time(currentTime.epochSecond.toInt(), currentTime.nano)
-        val header : net.wavem.uvc.ros.domain.std_msgs.Header = net.wavem.uvc.ros.domain.std_msgs.Header(stamp, "gts")
         val goal_waypoints_list : MutableList<Point> = mutableListOf()
 
         for ((index, locationJson) in locationList.withIndex()) {

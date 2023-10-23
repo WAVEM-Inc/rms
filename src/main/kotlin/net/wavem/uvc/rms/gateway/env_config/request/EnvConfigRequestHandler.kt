@@ -70,12 +70,6 @@ class EnvConfigRequestHandler(
         log.info(MQTTConnectionType.FROM_RMS, "envConfigsetInfoJson : [$setInfoJson]")
 
         renewMQTTIP(setInfoJson)
-
-        mqttService.bridge(
-            MQTTConnectionType.TO_UVC,
-            "/test/config",
-            envConfigJson.toString()
-        )
     }
 
     private companion object {

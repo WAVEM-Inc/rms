@@ -39,12 +39,6 @@ class ControlRequestHandler(
 
         val controlCmdJson : JsonObject = controlJson.getAsJsonObject(KEY_CONTROL_CMD)
         log.info(MQTTConnectionType.FROM_RMS, "control controlCmdJson : [$controlCmdJson]")
-
-        mqttService.bridge(
-            MQTTConnectionType.TO_UVC,
-            "/test/control",
-            controlJson.toString()
-        )
     }
 
     private companion object {

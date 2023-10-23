@@ -4,7 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a27e12f4-286f-4e61-bdd0-c816b7d24e25" name="Changes" comment="" />
+    <list default="true" id="a27e12f4-286f-4e61-bdd0-c816b7d24e25" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/rms/gateway/event/dto/EventInfoDTO.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/rms/gateway/location/dto/LocationPositionDTO.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/ros/domain/robot_status_msgs/SensorStatus.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/mqtt/infra/MQTTConfiguration.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/mqtt/infra/MQTTConfiguration.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/rms/gateway/control/request/ControlRequestHandler.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/rms/gateway/control/request/ControlRequestHandler.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/rms/gateway/env_config/request/EnvConfigRequestHandler.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/rms/gateway/env_config/request/EnvConfigRequestHandler.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/rms/gateway/event/response/EventResponseHandler.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/rms/gateway/event/response/EventResponseHandler.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/rms/gateway/location/response/LocationResponseHandler.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/rms/gateway/location/response/LocationResponseHandler.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/rms/gateway/path/request/PathRequestHandler.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/net/wavem/uvc/rms/gateway/path/request/PathRequestHandler.kt" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -15,14 +26,23 @@
       <ProjectState />
     </projectState>
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Kotlin Class" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 5
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
   <component name="ProjectId" id="2WyHrZpc8XUoRZ1QGA0Gl1w5rZH" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -31,7 +51,7 @@
   "keyToString": {
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main"
+    "git-widget-placeholder": "Dev__Reidlo__231019"
   }
 }]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
