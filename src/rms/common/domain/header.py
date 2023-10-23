@@ -1,6 +1,13 @@
 
 class Header():
-    def __init__(self, robotCorpId=None, workCorpId=None, workSiteId=None, robotId=None, robotType=None):
+    def __init__(
+        self,
+        robotCorpId: str = None,
+        workCorpId: str = None,
+        workSiteId: str = None,
+        robotId: str = None,
+        robotType: str = None
+    ):
         self.robotCorpId = robotCorpId
         self.workCorpId = workCorpId
         self.workSiteId = workSiteId

@@ -1,6 +1,12 @@
 
 class ComInfo():
-    def __init__(self, status=None, robotIP=None, mqttIP=None, mqttPort=None) -> None:
+    def __init__(
+        self,
+        status: str = None,
+        robotIP: str = None,
+        mqttIP: str = None,
+        mqttPort: str = None
+    ) -> None:
         self.status = status
         self.robotIP = robotIP
         self.mqttIP = mqttIP
