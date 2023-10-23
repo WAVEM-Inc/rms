@@ -1,7 +1,7 @@
-# rclpy_mqtt_bridge
+# RMDE(RMS MQTT Data Exchanger)
 
 ## Document
-- [rclpy_mqtt_bridge - For RCLPY(foxy)-MQTT connection](#rclpy_mqtt_bridge)
+- [RMDE(RMDE MQTT Data Exchanger) - For exchange data between ROS2 and MQTT](#rmderms-mqtt-data-exchanger)
   - [Document](#document)
   - [Environment](#1-environment)
   - [SetUp Installation](#2-setup-installation)
@@ -18,10 +18,10 @@
 
 
 ## 1. Environment
-* <img src="https://img.shields.io/badge/python-3776AB?style=for-the-badge&logo=python&logoColor=white">
+* <img src="https://img.shields.io/badge/ROS2 Foxy-22314E?style=for-the-badge&logo=ros&logoColor=white">
+* <img src="https://img.shields.io/badge/python 3.8.10-3776AB?style=for-the-badge&logo=python&logoColor=white">
 * <img src="https://img.shields.io/badge/mqtt-660066?style=for-the-badge&logo=mqtt&logoColor=white">
-* <img src="https://img.shields.io/badge/ROS2-22314E?style=for-the-badge&logo=ros&logoColor=white">
-* <img src="https://img.shields.io/badge/ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white">
+* <img src="https://img.shields.io/badge/ubuntu 20.04-E95420?style=for-the-badge&logo=ubuntu&logoColor=white">
 
 ## 2. SetUp Installation
 
@@ -44,6 +44,8 @@ sudo apt-get install mosquitto-dev
 
 ### 2-2. Install python-dev-is-python3
 ```bash
+sudo apt install python3-sphinx python3-pip
+sudo -H pip3 install sphinx_autodoc_typehints
 sudo apt-get install python-dev-is-python3
 ```
 
@@ -57,18 +59,20 @@ sudo apt-get install ros-foxy-rosbridge-library
 ### 3-1. Clone Project
 ```bash
 cd ${your ros2 workspace}/src
-git clone https://github.com/reidlo5135/rclpy_mqtt_bridge.git
+git clone https://github.com/reidlo5135/rmde.git
 ```
 
 ### 3-2. Build Project
 ```bash
-cd ${your ros2 workspace}/src/rclpy_mqtt_bridge
+cd ${your ros2 workspace}/src/rmde
 
 # install required pip3 modules
 # msgpack-python>=0.4.8
 # paho-mqtt>=1.2
 # cryptography>=2.8
 pip3 install -r requirements.txt
+
+pip install -e .
 
 # build ros2 package
 colcon build --symlink-install

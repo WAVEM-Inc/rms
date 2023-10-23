@@ -12,6 +12,7 @@ class JobResult():
     ) -> None:
         self.status = status
         self.startTime = startTime
+        self.endTime = endTime
         self.startBatteryLevel = startBatteryLevel
         self.endBatteryLevel = endBatteryLevel
         self.dist = dist
