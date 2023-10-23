@@ -13,13 +13,17 @@ class rmde_node(Node):
     rclpy_flag: str = 'RCLPY'
     mqtt_flag: str = 'MQTT'
     mqtt_broker: broker.mqtt_broker = broker.mqtt_broker()
-    event_response_handler: EventResponseHandler = EventResponseHandler(mqtt_broker)
+    event_response_handler: EventResponseHandler
     
     def __init__(self) -> None:
         super().__init__(self.node_name)
         self.get_logger().info('===== {} [{}] created ====='.format(self.rclpy_flag, self.node_name))
+        
+        self.event_response_handler = EventResponseHandler(self, self.mqtt_broker)
+        
         rclpy_timer_loop: float = 1.0
         self.create_timer(rclpy_timer_loop, self.__from_uvc_to_rms__)
+        
         self.__from_rms_to_uvc__()
     
     
