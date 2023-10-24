@@ -9,8 +9,6 @@ from rms.response.event.handler.event_response_handler import EventResponseHandl
 
 from rms.request.path.handler.path_request_handler import PathRequestHandler
 
-from typing import List
-from typing import Dict
 
 class rmde_node(Node):
     node_name: str = 'rmde'
@@ -35,7 +33,6 @@ class rmde_node(Node):
     
     
     def __from_uvc_to_rms__(self) -> None:
-        self.event_response_handler.response_to_uvc()
         self.location_response_handler.response_to_uvc()
         
     

@@ -8,6 +8,7 @@ from rclpy.qos import qos_profile_system_default
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from sensor_msgs.msg import NavSatFix
+from sensor_msgs.msg import BatteryState
 
 from mqtt import broker
 from rms.common.application.uuid_service import UUIDService
@@ -28,6 +29,8 @@ from rms.response.location.domain.lastInfo.location.last_info_location import La
 
 class LocationResponseHandler():
     rclpy_gps_subscription_topic: str = '/ublox/fix'
+    rclpy_battery_state_subscription_topic: str = '/battery/state'
+    
     mqtt_location_publisher_topic: str = 'hubilon/atcplus/ros/location'
     
     
@@ -43,6 +46,15 @@ class LocationResponseHandler():
             callback_group = self.gps_subscription_cb_group
         )
         
+        self.battery_state_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.battery_state_subscription: Subscription = self.rclpy_node.create_subscription(
+            msg_type = BatteryState,
+            topic = self.rclpy_battery_state_subscription_topic,
+            callback = self.rclpy_battery_state_subscription_cb,
+            qos_profile = qos_profile_sensor_data,
+            callback_group = self.battery_state_subscription_cb_group
+        )
+        
         self.mqtt_broker: broker.mqtt_broker = mqtt_broker
         self.uuid_service: UUIDService = UUIDService()
         self.time_service: TimeService = TimeService()
@@ -50,6 +62,9 @@ class LocationResponseHandler():
         self.location_xpos: float = 0.0
         self.location_ypos: float = 0.0
         self.heading: float = 45.0
+        self.battery_level: float = 0.0
+        self.velocity: float = 0.0
+        self.total_dist: int = 0
         
         
     def rclpy_gps_subscription_cb(self, gps_cb: NavSatFix) -> None:
@@ -63,6 +78,12 @@ class LocationResponseHandler():
         self.location_xpos = gps_cb.latitude
         self.location_ypos = gps_cb.longitude
         self.heading = gps_cb.altitude
+    
+    
+    def rclpy_battery_state_subscription_cb(self, battery_state_cb: BatteryState) -> None:
+        self.rclpy_node.get_logger().info(
+            'Location BatteryState cb'
+        )
     
     
     def build_location(self) -> Location:
@@ -85,7 +106,7 @@ class LocationResponseHandler():
             workCorpId = 'wco0000001',
             workSiteId = 'wst0000001',
             robotId = 'rbt0000001',
-            robotType = str(RobotType.AMR)
+            robotType = RobotType.AMR.value
         )
 
         return header
@@ -97,9 +118,9 @@ class LocationResponseHandler():
         job_order_id: str = self.uuid_service.generate_uuid()
         
         task_info: TaskInfo = TaskInfo(
-            jobGroup = str(JobGroupType.SUPPLY),
-            jobKind = str(JobKindType.MOVE),
-            taskStatus = str(TaskStatusType.ASSIGNED)
+            jobGroup = JobGroupType.SUPPLY.value,
+            jobKind = JobKindType.MOVE.value,
+            taskStatus = TaskStatusType.ASSIGNED.value
         )
         
         job_info: JobInfo = JobInfo(
@@ -121,11 +142,11 @@ class LocationResponseHandler():
         
         last_info: LastInfo = LastInfo(
             location = last_info_location.__dict__,
-            areaClsf = str(AreaCLSFType.INDOOR),
+            areaClsf = AreaCLSFType.INDOOR.value,
             floor = "1F",
-            batteryLevel = 50,
-            velocity = 1.5,
-            totalDist = 300
+            batteryLevel = self.battery_level,
+            velocity = self.velocity,
+            totalDist = self.total_dist
         )
         
         return last_info
@@ -133,10 +154,7 @@ class LocationResponseHandler():
     
     def response_to_uvc(self) -> None:
         built_location: Location = self.build_location()
-        self.mqtt_broker.client.publish(
-            self.mqtt_location_publisher_topic,
-            json.dumps(built_location.__dict__)
-        )
+        self.mqtt_broker.client.publish(self.mqtt_location_publisher_topic, json.dumps(built_location.__dict__))
         
 
 __all__ = ['location_response_handler']
