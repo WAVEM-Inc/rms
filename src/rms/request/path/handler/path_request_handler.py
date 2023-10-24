@@ -12,7 +12,7 @@ from rosbridge_library.internal import message_conversion
 from geometry_msgs.msg import Point
 from gts_navigation_msgs.msg import GoalWaypoints
 
-from mqtt import broker
+from mqtt import mqtt_client
 
 from rms.common.domain.header import Header
 from rms.request.path.domain.path import Path
@@ -20,7 +20,6 @@ from rms.request.path.domain.jobInfo.job_info import JobInfo
 from rms.request.path.domain.jobPath.job_path import JobPath
 
 from typing import Any
-from typing import List
 from typing import Dict
 
 
@@ -32,7 +31,7 @@ class PathRequestHandler():
     mqtt_path_subscription_topic: str = 'hubilon/atcplus/rms/path'
     
     
-    def __init__(self, rclpy_node: Node, mqtt_broker: broker.mqtt_broker) -> None:
+    def __init__(self, rclpy_node: Node, mqtt_broker: mqtt_client.Client) -> None:
         self.rclpy_node: Node = rclpy_node
         
         self.goal_waypoints_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
@@ -43,7 +42,7 @@ class PathRequestHandler():
             callback_group = self.goal_waypoints_cb_group    
         )
         
-        self.mqtt_broker: broker.mqtt_broker = mqtt_broker
+        self.mqtt_broker: mqtt_client.Client = mqtt_broker
         self.path: Path = Path()
         self.header: Header = Header()
         self.jobInfo: JobInfo = JobInfo()
@@ -81,7 +80,6 @@ class PathRequestHandler():
             
             self.rclpy_node.get_logger().info('JobPath LocationList {}'.format(self.jobPath.locationList))
             self.__publish_goal_waypoints_list__(self.jobPath.locationList)
-            
             
         self.mqtt_broker.client.subscribe(self.mqtt_path_subscription_topic)
         self.mqtt_broker.client.message_callback_add(self.mqtt_path_subscription_topic, mqtt_path_subscription_cb)

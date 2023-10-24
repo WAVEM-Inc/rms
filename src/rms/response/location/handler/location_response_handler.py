@@ -10,7 +10,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import BatteryState
 
-from mqtt import broker
+from mqtt import mqtt_client
 from rms.common.application.uuid_service import UUIDService
 from rms.common.application.time_service import TimeService
 from rms.common.domain.type.robot.robot_type import RobotType
@@ -34,7 +34,7 @@ class LocationResponseHandler():
     mqtt_location_publisher_topic: str = 'hubilon/atcplus/ros/location'
     
     
-    def __init__(self, rclpy_node: Node, mqtt_broker: broker.mqtt_broker) -> None:
+    def __init__(self, rclpy_node: Node, mqtt_broker: mqtt_client.Client) -> None:
         self.rclpy_node = rclpy_node
         
         self.gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
@@ -55,7 +55,7 @@ class LocationResponseHandler():
             callback_group = self.battery_state_subscription_cb_group
         )
         
-        self.mqtt_broker: broker.mqtt_broker = mqtt_broker
+        self.mqtt_broker: mqtt_client.Client = mqtt_broker
         self.uuid_service: UUIDService = UUIDService()
         self.time_service: TimeService = TimeService()
         

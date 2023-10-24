@@ -10,7 +10,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from sensor_msgs.msg import NavSatFix
 from robot_status_msgs.msg import SensorStatus
 
-from mqtt import broker
+from mqtt import mqtt_client
 from rms.common.application.uuid_service import UUIDService
 from rms.common.application.time_service import TimeService
 from rms.common.domain.type.robot.robot_type import RobotType
@@ -40,7 +40,7 @@ class EventResponseHandler():
     mqtt_event_publisher_topic: str = 'hubilon/atcplus/ros/event'
     
     
-    def __init__(self, rclpy_node: Node, mqtt_broker: broker.mqtt_broker) -> None:
+    def __init__(self, rclpy_node: Node, mqtt_broker: mqtt_client.Client) -> None:
         self.rclpy_node: Node = rclpy_node
         
         self.ublox_fix_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
@@ -88,7 +88,7 @@ class EventResponseHandler():
             callback_group = self.battery_state_status_subscription_cb_group
         )
 
-        self.mqtt_broker: broker.mqtt_broker = mqtt_broker
+        self.mqtt_broker: mqtt_client.Client = mqtt_broker
         self.uuid_service: UUIDService = UUIDService()
         self.time_service: TimeService = TimeService()
         
@@ -98,7 +98,7 @@ class EventResponseHandler():
         self.sensor_status: str = ""
         self.location_xpos: float = 0.0
         self.location_ypos: float = 0.0
-        self.heading: float = 45.0
+        self.heading: float = 0.0
     
     
     def rclpy_ublox_fix_subscription_cb(self, ublox_fix_cb: NavSatFix) -> None:

@@ -21,7 +21,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "exchanger = main:main"
+            "rmde_executor = main:main"
         ],
     },
 )
