@@ -1,4 +1,4 @@
-from rms.response.event.domain.eventInfo.location.event_location import EventLocation
+from rms.response.event.domain.eventInfo.location.event_info_location import EventInfoLocation
 
 
 class EventInfo():

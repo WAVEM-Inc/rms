@@ -1,9 +1,11 @@
 import rclpy
+import paho.mqtt.client as mqtt
 
 from rclpy.node import Node
 from mqtt import broker
+
+from rms.response.location.handler.location_response_handler import LocationResponseHandler
 from rms.response.event.handler.event_response_handler import EventResponseHandler
-import paho.mqtt.client as mqtt
 
 from typing import List
 from typing import Dict
@@ -19,6 +21,7 @@ class rmde_node(Node):
         super().__init__(self.node_name)
         self.get_logger().info('===== {} [{}] created ====='.format(self.rclpy_flag, self.node_name))
         
+        self.location_response_handler = LocationResponseHandler(self, self.mqtt_broker)
         self.event_response_handler = EventResponseHandler(self, self.mqtt_broker)
         
         rclpy_timer_loop: float = 1.0
@@ -29,6 +32,7 @@ class rmde_node(Node):
     
     def __from_uvc_to_rms__(self) -> None:
         self.event_response_handler.response_to_uvc()
+        self.location_response_handler.response_to_uvc()
         
     
     def __from_rms_to_uvc__(self) -> None:

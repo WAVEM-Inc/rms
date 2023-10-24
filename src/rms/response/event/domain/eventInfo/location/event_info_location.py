@@ -1,5 +1,5 @@
 
-class EventLocation():
+class EventInfoLocation():
     def __init__(
         self,
         xpos: float = None,
