@@ -7,7 +7,10 @@ class ComInfo():
         mqttIP: str = None,
         mqttPort: str = None
     ) -> None:
-        self.status = status
-        self.robotIP = robotIP
-        self.mqttIP = mqttIP
-        self.mqttPort = mqttPort
+        self.status: str = status
+        self.robotIP: str = robotIP
+        self.mqttIP: str = mqttIP
+        self.mqttPort: str = mqttPort
+        
+
+__all__ = ['com_info']

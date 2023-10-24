@@ -6,6 +6,9 @@ class TaskInfo():
         jobKind: str = None,
         taskStatus: str = None
     ) -> None:
-        self.jobGroup = jobGroup
-        self.jobKind = jobKind
-        self.taskStatus = taskStatus
+        self.jobGroup: str = jobGroup
+        self.jobKind: str = jobKind
+        self.taskStatus: str = taskStatus
+        
+
+__all__ = ['task_info']

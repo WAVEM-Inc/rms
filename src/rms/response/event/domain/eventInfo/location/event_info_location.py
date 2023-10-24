@@ -9,3 +9,6 @@ class EventInfoLocation():
         self.xpos = xpos
         self.ypos = ypos
         self.heading = heading
+        
+
+__all__ = ['event_info_location']

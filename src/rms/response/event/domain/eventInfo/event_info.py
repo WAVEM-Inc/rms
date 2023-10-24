@@ -19,3 +19,6 @@ class EventInfo():
         self.floor = floor
         self.batteryLevel = batteryLevel
         self.location = location
+        
+
+__all__ = ['event_info']

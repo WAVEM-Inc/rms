@@ -5,12 +5,14 @@ class JobInfo():
         jobPlanId: str = None,
         jobGroupId: str = None,
         jobOrderId: str = None,
-        taskInfo: dict = None
+        jobGroup: str = None,
+        jobKind: str = None
     ) -> None:
         self.jobPlanId: str = jobPlanId
         self.jobGroupId: str = jobGroupId
         self.jobOrderId: str = jobOrderId
-        self.taskInfo: dict = taskInfo
+        self.jobGroup: str = jobGroup
+        self.jobKind: str = jobKind
         
-        
+
 __all__ = ['job_info']

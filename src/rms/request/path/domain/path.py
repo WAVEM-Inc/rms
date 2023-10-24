@@ -1,14 +1,14 @@
 
-class Location():
+class Path():
     def __init__(
         self,
         header: dict = None,
         jobInfo: dict = None,
-        lastInfo: dict = None
+        jobPath: dict = None
     ) -> None:
         self.header: dict = header
         self.jobInfo: dict = jobInfo
-        self.lastInfo: dict = lastInfo
+        self.jobPath: dict = jobPath
         
         
-__all__ = ['location']
+__all__ = ['path']

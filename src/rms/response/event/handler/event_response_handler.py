@@ -200,3 +200,6 @@ class EventResponseHandler():
             self.mqtt_event_publisher_topic,
             json.dumps(built_event.__dict__)
         )
+        
+
+__all__ = ['event_response_handler']

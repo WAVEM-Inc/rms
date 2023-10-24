@@ -11,3 +11,6 @@ class Event():
         self.taskInfo = taskInfo
         self.eventInfo = eventInfo
         self.comInfo = comInfo
+        
+
+__all__ = ['event']

@@ -137,3 +137,6 @@ class LocationResponseHandler():
             self.mqtt_location_publisher_topic,
             json.dumps(built_location.__dict__)
         )
+        
+
+__all__ = ['location_response_handler']

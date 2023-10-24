@@ -9,9 +9,12 @@ class LastInfo():
         velocity: float = None,
         totalDist: int = None
     ) -> None:
-        self.location = location
-        self.areaClsf = areaClsf
-        self.floor = floor
-        self.batteryLevel = batteryLevel
-        self.velocity = velocity
-        self.totalDist = totalDist
+        self.location: dict = location
+        self.areaClsf: str = areaClsf
+        self.floor: str = floor
+        self.batteryLevel: int = batteryLevel
+        self.velocity: int = velocity
+        self.totalDist: int = totalDist
+        
+
+__all__ = ['last_info']
