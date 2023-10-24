@@ -16,3 +16,6 @@ class JobResult():
         self.startBatteryLevel = startBatteryLevel
         self.endBatteryLevel = endBatteryLevel
         self.dist = dist
+        
+
+__all__ = ['job_result']

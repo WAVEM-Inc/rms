@@ -1,5 +1,5 @@
 
-class EventLocation():
+class EventInfoLocation():
     def __init__(
         self,
         xpos: float = None,
@@ -9,3 +9,6 @@ class EventLocation():
         self.xpos = xpos
         self.ypos = ypos
         self.heading = heading
+        
+
+__all__ = ['event_info_location']

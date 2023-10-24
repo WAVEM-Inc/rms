@@ -16,3 +16,6 @@ class TaskInfo():
         self.jobGroup = jobGroup
         self.jobKind = jobKind
         self.jobResult = jobResult
+        
+        
+__all__ = ['task_info']

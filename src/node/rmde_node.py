@@ -1,25 +1,34 @@
 import rclpy
-
-from rclpy.node import Node
-from mqtt import broker
-from rms.response.event.handler.event_response_handler import EventResponseHandler
 import paho.mqtt.client as mqtt
 
-from typing import List
-from typing import Dict
+from rclpy.node import Node
+from mqtt import mqtt_client
+
+from rms.response.location.handler.location_response_handler import LocationResponseHandler
+from rms.response.event.handler.event_response_handler import EventResponseHandler
+
+from rms.request.path.handler.path_request_handler import PathRequestHandler
+from rms.request.control.handler.control_request_handler import ControlRequestHandler
+from rms.request.env_config.handler.env_config_request_handler import EnvConfigRequestHandler
+
 
 class rmde_node(Node):
     node_name: str = 'rmde'
     rclpy_flag: str = 'RCLPY'
     mqtt_flag: str = 'MQTT'
-    mqtt_broker: broker.mqtt_broker = broker.mqtt_broker()
-    event_response_handler: EventResponseHandler
+    mqtt_broker: mqtt_client.Client = mqtt_client.Client()
+    
     
     def __init__(self) -> None:
         super().__init__(self.node_name)
         self.get_logger().info('===== {} [{}] created ====='.format(self.rclpy_flag, self.node_name))
         
-        self.event_response_handler = EventResponseHandler(self, self.mqtt_broker)
+        self.location_response_handler: LocationResponseHandler = LocationResponseHandler(self, self.mqtt_broker)
+        self.event_response_handler: EventResponseHandler = EventResponseHandler(self, self.mqtt_broker)
+        
+        self.path_request_handler: PathRequestHandler = PathRequestHandler(self, self.mqtt_broker)
+        self.control_request_handler: ControlRequestHandler = ControlRequestHandler(self, self.mqtt_broker)
+        self.evn_config_request_handler: EnvConfigRequestHandler = EnvConfigRequestHandler(self, self.mqtt_broker)
         
         rclpy_timer_loop: float = 1.0
         self.create_timer(rclpy_timer_loop, self.__from_uvc_to_rms__)
@@ -28,22 +37,13 @@ class rmde_node(Node):
     
     
     def __from_uvc_to_rms__(self) -> None:
-        self.event_response_handler.response_to_uvc()
+        self.location_response_handler.response_to_uvc()
         
     
     def __from_rms_to_uvc__(self) -> None:
-        mqtt_topic_list: List = ['hubilon/atcplus/rms/path', 'hubilon/atcplus/rms/control', 'hubilon/atcplus/rms/config']
-        
-        def mqtt_subscription_callback(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
-            mqtt_topic: str = mqtt_message.topic
-            mqtt_decoded_payload: str = mqtt_message.payload.decode()
-
-            self.get_logger().info("{} MQTT received message [{}] from [{}]".format(self.mqtt_flag, mqtt_decoded_payload, mqtt_topic))
-        
-        for mqtt_topic in mqtt_topic_list:
-            self.get_logger().info('{} [{}] subscription granted'.format(self.mqtt_flag, mqtt_topic))
-            self.mqtt_broker.client.subscribe(mqtt_topic)
-            self.mqtt_broker.client.message_callback_add(mqtt_topic, mqtt_subscription_callback)
+        self.path_request_handler.request_to_uvc()
+        self.control_request_handler.request_to_uvc()
+        self.evn_config_request_handler.request_to_uvc()
         
 
 
