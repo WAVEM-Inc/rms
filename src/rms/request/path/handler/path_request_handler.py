@@ -81,7 +81,7 @@ class PathRequestHandler():
             self.rclpy_node.get_logger().info('JobPath LocationList {}'.format(self.jobPath.locationList))
             self.__publish_goal_waypoints_list__(self.jobPath.locationList)
             
-        self.mqtt_broker.client.subscribe(self.mqtt_path_subscription_topic)
+        self.mqtt_broker.subscribe(topic = self.mqtt_path_subscription_topic, qos = 2)
         self.mqtt_broker.client.message_callback_add(self.mqtt_path_subscription_topic, mqtt_path_subscription_cb)
 
     

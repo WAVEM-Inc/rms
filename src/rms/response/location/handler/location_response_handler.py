@@ -180,7 +180,7 @@ class LocationResponseHandler():
     
     def response_to_uvc(self) -> None:
         built_location: Location = self.build_location()
-        self.mqtt_broker.client.publish(self.mqtt_location_publisher_topic, json.dumps(built_location.__dict__))
+        self.mqtt_broker.publish(topic = self.mqtt_location_publisher_topic, payload = json.dumps(built_location.__dict__), qos = 0)
         
 
 __all__ = ['location_response_handler']

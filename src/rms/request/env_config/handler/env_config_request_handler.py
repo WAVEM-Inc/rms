@@ -64,5 +64,5 @@ class EnvConfigRequestHandler():
                 self.config_parser.write(mqtt_config_file)
                 self.rclpy_node.get_logger().info('===== MQTT Broker has been changed with [{}] reboot required =====' % self.set_info.mqttIP)
             
-        self.mqtt_broker.client.subscribe(self.mqtt_path_subscription_topic)
+        self.mqtt_broker.subscribe(topic = self.mqtt_path_subscription_topic, qos = 0)
         self.mqtt_broker.client.message_callback_add(self.mqtt_path_subscription_topic, mqtt_path_subscription_cb)

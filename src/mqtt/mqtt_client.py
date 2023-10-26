@@ -122,7 +122,7 @@ class Client:
         
 
 
-    def publish(self, topic: str, payload: Any) -> None:
+    def publish(self, topic: str, payload: Any, qos: int) -> None:
         
         """ Description
         
@@ -140,10 +140,10 @@ class Client:
         
         """
         
-        self.client.publish(topic=topic, payload=payload, qos=0)
+        self.client.publish(topic = topic, payload = payload, qos = qos)
 
 
-    def subscribe(self, topic: str) -> None:
+    def subscribe(self, topic: str, qos: int) -> None:
         
         """ Description
         
@@ -160,8 +160,8 @@ class Client:
         
         """
         
-        self.__mqtt_logger__.info("MQTT granted subscription from [{}]".format(topic))
-        self.client.subscribe(topic=topic, qos=0)
+        self.__mqtt_logger__.info('MQTT granted subscription\n\ttopic : {%s}\n\tqos : {%d}' % (topic, qos))
+        self.client.subscribe(topic = topic, qos = qos)
 
 
 __all__ = ["mqtt_client"]
