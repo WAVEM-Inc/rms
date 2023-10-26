@@ -280,7 +280,7 @@ class EventResponseHandler():
 
     def response_to_uvc(self) -> None:
         built_event: Event = self.build_event()
-        self.mqtt_broker.client.publish(self.mqtt_event_publisher_topic, json.dumps(built_event.__dict__))
+        self.mqtt_broker.publish(topic = self.mqtt_event_publisher_topic, payload = json.dumps(built_event.__dict__), qos = 0)
         
 
 __all__ = ['event_response_handler']

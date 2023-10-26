@@ -9,6 +9,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import BatteryState
+from robot_status_msgs.msg import VelocityStatus
 
 from mqtt import mqtt_client
 from rms.common.application.uuid_service import UUIDService
@@ -30,6 +31,7 @@ from rms.response.location.domain.lastInfo.location.last_info_location import La
 class LocationResponseHandler():
     rclpy_gps_subscription_topic: str = '/ublox/fix'
     rclpy_battery_state_subscription_topic: str = '/battery/state'
+    rclpy_velocity_state_subscription_topic: str = '/velocity/state'
     
     mqtt_location_publisher_topic: str = 'hubilon/atcplus/ros/location'
     
@@ -53,6 +55,15 @@ class LocationResponseHandler():
             callback = self.rclpy_battery_state_subscription_cb,
             qos_profile = qos_profile_sensor_data,
             callback_group = self.battery_state_subscription_cb_group
+        )
+        
+        self.velocity_state_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.velocity_state_subscription: Subscription = self.rclpy_node.create_subscription(
+            msg_type = VelocityStatus,
+            topic = self.rclpy_velocity_state_subscription_topic,
+            callback = self.rclpy_velocity_state_subscription_cb,
+            qos_profile = qos_profile_sensor_data,
+            callback_group = self.velocity_state_subscription_cb_group
         )
         
         self.mqtt_broker: mqtt_client.Client = mqtt_broker
@@ -84,6 +95,21 @@ class LocationResponseHandler():
         self.rclpy_node.get_logger().info(
             'Location BatteryState cb'
         )
+    
+    
+    def rclpy_velocity_state_subscription_cb(self, velocity_state_cb: VelocityStatus) -> None:
+        current_velocity: float = velocity_state_cb.current_velocity
+        distance: float = velocity_state_cb.distance
+        
+        self.rclpy_node.get_logger().info(
+            'Location VelocityState cb\n\tcurrent_velocity : "%f"\n\tdistance : "%f"' % (
+                current_velocity,
+                distance
+            )
+        )
+        
+        self.velocity = current_velocity
+        self.total_dist = distance
     
     
     def build_location(self) -> Location:
@@ -154,7 +180,7 @@ class LocationResponseHandler():
     
     def response_to_uvc(self) -> None:
         built_location: Location = self.build_location()
-        self.mqtt_broker.client.publish(self.mqtt_location_publisher_topic, json.dumps(built_location.__dict__))
+        self.mqtt_broker.publish(topic = self.mqtt_location_publisher_topic, payload = json.dumps(built_location.__dict__), qos = 0)
         
 
 __all__ = ['location_response_handler']

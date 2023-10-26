@@ -9,7 +9,7 @@ from rclpy.qos import qos_profile_system_default
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rosbridge_library.internal import message_conversion
 
-from geometry_msgs.msg import Point
+from sensor_msgs.msg import NavSatFix
 from gts_navigation_msgs.msg import GoalWaypoints
 
 from mqtt import mqtt_client
@@ -81,7 +81,7 @@ class PathRequestHandler():
             self.rclpy_node.get_logger().info('JobPath LocationList {}'.format(self.jobPath.locationList))
             self.__publish_goal_waypoints_list__(self.jobPath.locationList)
             
-        self.mqtt_broker.client.subscribe(self.mqtt_path_subscription_topic)
+        self.mqtt_broker.subscribe(topic = self.mqtt_path_subscription_topic, qos = 2)
         self.mqtt_broker.client.message_callback_add(self.mqtt_path_subscription_topic, mqtt_path_subscription_cb)
 
     
@@ -99,11 +99,11 @@ class PathRequestHandler():
         goal_waypoints_list: list = []
         
         for location in location_list:
-            rclpy_msg_type: Any = self.__lookup_object__('geometry_msgs.msg', 'Point')
+            rclpy_msg_type: Any = self.__lookup_object__('sensor_msgs.msg', 'NavSatFix')
             location_to_point: dict = {
-                'x': location['xpos'],
-                'y': location['ypos'],
-                'z': 45.0
+                'latitude': location['xpos'],
+                'longitude': location['ypos'],
+                'altitude': 0.0
             }
             point: Any = message_conversion.populate_instance(location_to_point, rclpy_msg_type())
             goal_waypoints_list.append(point)

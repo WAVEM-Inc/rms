@@ -88,7 +88,7 @@ class Logger:
             self.__log__(start_color, self.__info__, message, end_color)
         """
         
-        rclpy_node_name: str = "rclpy_mqtt_bridge"
+        rclpy_node_name: str = 'rmde'
         formatted_current_time: str = self.__get_current_time__()
         print(
             start_color

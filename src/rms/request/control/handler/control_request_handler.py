@@ -53,5 +53,5 @@ class ControlRequestHandler():
                 stop = self.control.controlCmd['stop']
             )
             
-        self.mqtt_broker.client.subscribe(self.mqtt_path_subscription_topic)
+        self.mqtt_broker.subscribe(topic = self.mqtt_path_subscription_topic, qos = 1)
         self.mqtt_broker.client.message_callback_add(self.mqtt_path_subscription_topic, mqtt_path_subscription_cb)
