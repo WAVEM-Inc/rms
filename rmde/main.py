@@ -13,8 +13,8 @@ def main(args=None) -> None:
         rclpy.spin(node)
     except ROSInterruptException:
         node.get_logger().warn('===== {} [{}] terminated with Ctrl-C ====='.format(node.rclpy_flag, node.node_name))
-        node.mqtt_broker.client.disconnect()
-        node.mqtt_broker.client.loop_stop()
+        node.mqtt_client.client.disconnect()
+        node.mqtt_client.client.loop_stop()
     
     node.destroy_node()
     rclpy.shutdown()
