@@ -1,5 +1,0 @@
-host: "localhost"
-port: 1883
-client_name: "rmde"
-client_keep_alive: 60
-  

@@ -202,20 +202,8 @@ class Logger:
 
 """
 class Client:
-    config_parser: configparser.ConfigParser = configparser.ConfigParser()
-    script_directory: str = os.path.dirname(os.path.abspath(__file__))
-    config_file_path: str = os.path.join(script_directory, 'mqtt.ini')
-    config_parser.read(config_file_path)
-    
-    # __broker_address__: str = config_parser.get('broker', 'host')
-    # __broker_port__: int = int(config_parser.get('broker', 'port'))
-    # __client_name__: str = config_parser.get('broker', 'client_name')
-    # __client_keep_alive__: int = int(config_parser.get('broker', 'client_keep_alive'))
-    
-    __mqtt_logger__: Logger = Logger()
 
-
-    def __init__(self, rclpy_node: Node) -> None:
+    def __init__(self) -> None:
         
         """ Description
         
@@ -232,16 +220,19 @@ class Client:
         Usage:
             __mqtt_manager__: broker.mqtt_broker = broker.mqtt_broker()
         """
+
+        self.__config_parser__: configparser.ConfigParser = configparser.ConfigParser()
+        self.__script_directory__: str = os.path.dirname(os.path.abspath(__file__))
+        self.__config_file_path__: str = os.path.join(self.__script_directory__, 'mqtt.ini')
+        self.__config_parser__.read(self.__config_file_path__)
         
-        self.rclpy_node: Node = rclpy_node
+        self.__mqtt_logger__: Logger = Logger()
+        self.__broker_address__: str = self.__config_parser__.get('broker', 'host')
+        self.__broker_port__: int = int(self.__config_parser__.get('broker', 'port'))
+        self.__client_name__: str = self.__config_parser__.get('broker', 'client_name')
+        self.__client_keep_alive__: int = int(self.__config_parser__.get('broker', 'client_keep_alive'))
         
-        self.__broker_address__: str = self.rclpy_node.get_parameter_or('host', rclpy.Parameter('host', rclpy.Parameter.Type.STRING, 'localhost')).get_parameter_value().string_value
-        print('broker address : %s' % self.__broker_address__)
-        self.__broker_port__: int = self.rclpy_node.get_parameter_or('port', rclpy.Parameter('port', rclpy.Parameter.Type.INTEGER, 1883)).get_parameter_value().integer_value
-        self.__client_name__: str = self.rclpy_node.get_parameter_or('client_name', rclpy.Parameter('client_name', rclpy.Parameter.Type.STRING, 'rmde')).get_parameter_value().string_value
-        self.__client_keep_alive__: int = self.rclpy_node.get_parameter_or('client_keep_alive', rclpy.Parameter('client_keep_alive', rclpy.Parameter.Type.INTEGER, 60)).get_parameter_value().integer_value
-        
-        self.client: mqtt.Client = mqtt.Client(self.__client_name__, clean_session=True, userdata=None, transport='tcp')
+        self.client: mqtt.Client = mqtt.Client(self.__client_name__, clean_session = True, userdata = None, transport = 'tcp')
         
         self.client.on_connect = self.__on_connect__
         self.client.on_message = self.__on_message__
