@@ -334,4 +334,4 @@ class Client:
         self.client.subscribe(topic = topic, qos = qos)
 
 
-__all__ = ["mqtt_client"]
+__all__ = ['mqtt_client']

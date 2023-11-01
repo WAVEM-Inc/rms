@@ -11,18 +11,12 @@ def generate_launch_description():
     package_shared_directory: str = get_package_share_directory(package_name)
     executable_name: str = 'rmde_executor'
 
-    mqtt_broker_parameter = os.path.join(
-        package_shared_directory,
-        'parameter',
-        'mqtt_broker_params.yaml'
-    )
-
     rmde_executor_node = Node(
         package=package_name,
         executable=executable_name,
         name=executable_name,
         output='screen',
-        parameters=[mqtt_broker_parameter]
+        parameters=[]
     )
 
     ld.add_action(rmde_executor_node)
