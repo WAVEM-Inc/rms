@@ -227,8 +227,8 @@ class Client:
         self.__config_parser__.read(self.__config_file_path__)
         
         self.__mqtt_logger__: Logger = Logger()
-        self.__broker_address__: str = self.__config_parser__.get('broker', 'host')
-        self.__broker_port__: int = int(self.__config_parser__.get('broker', 'port'))
+        self.broker_address: str = self.__config_parser__.get('broker', 'host')
+        self.broker_port: int = int(self.__config_parser__.get('broker', 'port'))
         self.__client_name__: str = self.__config_parser__.get('broker', 'client_name')
         self.__client_keep_alive__: int = int(self.__config_parser__.get('broker', 'client_keep_alive'))
         
@@ -236,10 +236,10 @@ class Client:
         
         self.client.on_connect = self.__on_connect__
         self.client.on_message = self.__on_message__
-        self.client.connect(self.__broker_address__, self.__broker_port__, self.__client_keep_alive__)
+        self.client.connect(self.broker_address, self.broker_port, self.__client_keep_alive__)
 
         if self.client.is_connected:
-            self.__mqtt_logger__.info("===== MQTT connected to [%s] =====" % self.__broker_address__)
+            self.__mqtt_logger__.info("===== MQTT connected to [%s] =====" % self.broker_address)
             self.client.loop_start()
         else:
             self.__mqtt_logger__.error("===== MQTT failed to connect =====")

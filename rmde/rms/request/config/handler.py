@@ -1,12 +1,9 @@
 import os
 import json
-import rclpy
 import configparser
 import paho.mqtt.client as mqtt
 
 from rclpy.node import Node
-from rclpy.parameter import Parameter
-from rcl_interfaces.msg import ParameterDescriptor
 
 from ....mqtt import mqtt_client
 
