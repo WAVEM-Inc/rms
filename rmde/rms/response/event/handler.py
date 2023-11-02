@@ -11,6 +11,7 @@ from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import BatteryState
 from robot_status_msgs.msg import SensorStatus
 from robot_status_msgs.msg import VelocityStatus
+from robot_status_msgs.msg import NavigationStatus
 
 from ....mqtt.mqtt_client import Client
 
@@ -44,6 +45,7 @@ class EventResponseHandler():
     rclpy_scan_status_subscriptin_topic: str = '/scan/status'
     rclpy_ublox_fix_status_subscription_topic: str = '/ublox/fix/status'
     rclpy_battery_state_subscription_topic: str = '/battery/status'
+    rclpy_navigation_status_subscription_topic: str = '/navigation/status'
     
     mqtt_event_publisher_topic: str = 'hubilon/atcplus/ros/rco0000000/rbt00000000/event'
     
@@ -55,8 +57,8 @@ class EventResponseHandler():
         self.ublox_fix_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = NavSatFix,
             topic = self.rclpy_ublox_fix_subscription_topic,
-            callback = self.rclpy_ublox_fix_subscription_cb,
             qos_profile = qos_profile_sensor_data,
+            callback = self.rclpy_ublox_fix_subscription_cb,
             callback_group = self.ublox_fix_subscription_cb_group
         )
 
@@ -69,12 +71,21 @@ class EventResponseHandler():
             callback_group = self.battery_state_subscription_cb_group
         )
 
+        self.velocity_state_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.velocity_state_subscription: Subscription = self.rclpy_node.create_subscription(
+            msg_type = VelocityStatus,
+            topic = self.rclpy_velocity_state_subscription_topic,
+            qos_profile = qos_profile_sensor_data,
+            callback = self.rclpy_velocity_state_subscription_cb,
+            callback_group = self.velocity_state_subscription_cb_group
+        )
+
         self.imu_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.imu_status_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = SensorStatus,
             topic = self.rclpy_imu_status_subscription_topic,
-            callback = self.rclpy_imu_status_subscription_cb,
             qos_profile = qos_profile_system_default,
+            callback = self.rclpy_imu_status_subscription_cb,
             callback_group = self.imu_status_subscription_cb_group
         )
 
@@ -82,8 +93,8 @@ class EventResponseHandler():
         self.scan_status_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = SensorStatus,
             topic = self.rclpy_scan_status_subscriptin_topic,
-            callback = self.rclpy_scan_status_subscription_cb,
             qos_profile = qos_profile_system_default,
+            callback = self.rclpy_scan_status_subscription_cb,
             callback_group = self.imu_status_subscription_cb_group
         )
         
@@ -91,8 +102,8 @@ class EventResponseHandler():
         self.ublox_fix_status_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = SensorStatus,
             topic = self.rclpy_ublox_fix_subscription_topic,
-            callback = self.rclpy_ublox_fix_status_subscription_cb,
             qos_profile = qos_profile_system_default,
+            callback = self.rclpy_ublox_fix_status_subscription_cb,
             callback_group = self.ublox_fix_status_subscription_cb_group
         )
         
@@ -100,9 +111,17 @@ class EventResponseHandler():
         self.battery_state_status_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = SensorStatus,
             topic = self.rclpy_battery_state_subscription_topic,
-            callback = self.rclpy_battery_state_status_subscription_cb,
             qos_profile = qos_profile_system_default,
+            callback = self.rclpy_battery_state_status_subscription_cb,
             callback_group = self.battery_state_status_subscription_cb_group
+        )
+
+        self.navigation_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.navigation_status_subscription: Subscription = self.rclpy_node.create_subscription(
+            msg_type = NavigationStatus,
+            topic = self.rclpy_navigation_status_subscription_topic,
+            qos_profile = qos_profile_system_default,
+            callback_group = self.navigation_status_subscription_cb_group
         )
 
         self.host_name: str = socket.gethostname()
@@ -134,7 +153,7 @@ class EventResponseHandler():
         self.end_battery_level = battery_state_cb.percentage
         self.battery_level = battery_state_cb.percentage
 
-    
+
     def rclpy_velocity_state_subscription_cb(self, velocity_state_cb: VelocityStatus) -> None:
         self.dist = velocity_state_cb.distance
 
@@ -147,7 +166,6 @@ class EventResponseHandler():
 
     def rclpy_imu_status_subscription_cb(self, imu_status_cb: SensorStatus) -> None:
         status_code: int = imu_status_cb.status_code
-        status_message: str = imu_status_cb.status_message
         
         if (status_code == -1000):
             self.__report_sensor_broken_status__('IMU')
@@ -157,17 +175,14 @@ class EventResponseHandler():
     
     def rclpy_scan_status_subscription_cb(self, scan_status_cb: SensorStatus) -> None:
         status_code: int = scan_status_cb.status_code
-        status_message: str = scan_status_cb.status_message
         
         if (status_code == -1001):
             self.__report_sensor_broken_status__('SCAN')
         else:
             return
         
-    
     def rclpy_ublox_fix_status_subscription_cb(self, ublox_fix_status_cb: SensorStatus) -> None:
         status_code: int = ublox_fix_status_cb.status_code
-        status_message: str = ublox_fix_status_cb.status_message
         
         if (status_code == -1002):
             self.__report_sensor_broken_status__('GPS')
@@ -177,12 +192,19 @@ class EventResponseHandler():
     
     def rclpy_battery_state_status_subscription_cb(self, battery_state_status: SensorStatus) -> None:
         status_code: int = battery_state_status.status_code
-        status_message: str = battery_state_status.status_message
         
         if (status_code == -1003):
             self.__report_sensor_broken_status__('BATTERY')
         else:
             return
+        
+
+    def rclpy_navigation_status_subscription_cb(self, navigation_status: NavigationStatus) -> None:
+        job_group: str = navigation_status.job_group
+        job_kind: str = navigation_status.job_kind
+        status: str = navigation_status.status
+        
+
         
 
     def build_event(self) -> Event:
