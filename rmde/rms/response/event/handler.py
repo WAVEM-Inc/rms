@@ -40,12 +40,11 @@ from .domain import ComInfo
 class EventResponseHandler():
     rclpy_ublox_fix_subscription_topic: str = '/ublox/fix'
     rclpy_battery_state_subscription_topic: str = '/battery/state'
-    rclpy_velocity_state_subscription_topic: str = '/velocity/state'
     rclpy_imu_status_subscription_topic: str = '/imu/status'
     rclpy_scan_status_subscriptin_topic: str = '/scan/status'
     rclpy_ublox_fix_status_subscription_topic: str = '/ublox/fix/status'
-    rclpy_battery_state_subscription_topic: str = '/battery/status'
-    rclpy_navigation_status_subscription_topic: str = '/navigation/status'
+    rclpy_battery_state_subscription_topic: str = '/battery/state/status'
+    rclpy_gts_navigation_task_status_subscription_topic: str = '/gts_navigation/task_status'
     
     mqtt_event_publisher_topic: str = 'hubilon/atcplus/ros/rco0000000/rbt00000000/event'
     
@@ -69,15 +68,6 @@ class EventResponseHandler():
             qos_profile = qos_profile_sensor_data,
             callback = self.rclpy_battery_state_subscription_cb,
             callback_group = self.battery_state_subscription_cb_group
-        )
-
-        self.velocity_state_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.velocity_state_subscription: Subscription = self.rclpy_node.create_subscription(
-            msg_type = VelocityStatus,
-            topic = self.rclpy_velocity_state_subscription_topic,
-            qos_profile = qos_profile_sensor_data,
-            callback = self.rclpy_velocity_state_subscription_cb,
-            callback_group = self.velocity_state_subscription_cb_group
         )
 
         self.imu_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
@@ -116,12 +106,13 @@ class EventResponseHandler():
             callback_group = self.battery_state_status_subscription_cb_group
         )
 
-        self.navigation_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.navigation_status_subscription: Subscription = self.rclpy_node.create_subscription(
+        self.gts_navigation_task_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.gts_navigation_task_status_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = NavigationStatus,
-            topic = self.rclpy_navigation_status_subscription_topic,
+            topic = self.rclpy_gts_navigation_task_status_subscription_topic,
             qos_profile = qos_profile_system_default,
-            callback_group = self.navigation_status_subscription_cb_group
+            callback = self.rclpy_gts_navigation_task_status_subscription_cb,
+            callback_group = self.gts_navigation_task_status_subscription_cb_group
         )
 
         self.host_name: str = socket.gethostname()
@@ -131,12 +122,19 @@ class EventResponseHandler():
         self.uuid_service: UUIDService = UUIDService()
         self.time_service: TimeService = TimeService()
         
-        self.start_battery_level: float = 0.0
-        self.end_battery_level: float = 0.0
-        self.dist: int = 0
+        self.job_group: str = ''
+        self.job_kind: str = ''
+        self.job_status: str = ''
+        self.job_start_time: str = ''
+        self.job_end_time: str = ''
+        self.job_start_battery_level: float = 0.0
+        self.job_end_battery_level: float = 0.0
+        self.job_start_dist: float = 0.0
+        self.job_end_dist: float = 0.0
+        
         self.sensor_status: str = ''
         self.sensor_type: str = ''
-        self.battery_level: float = 0.0
+        self.current_battery_level: float = 0.0
         self.location_xpos: float = 0.0
         self.location_ypos: float = 0.0
         self.heading: float = 0.0
@@ -149,13 +147,9 @@ class EventResponseHandler():
     
     
     def rclpy_battery_state_subscription_cb(self, battery_state_cb: BatteryState) -> None:
-        self.start_battery_level = battery_state_cb.percentage
-        self.end_battery_level = battery_state_cb.percentage
-        self.battery_level = battery_state_cb.percentage
-
-
-    def rclpy_velocity_state_subscription_cb(self, velocity_state_cb: VelocityStatus) -> None:
-        self.dist = velocity_state_cb.distance
+        self.job_start_battery_level = battery_state_cb.percentage
+        self.job_end_battery_level = battery_state_cb.percentage
+        self.current_battery_level = battery_state_cb.percentage
 
     
     def __report_sensor_broken_status__(self, sensor_type: str) -> None:
@@ -181,6 +175,7 @@ class EventResponseHandler():
         else:
             return
         
+        
     def rclpy_ublox_fix_status_subscription_cb(self, ublox_fix_status_cb: SensorStatus) -> None:
         status_code: int = ublox_fix_status_cb.status_code
         
@@ -199,12 +194,17 @@ class EventResponseHandler():
             return
         
 
-    def rclpy_navigation_status_subscription_cb(self, navigation_status: NavigationStatus) -> None:
-        job_group: str = navigation_status.job_group
-        job_kind: str = navigation_status.job_kind
-        status: str = navigation_status.status
-        
-
+    def rclpy_gts_navigation_task_status_subscription_cb(self, navigation_status: NavigationStatus) -> None:
+        self.job_group: str = navigation_status.job_group
+        self.job_kind: str = navigation_status.job_kind
+        self.job_status: str = navigation_status.status
+        self.job_start_time: str = navigation_status.start_time
+        self.job_end_time: str = navigation_status.end_time
+        self.job_start_battery_level: float = navigation_status.start_battery_level
+        self.job_end_battery_level: float = navigation_status.end_battery_level
+        self.job_start_dist: float = navigation_status.start_dist
+        self.job_end_dist: float = navigation_status.end_dist
+        self.response_to_uvc()
         
 
     def build_event(self) -> Event:
@@ -246,9 +246,9 @@ class EventResponseHandler():
             status = JobResultStatusType.SUCCESS.value,
             startTime = formatted_datetime,
             endTime = formatted_datetime,
-            startBatteryLevel = self.start_battery_level,
-            endBatteryLevel = self.end_battery_level,
-            dist = self.dist
+            startBatteryLevel = self.job_start_battery_level,
+            endBatteryLevel = self.job_end_battery_level,
+            dist = (self.job_end_dist - self.job_start_dist)
         )
         
         taskInfo: TaskInfo = TaskInfo(
@@ -278,7 +278,7 @@ class EventResponseHandler():
             eventSubCd = self.sensor_type,
             areaClsf = AreaCLSFType.INDOOR.value,
             floor = '1F',
-            batteryLevel = self.battery_level,
+            batteryLevel = self.current_battery_level,
             location = event_location.__dict__
         )
 
