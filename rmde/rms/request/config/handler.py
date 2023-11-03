@@ -2,6 +2,7 @@ import os
 import json
 import configparser
 import paho.mqtt.client as mqtt
+
 from rclpy.node import Node
 
 from ....mqtt import mqtt_client
@@ -28,7 +29,7 @@ class ConfigRequestHandler():
         
         self.config_parser: configparser.ConfigParser = configparser.ConfigParser()
         self.script_directory: str = os.path.dirname(os.path.abspath(__file__))
-        self.config_file_path: str = os.path.join(self.script_directory, 'mqtt.ini')
+        self.config_file_path: str = os.path.join(self.script_directory, '../../../mqtt/mqtt.ini')
         self.config_parser.read(self.config_file_path)
         
     
@@ -53,7 +54,7 @@ class ConfigRequestHandler():
                 robotCorpId = self.env_config.setInfo['robotCorpId'],
                 workCorpId = self.env_config.setInfo['workCorpId'],
                 workSiteId = self.env_config.setInfo['workSiteId'],
-                batteryEvent = self.env_config.setInfo['batteryEvent'],
+                batteryEvent = self.env_config.setInfo['batteryEvent']
             )
             
             self.config_parser.set('broker', 'host', self.set_info.mqttIP)
@@ -61,7 +62,14 @@ class ConfigRequestHandler():
             
             with open(self.config_file_path, 'w') as mqtt_config_file:
                 self.config_parser.write(mqtt_config_file)
-                self.rclpy_node.get_logger().info('===== MQTT Broker has been changed with [{}] reboot required =====' % self.set_info.mqttIP)
+                self.rclpy_node.get_logger().info('===== MQTT Broker has been changed with [%s] reboot required =====' % self.set_info.mqttIP)
+                self.rclpy_node.destroy_node()
+                exit(0)
             
         self.mqtt_broker.subscribe(topic = self.mqtt_path_subscription_topic, qos = 0)
         self.mqtt_broker.client.message_callback_add(self.mqtt_path_subscription_topic, mqtt_path_subscription_cb)
+
+
+
+
+__all__ = ['config_request_handler']

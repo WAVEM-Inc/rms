@@ -1,4 +1,4 @@
-import rclpy
+import socket
 import json
 
 from rclpy.node import Node
@@ -8,9 +8,12 @@ from rclpy.qos import qos_profile_system_default
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from sensor_msgs.msg import NavSatFix
+from sensor_msgs.msg import BatteryState
 from robot_status_msgs.msg import SensorStatus
+from robot_status_msgs.msg import VelocityStatus
+from robot_status_msgs.msg import NavigationStatus
 
-from ....mqtt import mqtt_client
+from ....mqtt.mqtt_client import Client
 
 from ...common.service import UUIDService
 from ...common.service import TimeService
@@ -36,32 +39,43 @@ from .domain import ComInfo
 
 class EventResponseHandler():
     rclpy_ublox_fix_subscription_topic: str = '/ublox/fix'
+    rclpy_battery_state_subscription_topic: str = '/battery/state'
     rclpy_imu_status_subscription_topic: str = '/imu/status'
     rclpy_scan_status_subscriptin_topic: str = '/scan/status'
     rclpy_ublox_fix_status_subscription_topic: str = '/ublox/fix/status'
-    rclpy_battery_state_subscription_topic: str = '/battery/status'
+    rclpy_battery_state_subscription_topic: str = '/battery/state/status'
+    rclpy_gts_navigation_task_status_subscription_topic: str = '/gts_navigation/task_status'
     
     mqtt_event_publisher_topic: str = 'hubilon/atcplus/ros/rco0000000/rbt00000000/event'
     
     
-    def __init__(self, rclpy_node: Node, mqtt_broker: mqtt_client.Client) -> None:
+    def __init__(self, rclpy_node: Node, mqtt_client: Client) -> None:
         self.rclpy_node: Node = rclpy_node
         
         self.ublox_fix_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.ublox_fix_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = NavSatFix,
             topic = self.rclpy_ublox_fix_subscription_topic,
-            callback = self.rclpy_ublox_fix_subscription_cb,
             qos_profile = qos_profile_sensor_data,
+            callback = self.rclpy_ublox_fix_subscription_cb,
             callback_group = self.ublox_fix_subscription_cb_group
+        )
+
+        self.battery_state_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.battery_state_subscription: Subscription = self.rclpy_node.create_subscription(
+            msg_type = BatteryState,
+            topic = self.rclpy_battery_state_subscription_topic,
+            qos_profile = qos_profile_sensor_data,
+            callback = self.rclpy_battery_state_subscription_cb,
+            callback_group = self.battery_state_subscription_cb_group
         )
 
         self.imu_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.imu_status_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = SensorStatus,
             topic = self.rclpy_imu_status_subscription_topic,
-            callback = self.rclpy_imu_status_subscription_cb,
             qos_profile = qos_profile_system_default,
+            callback = self.rclpy_imu_status_subscription_cb,
             callback_group = self.imu_status_subscription_cb_group
         )
 
@@ -69,8 +83,8 @@ class EventResponseHandler():
         self.scan_status_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = SensorStatus,
             topic = self.rclpy_scan_status_subscriptin_topic,
-            callback = self.rclpy_scan_status_subscription_cb,
             qos_profile = qos_profile_system_default,
+            callback = self.rclpy_scan_status_subscription_cb,
             callback_group = self.imu_status_subscription_cb_group
         )
         
@@ -78,8 +92,8 @@ class EventResponseHandler():
         self.ublox_fix_status_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = SensorStatus,
             topic = self.rclpy_ublox_fix_subscription_topic,
-            callback = self.rclpy_ublox_fix_status_subscription_cb,
             qos_profile = qos_profile_system_default,
+            callback = self.rclpy_ublox_fix_status_subscription_cb,
             callback_group = self.ublox_fix_status_subscription_cb_group
         )
         
@@ -87,54 +101,65 @@ class EventResponseHandler():
         self.battery_state_status_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = SensorStatus,
             topic = self.rclpy_battery_state_subscription_topic,
-            callback = self.rclpy_battery_state_status_subscription_cb,
             qos_profile = qos_profile_system_default,
+            callback = self.rclpy_battery_state_status_subscription_cb,
             callback_group = self.battery_state_status_subscription_cb_group
         )
 
-        self.mqtt_broker: mqtt_client.Client = mqtt_broker
+        self.gts_navigation_task_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.gts_navigation_task_status_subscription: Subscription = self.rclpy_node.create_subscription(
+            msg_type = NavigationStatus,
+            topic = self.rclpy_gts_navigation_task_status_subscription_topic,
+            qos_profile = qos_profile_system_default,
+            callback = self.rclpy_gts_navigation_task_status_subscription_cb,
+            callback_group = self.gts_navigation_task_status_subscription_cb_group
+        )
+
+        self.host_name: str = socket.gethostname()
+        self.ip_address: str = socket.gethostbyname(self.host_name)
+
+        self.mqtt_client: Client = mqtt_client
         self.uuid_service: UUIDService = UUIDService()
         self.time_service: TimeService = TimeService()
         
-        self.start_battery_level: int = 0
-        self.end_battery_level: int = 0
-        self.dist: int = 0
-        self.sensor_status: str = ""
+        self.job_group: str = ''
+        self.job_kind: str = ''
+        self.job_status: str = ''
+        self.job_start_time: str = ''
+        self.job_end_time: str = ''
+        self.job_start_battery_level: float = 0.0
+        self.job_end_battery_level: float = 0.0
+        self.job_start_dist: float = 0.0
+        self.job_end_dist: float = 0.0
+        
+        self.sensor_status: str = ''
+        self.sensor_type: str = ''
+        self.current_battery_level: float = 0.0
         self.location_xpos: float = 0.0
         self.location_ypos: float = 0.0
         self.heading: float = 0.0
     
     
-    def rclpy_ublox_fix_subscription_cb(self, ublox_fix_cb: NavSatFix) -> None:
-        self.rclpy_node.get_logger().info(
-            'Event GPS cb\n\tlat : "%f"\n\tlon : "%f"\n\talt : "%f"' % (
-                ublox_fix_cb.latitude,
-                ublox_fix_cb.longitude,
-                ublox_fix_cb.altitude
-            )
-        )
-        
+    def rclpy_ublox_fix_subscription_cb(self, ublox_fix_cb: NavSatFix) -> None:        
         self.location_xpos = ublox_fix_cb.latitude
         self.location_ypos = ublox_fix_cb.longitude
         self.heading = ublox_fix_cb.altitude
     
     
-    def __report_sensor_broken_status__(self, sensor_name: str) -> None:
+    def rclpy_battery_state_subscription_cb(self, battery_state_cb: BatteryState) -> None:
+        self.job_start_battery_level = battery_state_cb.percentage
+        self.job_end_battery_level = battery_state_cb.percentage
+        self.current_battery_level = battery_state_cb.percentage
+
+    
+    def __report_sensor_broken_status__(self, sensor_type: str) -> None:
         self.sensor_status = EventCdType.BROKEN.value
-        self.rclpy_node.get_logger().info('Event %s Sensor Broken "%s"' % (sensor_name, self.sensor_status))
+        self.sensor_type = sensor_type
         self.response_to_uvc()
     
 
     def rclpy_imu_status_subscription_cb(self, imu_status_cb: SensorStatus) -> None:
         status_code: int = imu_status_cb.status_code
-        status_message: str = imu_status_cb.status_message
-        
-        self.rclpy_node.get_logger().info(
-            'Event IMU Status\n\tcode : "%d"\n\tmessage : "%s"' % (
-                status_code,
-                status_message
-            )
-        )
         
         if (status_code == -1000):
             self.__report_sensor_broken_status__('IMU')
@@ -144,31 +169,15 @@ class EventResponseHandler():
     
     def rclpy_scan_status_subscription_cb(self, scan_status_cb: SensorStatus) -> None:
         status_code: int = scan_status_cb.status_code
-        status_message: str = scan_status_cb.status_message
-        
-        self.rclpy_node.get_logger().info(
-            'Event SCAN Status\n\tcode : "%d"\n\tmessage : "%s"' % (
-                status_code,
-                status_message
-            )
-        )
         
         if (status_code == -1001):
             self.__report_sensor_broken_status__('SCAN')
         else:
             return
         
-    
+        
     def rclpy_ublox_fix_status_subscription_cb(self, ublox_fix_status_cb: SensorStatus) -> None:
         status_code: int = ublox_fix_status_cb.status_code
-        status_message: str = ublox_fix_status_cb.status_message
-        
-        self.rclpy_node.get_logger().info(
-            'Event UbloxFix Status\n\tcode : "%d"\n\tmessage : "%s"' % (
-                status_code,
-                status_message
-            )
-        )
         
         if (status_code == -1002):
             self.__report_sensor_broken_status__('GPS')
@@ -178,19 +187,24 @@ class EventResponseHandler():
     
     def rclpy_battery_state_status_subscription_cb(self, battery_state_status: SensorStatus) -> None:
         status_code: int = battery_state_status.status_code
-        status_message: str = battery_state_status.status_message
-        
-        self.rclpy_node.get_logger().info(
-            'Event BatteryState Status\n\tcode : "%d"\n\tmessage : "%s"' % (
-                status_code,
-                status_message
-            )
-        )
         
         if (status_code == -1003):
             self.__report_sensor_broken_status__('BATTERY')
         else:
             return
+        
+
+    def rclpy_gts_navigation_task_status_subscription_cb(self, navigation_status: NavigationStatus) -> None:
+        self.job_group: str = navigation_status.job_group
+        self.job_kind: str = navigation_status.job_kind
+        self.job_status: str = navigation_status.status
+        self.job_start_time: str = navigation_status.start_time
+        self.job_end_time: str = navigation_status.end_time
+        self.job_start_battery_level: float = navigation_status.start_battery_level
+        self.job_end_battery_level: float = navigation_status.end_battery_level
+        self.job_start_dist: float = navigation_status.start_dist
+        self.job_end_dist: float = navigation_status.end_dist
+        self.response_to_uvc()
         
 
     def build_event(self) -> Event:
@@ -232,9 +246,9 @@ class EventResponseHandler():
             status = JobResultStatusType.SUCCESS.value,
             startTime = formatted_datetime,
             endTime = formatted_datetime,
-            startBatteryLevel = self.start_battery_level,
-            endBatteryLevel = self.end_battery_level,
-            dist = 300
+            startBatteryLevel = self.job_start_battery_level,
+            endBatteryLevel = self.job_end_battery_level,
+            dist = (self.job_end_dist - self.job_start_dist)
         )
         
         taskInfo: TaskInfo = TaskInfo(
@@ -261,10 +275,10 @@ class EventResponseHandler():
         event_info: EventInfo = EventInfo(
             eventId = event_id,
             eventCd = self.sensor_status,
-            eventSubCd = 'SUB001',
+            eventSubCd = self.sensor_type,
             areaClsf = AreaCLSFType.INDOOR.value,
             floor = '1F',
-            batteryLevel = 50,
+            batteryLevel = self.current_battery_level,
             location = event_location.__dict__
         )
 
@@ -274,9 +288,9 @@ class EventResponseHandler():
     def __build_com_info__(self) -> ComInfo:
         com_info: ComInfo = ComInfo(
             status = ComInfoStatusType.CONNECTED.value,
-            robotIP = '192.168.0.1',
-            mqttIP = '33',
-            mqttPort = '1883'
+            robotIP = self.ip_address,
+            mqttIP = self.mqtt_client.broker_address,
+            mqttPort = self.mqtt_client.broker_port
         )
 
         return com_info
@@ -284,7 +298,7 @@ class EventResponseHandler():
 
     def response_to_uvc(self) -> None:
         built_event: Event = self.build_event()
-        self.mqtt_broker.publish(topic = self.mqtt_event_publisher_topic, payload = json.dumps(built_event.__dict__), qos = 0)
+        self.mqtt_client.publish(topic = self.mqtt_event_publisher_topic, payload = json.dumps(built_event.__dict__), qos = 0)
         
 
 __all__ = ['event_response_handler']

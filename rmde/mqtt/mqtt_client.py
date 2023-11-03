@@ -1,4 +1,6 @@
 import os
+import rclpy
+from rclpy.node import Node
 import paho.mqtt.client as mqtt
 import configparser
 
@@ -200,20 +202,6 @@ class Logger:
 
 """
 class Client:
-    config_parser: configparser.ConfigParser = configparser.ConfigParser()
-    script_directory: str = os.path.dirname(os.path.abspath(__file__))
-    config_file_path: str = os.path.join(script_directory, 'mqtt.ini')
-    config_parser.read(config_file_path)
-    
-    __broker_address__: str = config_parser.get('broker', 'host')
-    __broker_port__: int = int(config_parser.get('broker', 'port'))
-    __client_name__: str = config_parser.get('broker', 'client_name')
-    __client_keep_alive__: int = int(config_parser.get('broker', 'client_keep_alive'))
-    
-    __mqtt_logger__: Logger = Logger()
-
-    client: mqtt.Client = mqtt.Client(__client_name__, clean_session=True, userdata=None, transport="tcp")
-
 
     def __init__(self) -> None:
         
@@ -232,13 +220,26 @@ class Client:
         Usage:
             __mqtt_manager__: broker.mqtt_broker = broker.mqtt_broker()
         """
+
+        self.__config_parser__: configparser.ConfigParser = configparser.ConfigParser()
+        self.__script_directory__: str = os.path.dirname(os.path.abspath(__file__))
+        self.__config_file_path__: str = os.path.join(self.__script_directory__, 'mqtt.ini')
+        self.__config_parser__.read(self.__config_file_path__)
+        
+        self.__mqtt_logger__: Logger = Logger()
+        self.broker_address: str = self.__config_parser__.get('broker', 'host')
+        self.broker_port: int = int(self.__config_parser__.get('broker', 'port'))
+        self.__client_name__: str = self.__config_parser__.get('broker', 'client_name')
+        self.__client_keep_alive__: int = int(self.__config_parser__.get('broker', 'client_keep_alive'))
+        
+        self.client: mqtt.Client = mqtt.Client(self.__client_name__, clean_session = True, userdata = None, transport = 'tcp')
         
         self.client.on_connect = self.__on_connect__
         self.client.on_message = self.__on_message__
-        self.client.connect(self.__broker_address__, self.__broker_port__, self.__client_keep_alive__)
+        self.client.connect(self.broker_address, self.broker_port, self.__client_keep_alive__)
 
         if self.client.is_connected:
-            self.__mqtt_logger__.info("===== MQTT connected to [%s] =====" % self.__broker_address__)
+            self.__mqtt_logger__.info("===== MQTT connected to [%s] =====" % self.broker_address)
             self.client.loop_start()
         else:
             self.__mqtt_logger__.error("===== MQTT failed to connect =====")
@@ -333,4 +334,4 @@ class Client:
         self.client.subscribe(topic = topic, qos = qos)
 
 
-__all__ = ["mqtt_client"]
+__all__ = ['mqtt_client']

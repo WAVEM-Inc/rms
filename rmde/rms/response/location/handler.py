@@ -81,34 +81,18 @@ class LocationResponseHandler():
         
         
     def rclpy_gps_subscription_cb(self, gps_cb: NavSatFix) -> None:
-        self.rclpy_node.get_logger().info(
-            'Location GPS cb\n\tlat : "%f"\n\tlon : "%f"\n\talt : "%f"' % (
-                gps_cb.latitude,
-                gps_cb.longitude,
-                gps_cb.altitude
-            )
-        )
         self.location_xpos = gps_cb.latitude
         self.location_ypos = gps_cb.longitude
         self.heading = gps_cb.altitude
     
     
     def rclpy_battery_state_subscription_cb(self, battery_state_cb: BatteryState) -> None:
-        self.rclpy_node.get_logger().info(
-            'Location BatteryState cb'
-        )
+        self.battery_level = battery_state_cb.percentage
     
     
     def rclpy_velocity_state_subscription_cb(self, velocity_state_cb: VelocityStatus) -> None:
         current_velocity: float = velocity_state_cb.current_velocity
         distance: float = velocity_state_cb.distance
-        
-        self.rclpy_node.get_logger().info(
-            'Location VelocityState cb\n\tcurrent_velocity : "%f"\n\tdistance : "%f"' % (
-                current_velocity,
-                distance
-            )
-        )
         
         self.velocity = current_velocity
         self.total_dist = distance

@@ -2,7 +2,7 @@ import rclpy
 import paho.mqtt.client as mqtt
 
 from rclpy.node import Node
-from ..mqtt import mqtt_client
+from ..mqtt.mqtt_client import Client
 
 from ..rms.request.config.handler import ConfigRequestHandler
 from ..rms.request.control.handler import ControlRequestHandler
@@ -16,20 +16,18 @@ class RMDENode(Node):
     node_name: str = 'rmde'
     rclpy_flag: str = 'RCLPY'
     mqtt_flag: str = 'MQTT'
-    mqtt_broker: mqtt_client.Client = mqtt_client.Client()
-    
+    mqtt_client: Client = Client()
     
     def __init__(self) -> None:
         super().__init__(self.node_name)
         self.get_logger().info('===== {} [{}] created ====='.format(self.rclpy_flag, self.node_name))
         
-        self.event_response_handler: EventResponseHandler = EventResponseHandler(self, self.mqtt_broker)
-        self.location_response_handler: LocationResponseHandler = LocationResponseHandler(self, self.mqtt_broker)
+        self.event_response_handler: EventResponseHandler = EventResponseHandler(self, self.mqtt_client)
+        self.location_response_handler: LocationResponseHandler = LocationResponseHandler(self, self.mqtt_client)
         
-        self.evn_config_request_handler: ConfigRequestHandler = ConfigRequestHandler(self, self.mqtt_broker)
-        self.control_request_handler: ControlRequestHandler = ControlRequestHandler(self, self.mqtt_broker)
-        self.path_request_handler: PathRequestHandler = PathRequestHandler(self, self.mqtt_broker)
-        
+        self.evn_config_request_handler: ConfigRequestHandler = ConfigRequestHandler(self, self.mqtt_client)
+        self.control_request_handler: ControlRequestHandler = ControlRequestHandler(self, self.mqtt_client)
+        self.path_request_handler: PathRequestHandler = PathRequestHandler(self, self.mqtt_client)
         
         rclpy_timer_loop: float = 1.0
         self.create_timer(rclpy_timer_loop, self.__from_uvc_to_rms__)
