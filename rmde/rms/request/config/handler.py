@@ -1,11 +1,12 @@
 import os
 import json
-import configparser
 import paho.mqtt.client as mqtt
 
 from rclpy.node import Node
+from configparser import ConfigParser
 
 from ....mqtt import mqtt_client
+from ...common.service import ConfigService
 
 from .domain import Config
 from .domain import SetInfo
@@ -18,23 +19,23 @@ class ConfigRequestHandler():
     rclpy_flag: str = 'RCLPY'
     mqtt_flag: str = 'MQTT'
     
-    mqtt_path_subscription_topic: str = 'hubilon/atcplus/rms/rco0000000/rbt00000000/config'
-    
-    
+        
     def __init__(self, rclpy_node: Node, mqtt_broker: mqtt_client.Client) -> None:
         self.rclpy_node: Node = rclpy_node
         self.mqtt_broker: mqtt_client.Client = mqtt_broker
+        
+        self.script_directory: str = os.path.dirname(os.path.abspath(__file__))
+        self.config_file_path: str = '../../../mqtt/mqtt.ini'
+        self.config_service: ConfigService = ConfigService(self.script_directory, self.config_file_path)
+        self.config_parser: ConfigParser = self.config_service.read()
+        self.mqtt_config_subscription_topic: str = self.config_parser.get('topics', 'config')
+        
         self.env_config: Config = Config()
         self.set_info: SetInfo = SetInfo()
         
-        self.config_parser: configparser.ConfigParser = configparser.ConfigParser()
-        self.script_directory: str = os.path.dirname(os.path.abspath(__file__))
-        self.config_file_path: str = os.path.join(self.script_directory, '../../../mqtt/mqtt.ini')
-        self.config_parser.read(self.config_file_path)
-        
     
     def request_to_uvc(self) -> None:
-        def mqtt_path_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
+        def mqtt_config_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
             mqtt_topic: str = mqtt_message.topic
             mqtt_decoded_payload: str = mqtt_message.payload.decode()
             mqtt_json: Any = json.loads(mqtt_message.payload)
@@ -66,8 +67,8 @@ class ConfigRequestHandler():
                 self.rclpy_node.destroy_node()
                 exit(0)
             
-        self.mqtt_broker.subscribe(topic = self.mqtt_path_subscription_topic, qos = 0)
-        self.mqtt_broker.client.message_callback_add(self.mqtt_path_subscription_topic, mqtt_path_subscription_cb)
+        self.mqtt_broker.subscribe(topic = self.mqtt_config_subscription_topic, qos = 0)
+        self.mqtt_broker.client.message_callback_add(self.mqtt_config_subscription_topic, mqtt_config_subscription_cb)
 
 
 
