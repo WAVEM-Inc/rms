@@ -1,13 +1,11 @@
 import os
-import rclpy
-from rclpy.node import Node
+import time
 import paho.mqtt.client as mqtt
-import configparser
 
 from typing import Any
+from configparser import ConfigParser
+from ..rms.common.service import ConfigService
 
-import time
-from ament_index_python.packages import get_package_share_directory
 
 """ Description
 
@@ -220,11 +218,11 @@ class Client:
         Usage:
             __mqtt_manager__: broker.mqtt_broker = broker.mqtt_broker()
         """
-
-        self.__config_parser__: configparser.ConfigParser = configparser.ConfigParser()
+        
         self.__script_directory__: str = os.path.dirname(os.path.abspath(__file__))
-        self.__config_file_path__: str = os.path.join(self.__script_directory__, 'mqtt.ini')
-        self.__config_parser__.read(self.__config_file_path__)
+        self.__config_file_path__: str = 'mqtt.ini'
+        self.__config_service__: ConfigService = ConfigService(self.__script_directory__, self.__config_file_path__)
+        self.__config_parser__: ConfigParser = self.__config_service__.read()
         
         self.__mqtt_logger__: Logger = Logger()
         self.broker_address: str = self.__config_parser__.get('broker', 'host')

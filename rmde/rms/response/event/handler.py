@@ -1,6 +1,8 @@
-import socket
+import os
 import json
+import socket
 
+from configparser import ConfigParser
 from rclpy.node import Node
 from rclpy.subscription import Subscription
 from rclpy.qos import qos_profile_sensor_data
@@ -10,13 +12,14 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import BatteryState
 from robot_status_msgs.msg import SensorStatus
-from robot_status_msgs.msg import VelocityStatus
 from robot_status_msgs.msg import NavigationStatus
 
 from ....mqtt.mqtt_client import Client
 
 from ...common.service import UUIDService
 from ...common.service import TimeService
+from ...common.service import ConfigService
+from ...common.service import NetworkService
 
 from ...common.enum_types import RobotType
 from ...common.enum_types import AreaCLSFType
@@ -38,19 +41,25 @@ from .domain import ComInfo
 
 
 class EventResponseHandler():
-    rclpy_ublox_fix_subscription_topic: str = '/ublox/fix'
-    rclpy_battery_state_subscription_topic: str = '/battery/state'
-    rclpy_imu_status_subscription_topic: str = '/imu/status'
-    rclpy_scan_status_subscriptin_topic: str = '/scan/status'
-    rclpy_ublox_fix_status_subscription_topic: str = '/ublox/fix/status'
-    rclpy_battery_state_subscription_topic: str = '/battery/state/status'
-    rclpy_gts_navigation_task_status_subscription_topic: str = '/gts_navigation/task_status'
     
-    mqtt_event_publisher_topic: str = 'hubilon/atcplus/ros/rco0000000/rbt00000000/event'
-    
-    
+        
     def __init__(self, rclpy_node: Node, mqtt_client: Client) -> None:
+        self.script_directory: str = os.path.dirname(os.path.abspath(__file__))
+        self.config_file_path: str = '../../../mqtt/mqtt.ini'
+        self.config_service: ConfigService = ConfigService(self.script_directory, self.config_file_path)
+        self.config_parser: ConfigParser = self.config_service.read()
+        self.mqtt_event_publisher_topic: str = self.config_parser.get('topics', 'event')
+        
+        self.network_service: NetworkService = NetworkService()
+        
         self.rclpy_node: Node = rclpy_node
+        self.rclpy_ublox_fix_subscription_topic: str = '/ublox/fix'
+        self.rclpy_battery_state_subscription_topic: str = '/battery/state'
+        self.rclpy_imu_status_subscription_topic: str = '/imu/status'
+        self.rclpy_scan_status_subscriptin_topic: str = '/scan/status'
+        self.rclpy_ublox_fix_status_subscription_topic: str = '/ublox/fix/status'
+        self.rclpy_battery_state_subscription_topic: str = '/battery/state/status'
+        self.rclpy_gts_navigation_task_status_subscription_topic: str = '/gts_navigation/task_status'
         
         self.ublox_fix_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.ublox_fix_subscription: Subscription = self.rclpy_node.create_subscription(
@@ -114,10 +123,10 @@ class EventResponseHandler():
             callback = self.rclpy_gts_navigation_task_status_subscription_cb,
             callback_group = self.gts_navigation_task_status_subscription_cb_group
         )
-
-        self.host_name: str = socket.gethostname()
-        self.ip_address: str = socket.gethostbyname(self.host_name)
-
+                
+        
+        self.ip_address: str = self.network_service.get_local_ip()
+        
         self.mqtt_client: Client = mqtt_client
         self.uuid_service: UUIDService = UUIDService()
         self.time_service: TimeService = TimeService()

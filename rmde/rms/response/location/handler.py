@@ -1,10 +1,10 @@
-import rclpy
+import os
 import json
 
+from configparser import ConfigParser
 from rclpy.node import Node
 from rclpy.subscription import Subscription
 from rclpy.qos import qos_profile_sensor_data
-from rclpy.qos import qos_profile_system_default
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from sensor_msgs.msg import NavSatFix
@@ -15,6 +15,7 @@ from ....mqtt import mqtt_client
 
 from ...common.service import UUIDService
 from ...common.service import TimeService
+from ...common.service import ConfigService
 
 from ...common.enum_types import RobotType
 from ...common.enum_types import AreaCLSFType
@@ -31,15 +32,19 @@ from .domain import LastInfoLocation
 
 
 class LocationResponseHandler():
-    rclpy_gps_subscription_topic: str = '/ublox/fix'
-    rclpy_battery_state_subscription_topic: str = '/battery/state'
-    rclpy_velocity_state_subscription_topic: str = '/velocity/state'
-    
-    mqtt_location_publisher_topic: str = 'hubilon/atcplus/ros/rco0000000/rbt00000000/location'
     
     
     def __init__(self, rclpy_node: Node, mqtt_broker: mqtt_client.Client) -> None:
+        self.script_directory: str = os.path.dirname(os.path.abspath(__file__))
+        self.config_file_path: str = '../../../mqtt/mqtt.ini'
+        self.config_service: ConfigService = ConfigService(self.script_directory, self.config_file_path)
+        self.config_parser: ConfigParser = self.config_service.read()
+        self.mqtt_location_publisher_topic: str = self.config_parser.get('topics', 'location')
+        
         self.rclpy_node = rclpy_node
+        self.rclpy_gps_subscription_topic: str = '/ublox/fix'
+        self.rclpy_battery_state_subscription_topic: str = '/battery/state'
+        self.rclpy_velocity_state_subscription_topic: str = '/velocity/state'
         
         self.gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.gps_subscription: Subscription = self.rclpy_node.create_subscription(
@@ -155,7 +160,7 @@ class LocationResponseHandler():
         last_info: LastInfo = LastInfo(
             location = last_info_location.__dict__,
             areaClsf = AreaCLSFType.INDOOR.value,
-            floor = "1F",
+            floor = '1F',
             batteryLevel = self.battery_level,
             velocity = self.velocity,
             totalDist = self.total_dist

@@ -1,18 +1,19 @@
-import rclpy
-import paho.mqtt.client as mqtt
+import os
 import json
 import importlib
+import paho.mqtt.client as mqtt
 
+from configparser import ConfigParser
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.qos import qos_profile_system_default
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rosbridge_library.internal import message_conversion
 
-from sensor_msgs.msg import NavSatFix
 from gts_navigation_msgs.msg import GoalWaypoints
 
 from ....mqtt import mqtt_client
+from ...common.service import ConfigService
 
 from ...common.domain import Header
 from .domain import JobInfo
@@ -28,12 +29,16 @@ class PathRequestHandler():
     rclpy_flag: str = 'RCLPY'
     mqtt_flag: str = 'MQTT'
     
-    rclpy_goal_waypoints_publisher_topic: str = '/gts_navigation/waypoints'
-    mqtt_path_subscription_topic: str = 'hubilon/atcplus/rms/rco0000000/rbt00000000/path'
-    
     
     def __init__(self, rclpy_node: Node, mqtt_broker: mqtt_client.Client) -> None:
+        self.script_directory: str = os.path.dirname(os.path.abspath(__file__))
+        self.config_file_path: str = '../../../mqtt/mqtt.ini'
+        self.config_service: ConfigService = ConfigService(self.script_directory, self.config_file_path)
+        self.config_parser: ConfigParser = self.config_service.read()
+        self.mqtt_path_subscription_topic: str = self.config_parser.get('topics', 'path')
+        
         self.rclpy_node: Node = rclpy_node
+        self.rclpy_goal_waypoints_publisher_topic: str = '/gts_navigation/waypoints'
         
         self.goal_waypoints_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.goal_waypoints_publisher: Publisher = self.rclpy_node.create_publisher(
