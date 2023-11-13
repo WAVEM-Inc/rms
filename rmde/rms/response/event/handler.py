@@ -171,7 +171,8 @@ class EventResponseHandler():
         status_code: int = imu_status_cb.status_code
         
         if (status_code == -1000):
-            self.__report_sensor_broken_status__('IMU')
+            self.sensor_status = EventCdType.BROKEN.value
+            self.sensor_type = 'IMU'
         else:
             return
         
@@ -180,7 +181,8 @@ class EventResponseHandler():
         status_code: int = scan_status_cb.status_code
         
         if (status_code == -1001):
-            self.__report_sensor_broken_status__('SCAN')
+            self.sensor_status = EventCdType.BROKEN.value
+            self.sensor_type = 'LiDAR'
         else:
             return
         
@@ -189,7 +191,8 @@ class EventResponseHandler():
         status_code: int = ublox_fix_status_cb.status_code
         
         if (status_code == -1002):
-            self.__report_sensor_broken_status__('GPS')
+            self.sensor_status = EventCdType.BROKEN.value
+            self.sensor_type = 'GPS'
         else:
             return
         
@@ -198,7 +201,8 @@ class EventResponseHandler():
         status_code: int = battery_state_status.status_code
         
         if (status_code == -1003):
-            self.__report_sensor_broken_status__('BATTERY')
+            self.sensor_status = EventCdType.BROKEN.value
+            self.sensor_type = 'BATTERY'
         else:
             return
         

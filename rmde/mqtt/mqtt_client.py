@@ -5,6 +5,7 @@ import paho.mqtt.client as mqtt
 from typing import Any
 from configparser import ConfigParser
 from ..rms.common.service import ConfigService
+from ..rms.common.service import UUIDService
 
 
 """ Description
@@ -221,18 +222,20 @@ class Client:
         
         self.__script_directory__: str = os.path.dirname(os.path.abspath(__file__))
         self.__config_file_path__: str = 'mqtt.ini'
+        self.__uuid_service__: UUIDService = UUIDService()
         self.__config_service__: ConfigService = ConfigService(self.__script_directory__, self.__config_file_path__)
         self.__config_parser__: ConfigParser = self.__config_service__.read()
         
         self.__mqtt_logger__: Logger = Logger()
         self.broker_address: str = self.__config_parser__.get('broker', 'host')
         self.broker_port: int = int(self.__config_parser__.get('broker', 'port'))
-        self.__client_name__: str = self.__config_parser__.get('broker', 'client_name')
+        self.__client_name__: str = self.__uuid_service__.generate_uuid()
         self.__client_keep_alive__: int = int(self.__config_parser__.get('broker', 'client_keep_alive'))
         self.__user_name__: str = self.__config_parser__.get('broker', 'user_name')
         self.__password__: str = self.__config_parser__.get('broker', 'password')
         
-        self.client: mqtt.Client = mqtt.Client(self.__client_name__, clean_session = True, userdata = None, transport = 'tcp')
+        self.client: mqtt.Client = mqtt.Client(self.__client_name__, clean_session = True, userdata = None, transport = 'websockets')
+        self.client.ws_set_options(path = '/ws')
         self.client.username_pw_set(self.__user_name__, self.__password__)
         
         self.client.on_connect = self.__on_connect__
