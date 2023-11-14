@@ -234,8 +234,9 @@ class Client:
         self.__user_name__: str = self.__config_parser__.get('broker', 'user_name')
         self.__password__: str = self.__config_parser__.get('broker', 'password')
         
-        self.client: mqtt.Client = mqtt.Client(self.__client_name__, clean_session = True, userdata = None, transport = 'websockets')
-        self.client.ws_set_options(path = '/ws')
+        self.client: mqtt.Client = mqtt.Client(self.__client_name__, clean_session = True, userdata = None, transport = 'tcp')
+        # self.client: mqtt.Client = mqtt.Client(self.__client_name__, clean_session = True, userdata = None, transport = 'websockets')
+        # self.client.ws_set_options(path = '/ws')
         self.client.username_pw_set(self.__user_name__, self.__password__)
         
         self.client.on_connect = self.__on_connect__
