@@ -3,13 +3,12 @@ import json
 import paho.mqtt.client as mqtt
 
 from configparser import ConfigParser
-from concurrent.futures import Future
 from rclpy.node import Node
-from rclpy.client import Client
+from rclpy.publisher import Publisher
 from rclpy.qos import qos_profile_system_default
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
-from gts_navigation_msgs.srv import GoalCancel
+from gts_navigation_msgs.msg import NavigationControl
 
 from ....mqtt import mqtt_client
 from ...common.service import ConfigService
@@ -34,13 +33,14 @@ class ControlRequestHandler():
         self.mqtt_control_subscription_topic: str = self.config_parser.get('topics', 'control')
         
         self.rclpy_node: Node = rclpy_node
-        self.rclpy_goal_cancel_service_server_name: str = '/gts_navigation/goal_cancel'
-        self.rclpy_goal_cancel_service_client_cb_group = MutuallyExclusiveCallbackGroup()
-        self.rclpy_goal_cancel_service_client: Client = self.rclpy_node.create_client(
-            srv_type = GoalCancel,
-            srv_name = self.rclpy_goal_cancel_service_server_name,
+        
+        self.rclpy_gts_navigation_control_publisher_name: str = '/gts_navigation/control'
+        self.rclpy_gts_navigation_control_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.rclpy_gts_navigation_control_publisher: Publisher = self.rclpy_node.create_publisher(
+            msg_type = NavigationControl,
+            topic = self.rclpy_gts_navigation_control_publisher_name,
             qos_profile = qos_profile_system_default,
-            callback_group = self.rclpy_goal_cancel_service_client_cb_group
+            callback_group = self.rclpy_gts_navigation_control_publisher_cb_group
         )
         
         self.mqtt_broker: mqtt_client.Client = mqtt_broker
@@ -78,15 +78,7 @@ class ControlRequestHandler():
         is_cmd_ready: bool = (self.control_cmd.ready == True)
         is_cmd_move: bool = (self.control_cmd.move == True)
         is_cmd_stop: bool = (self.control_cmd.stop == True)
-        
-        self.rclpy_node.get_logger().info('%s judge_control_cmd is_cmd_stop %d' % (self.rclpy_goal_cancel_service_server_name, is_cmd_stop))
-        
-        is_rclpy_goal_cancel_service_server_ready: bool = self.rclpy_goal_cancel_service_client.wait_for_service(timeout_sec = 1.0)
-        
-        if (is_rclpy_goal_cancel_service_server_ready):
-            self.rclpy_node.get_logger().info('%s judge_control_cmd service not available' % self.rclpy_goal_cancel_service_server_name)
-            return
-        
+            
         if (is_cmd_ready and is_cmd_move and is_cmd_stop):
             return
         elif (is_cmd_ready and is_cmd_move):
@@ -96,11 +88,21 @@ class ControlRequestHandler():
         elif (is_cmd_ready and is_cmd_stop):
             return
         elif (is_cmd_stop and not is_cmd_ready and not is_cmd_move):
-            rclpy_goal_cancel_request: GoalCancel.Request = GoalCancel.Request()
-            rclpy_goal_cancel_request.cancel_goals = True
-            rclpy_goal_cancel_future: Future = self.rclpy_goal_cancel_service_client.call_async(rclpy_goal_cancel_request)
-            rclpy_goal_cancel_response: Any = rclpy_goal_cancel_future.result()
-            self.rclpy_node.get_logger().info('%s judge_control_cmd service response %s' % (self.rclpy_goal_cancel_service_server_name, rclpy_goal_cancel_response))
+            self.rclpy_node.get_logger().info("judge gts_navigation/control's command is stop")
+            
+            gts_navigation_control: NavigationControl = NavigationControl()
+            gts_navigation_control.cancel_navigation = True
+            gts_navigation_control.resume_navigation = False
+            
+            self.rclpy_gts_navigation_control_publisher.publish(gts_navigation_control)
+        elif (is_cmd_move and not is_cmd_stop and not is_cmd_ready):
+            self.rclpy_node.get_logger().info("judge gts_navigation/control's command is move")
+            
+            gts_navigation_control: NavigationControl = NavigationControl()
+            gts_navigation_control.cancel_navigation = False
+            gts_navigation_control.resume_navigation = True
+            
+            self.rclpy_gts_navigation_control_publisher.publish(gts_navigation_control)
         else: return
             
             

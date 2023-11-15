@@ -37,6 +37,7 @@ class RMDENode(Node):
     
     def __from_uvc_to_rms__(self) -> None:
         self.location_response_handler.response_to_uvc()
+        self.event_response_handler.response_to_uvc()
         
     
     def __from_rms_to_uvc__(self) -> None:
