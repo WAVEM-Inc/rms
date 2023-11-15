@@ -57,8 +57,8 @@ class EventResponseHandler():
         self.rclpy_battery_state_subscription_topic: str = '/battery/state'
         self.rclpy_imu_status_subscription_topic: str = '/imu/status'
         self.rclpy_scan_status_subscriptin_topic: str = '/scan/status'
-        self.rclpy_ublox_fix_status_subscription_topic: str = '/ublox/fix/status'
-        self.rclpy_battery_state_subscription_topic: str = '/battery/state/status'
+        self.rclpy_ublox_fix_status_subscription_topic: str = '/ublox/status'
+        self.rclpy_battery_state_subscription_topic: str = '/battery/status'
         self.rclpy_gts_navigation_task_status_subscription_topic: str = '/gts_navigation/task_status'
         
         self.ublox_fix_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
