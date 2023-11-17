@@ -6,6 +6,8 @@ import socket
 from configparser import ConfigParser
 from datetime import datetime
 
+from typing import Any
+
 
 class JsonEncoder(json.JSONEncoder):
     
@@ -49,7 +51,8 @@ class ConfigService():
         self.__config_parser__.read(self.__config_file_path__)
         
         return self.__config_parser__
-    
+
+
 
 class NetworkService():
     

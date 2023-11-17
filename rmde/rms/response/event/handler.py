@@ -44,21 +44,29 @@ class EventResponseHandler():
     
         
     def __init__(self, rclpy_node: Node, mqtt_client: Client) -> None:
+        self.rclpy_node: Node = rclpy_node
+
         self.script_directory: str = os.path.dirname(os.path.abspath(__file__))
-        self.config_file_path: str = '../../../mqtt/mqtt.ini'
-        self.config_service: ConfigService = ConfigService(self.script_directory, self.config_file_path)
-        self.config_parser: ConfigParser = self.config_service.read()
-        self.mqtt_event_publisher_topic: str = self.config_parser.get('topics', 'event')
+        self.mqtt_config_file_path: str = '../../../mqtt/mqtt.ini'
+        self.mqtt_config_service: ConfigService = ConfigService(self.script_directory, self.mqtt_config_file_path)
+        self.mqtt_config_parser: ConfigParser = self.mqtt_config_service.read()
+        self.mqtt_event_publisher_topic: str = self.mqtt_config_parser.get('topics', 'event')
+        self.mqtt_location_publisher_qos: int = int(self.mqtt_config_parser.get('qos', 'event'))
+
+        self.rclpy_node.get_logger().info('MQTT granted publisher\n\ttopic : {%s}\n\tqos : {%d}' % (self.mqtt_event_publisher_topic, self.mqtt_location_publisher_qos))
         
+        self.common_config_file_path: str = '../../common/config.ini'
+        self.common_config_service: ConfigService = ConfigService(self.script_directory, self.common_config_file_path)
+        self.common_config_parser: ConfigParser = self.common_config_service.read()
+
         self.network_service: NetworkService = NetworkService()
         
-        self.rclpy_node: Node = rclpy_node
         self.rclpy_ublox_fix_subscription_topic: str = '/ublox/fix'
         self.rclpy_battery_state_subscription_topic: str = '/battery/state'
         self.rclpy_imu_status_subscription_topic: str = '/imu/status'
         self.rclpy_scan_status_subscriptin_topic: str = '/scan/status'
         self.rclpy_ublox_fix_status_subscription_topic: str = '/ublox/status'
-        self.rclpy_battery_state_subscription_topic: str = '/battery/status'
+        self.rclpy_battery_state_status_subscription_topic: str = '/battery/status'
         self.rclpy_gts_navigation_task_status_subscription_topic: str = '/gts_navigation/task_status'
         
         self.ublox_fix_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
@@ -100,16 +108,16 @@ class EventResponseHandler():
         self.ublox_fix_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.ublox_fix_status_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = SensorStatus,
-            topic = self.rclpy_ublox_fix_subscription_topic,
+            topic = self.rclpy_ublox_fix_status_subscription_topic,
             qos_profile = qos_profile_system_default,
             callback = self.rclpy_ublox_fix_status_subscription_cb,
             callback_group = self.ublox_fix_status_subscription_cb_group
         )
         
         self.battery_state_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.battery_state_status_subscription: Subscription = self.rclpy_node.create_subscription(
+        self.battery_state_status_status_subscription: Subscription = self.rclpy_node.create_subscription(
             msg_type = SensorStatus,
-            topic = self.rclpy_battery_state_subscription_topic,
+            topic = self.rclpy_battery_state_status_subscription_topic,
             qos_profile = qos_profile_system_default,
             callback = self.rclpy_battery_state_status_subscription_cb,
             callback_group = self.battery_state_status_subscription_cb_group
@@ -237,12 +245,18 @@ class EventResponseHandler():
 
     
     def __build_header__(self) -> Header:
+        robotCoprId: str = self.common_config_parser.get('header', 'robotCorpId')
+        workCorpId: str = self.common_config_parser.get('header', 'workCorpId')
+        workSiteId: str = self.common_config_parser.get('header', 'workSiteId')
+        robotId: str = self.common_config_parser.get('header', 'robotId')
+        robotType: str = self.common_config_parser.get('header', 'robotType')
+
         header: Header = Header(
-            robotCorpId = 'rco0000001',
-            workCorpId = 'wco0000001',
-            workSiteId = 'wst0000001',
-            robotId = 'rbt0000001',
-            robotType = RobotType.AMR.value
+            robotCorpId = robotCoprId,
+            workCorpId = workCorpId,
+            workSiteId = workSiteId,
+            robotId = robotId,
+            robotType = robotType
         )
 
         return header

@@ -6,6 +6,7 @@ class SetInfo():
         mqttIP: str = None,
         mqttPort: str = None,
         robotCorpId: str = None,
+        robotId: str = None,
         workCorpId: str = None,
         workSiteId: str = None,
         batteryEvent: str = None
@@ -14,6 +15,7 @@ class SetInfo():
         self.mqttIP: str = mqttIP
         self.mqttPort: str = mqttPort
         self.robotCorpId: str = robotCorpId
+        self.robotId: str = robotId
         self.workCorpId: str = workCorpId
         self.workSiteId: str = workSiteId
         self.batteryEvent: str = batteryEvent

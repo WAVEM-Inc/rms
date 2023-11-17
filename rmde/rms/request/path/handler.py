@@ -32,10 +32,11 @@ class PathRequestHandler():
     
     def __init__(self, rclpy_node: Node, mqtt_broker: mqtt_client.Client) -> None:
         self.script_directory: str = os.path.dirname(os.path.abspath(__file__))
-        self.config_file_path: str = '../../../mqtt/mqtt.ini'
-        self.config_service: ConfigService = ConfigService(self.script_directory, self.config_file_path)
-        self.config_parser: ConfigParser = self.config_service.read()
-        self.mqtt_path_subscription_topic: str = self.config_parser.get('topics', 'path')
+        self.mqtt_config_file_path: str = '../../../mqtt/mqtt.ini'
+        self.mqtt_config_service: ConfigService = ConfigService(self.script_directory, self.mqtt_config_file_path)
+        self.mqtt_config_parser: ConfigParser = self.mqtt_config_service.read()
+        self.mqtt_path_subscription_topic: str = self.mqtt_config_parser.get('topics', 'path')
+        self.mqtt_path_subscription_qos: int = int(self.mqtt_config_parser.get('qos', 'path'))
         
         self.rclpy_node: Node = rclpy_node
         self.rclpy_goal_waypoints_publisher_topic: str = '/gts_navigation/waypoints'
@@ -87,7 +88,7 @@ class PathRequestHandler():
             self.rclpy_node.get_logger().info('JobPath LocationList {}'.format(self.jobPath.locationList))
             self.__publish_goal_waypoints_list__(self.jobPath.locationList)
             
-        self.mqtt_broker.subscribe(topic = self.mqtt_path_subscription_topic, qos = 2)
+        self.mqtt_broker.subscribe(topic = self.mqtt_path_subscription_topic, qos = self.mqtt_path_subscription_qos)
         self.mqtt_broker.client.message_callback_add(self.mqtt_path_subscription_topic, mqtt_path_subscription_cb)
 
     

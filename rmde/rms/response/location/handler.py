@@ -30,19 +30,29 @@ from .domain import TaskInfo
 from .domain import LastInfo
 from .domain import LastInfoLocation
 
+from typing import Any
+
 
 class LocationResponseHandler():
     
     
     def __init__(self, rclpy_node: Node, mqtt_broker: mqtt_client.Client) -> None:
+        self.rclpy_node: Node = rclpy_node
+
         self.script_directory: str = os.path.dirname(os.path.abspath(__file__))
-        self.config_file_path: str = '../../../mqtt/mqtt.ini'
-        self.config_service: ConfigService = ConfigService(self.script_directory, self.config_file_path)
-        self.config_parser: ConfigParser = self.config_service.read()
-        self.mqtt_location_publisher_topic: str = self.config_parser.get('topics', 'location')
+        self.mqtt_config_file_path: str = '../../../mqtt/mqtt.ini'
+        self.mqtt_config_service: ConfigService = ConfigService(self.script_directory, self.mqtt_config_file_path)
+        self.mqtt_config_parser: ConfigParser = self.mqtt_config_service.read()
+        self.mqtt_location_publisher_topic: str = self.mqtt_config_parser.get('topics', 'location')
+        self.mqtt_location_publisher_qos: int = int(self.mqtt_config_parser.get('qos', 'location'))
+
+        self.rclpy_node.get_logger().info('MQTT granted publisher\n\ttopic : {%s}\n\tqos : {%d}' % (self.mqtt_location_publisher_topic, self.mqtt_location_publisher_qos))
+
+        self.common_config_file_path: str = '../../common/config.ini'
+        self.common_config_service: ConfigService = ConfigService(self.script_directory, self.common_config_file_path)
+        self.common_config_parser: ConfigParser = self.common_config_service.read()
         
-        self.rclpy_node = rclpy_node
-        self.rclpy_gps_subscription_topic: str = '/ublox/fix'
+        self.rclpy_gps_subscription_topic: str = '/slam_to_gps'
         self.rclpy_battery_state_subscription_topic: str = '/battery/state'
         self.rclpy_velocity_state_subscription_topic: str = '/velocity/state'
         
@@ -118,12 +128,18 @@ class LocationResponseHandler():
         
         
     def __build_header__(self) -> Header:
+        robotCoprId: str = self.common_config_parser.get('header', 'robotCorpId')
+        workCorpId: str = self.common_config_parser.get('header', 'workCorpId')
+        workSiteId: str = self.common_config_parser.get('header', 'workSiteId')
+        robotId: str = self.common_config_parser.get('header', 'robotId')
+        robotType: str = self.common_config_parser.get('header', 'robotType')
+
         header: Header = Header(
-            robotCorpId = 'rco0000001',
-            workCorpId = 'wco0000001',
-            workSiteId = 'wst0000001',
-            robotId = 'rbt0000001',
-            robotType = RobotType.AMR.value
+            robotCorpId = robotCoprId,
+            workCorpId = workCorpId,
+            workSiteId = workSiteId,
+            robotId = robotId,
+            robotType = robotType
         )
 
         return header
@@ -162,7 +178,7 @@ class LocationResponseHandler():
             areaClsf = AreaCLSFType.INDOOR.value,
             floor = '1F',
             batteryLevel = self.battery_level,
-            velocity = self.velocity,
+            velocity = abs(self.velocity),
             totalDist = self.total_dist
         )
         
@@ -171,7 +187,7 @@ class LocationResponseHandler():
     
     def response_to_uvc(self) -> None:
         built_location: Location = self.build_location()
-        self.mqtt_broker.publish(topic = self.mqtt_location_publisher_topic, payload = json.dumps(built_location.__dict__), qos = 0)
+        self.mqtt_broker.publish(topic = self.mqtt_location_publisher_topic, payload = json.dumps(built_location.__dict__), qos = self.mqtt_location_publisher_qos)
         
 
 __all__ = ['location_response_handler']
