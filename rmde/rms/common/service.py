@@ -68,4 +68,4 @@ class NetworkService():
         return __ip_address
 
 
-__all__ = ['common_service']
+__all__ = ['rms_common_service']

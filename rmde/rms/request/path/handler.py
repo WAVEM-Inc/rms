@@ -137,4 +137,4 @@ class PathRequestHandler():
         self.__rclpy_goal_waypoints_publisher.publish(__rclpy_goal_waypoints)
         
 
-__all__ = ['path_request_handler']
+__all__ = ['rms_request_path_handler']

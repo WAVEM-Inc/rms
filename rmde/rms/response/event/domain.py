@@ -69,4 +69,4 @@ class Event():
     comInfo: Dict = field(default_factory = empty_dict)
         
 
-__all__ = ['event']
+__all__ = ['rms_response_event_domain']

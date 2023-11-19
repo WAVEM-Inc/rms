@@ -111,4 +111,4 @@ class ControlRequestHandler():
             
             
 
-__all__ = ['control_request_handler']
+__all__ = ['rms_request_control_handler']

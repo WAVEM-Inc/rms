@@ -149,18 +149,18 @@ class LocationResponseHandler():
     
 
     def __build_job_info(self) -> JobInfo:
-        __task_info: TaskInfo = TaskInfo()
+        __taskInfo: TaskInfo = TaskInfo()
 
         __job_group: str = JobGroupType.SUPPLY.value
-        __task_info.jobGroup = __job_group
+        __taskInfo.jobGroup = __job_group
 
         __job_kind: str = JobKindType.MOVE.value
-        __task_info.jobKind = __job_kind
+        __taskInfo.jobKind = __job_kind
 
         __task_status: str = TaskStatusType.ASSIGNED.value
-        __task_info.taskStatus = __task_status
+        __taskInfo.taskStatus = __task_status
 
-        __task_info_dict: dict = __task_info.__dict__
+        __task_info_dict: dict = __taskInfo.__dict__
 
         __job_plan_id: str = self.__uuid_service.generate_uuid()
         __job_group_id: str = self.__uuid_service.generate_uuid()
@@ -177,35 +177,46 @@ class LocationResponseHandler():
         __jobOrderId: str = __job_order_id
         __jobInfo.jobOrderId = __jobOrderId
 
-        __task_info: dict = __task_info_dict
-        __jobInfo.taskInfo = __task_info
+        __taskInfo: dict = __task_info_dict
+        __jobInfo.taskInfo = __taskInfo
 
         return __jobInfo
     
     
     def __build_last_info(self) -> LastInfo:
-        __last_info_location: LastInfoLocation = LastInfoLocation()
+        __lastInfoLocation: LastInfoLocation = LastInfoLocation()
 
         __xpos: float = self.location_xpos
-        __last_info_location.xpos = __xpos
+        __lastInfoLocation.xpos = __xpos
 
         __ypos: float = self.location_ypos
-        __last_info_location.ypos = __ypos
+        __lastInfoLocation.ypos = __ypos
 
         __heading: float = self.heading
-        __last_info_location.heading = __heading
+        __lastInfoLocation.heading = __heading
 
-        __last_info_location_dict: dict = __last_info_location.__dict__
+        __lastInfoLocation_dict: dict = __lastInfoLocation.__dict__
         
-        last_info: LastInfo = LastInfo()
+        lastInfo: LastInfo = LastInfo()
 
-        areaClsf = AreaCLSFType.INDOOR.value
-        floor = '1F'
-        batteryLevel = self.battery_level
-        velocity = abs(self.velocity)
-        totalDist = self.total_dist
+        lastInfo.location = __lastInfoLocation_dict
+
+        __areaClsf: str = AreaCLSFType.INDOOR.value
+        lastInfo.areaClsf = __areaClsf
         
-        return last_info
+        __floor: str = '1F'
+        lastInfo.floor = __floor
+
+        __batteryLevel: int = self.battery_level
+        lastInfo.batteryLevel = __batteryLevel
+
+        __velocity: float = abs(self.velocity)
+        lastInfo.velocity = __velocity
+        
+        __totalDist: int = self.total_dist
+        lastInfo.totalDist = __totalDist
+        
+        return lastInfo
     
     
     def response_to_uvc(self) -> None:
@@ -213,4 +224,4 @@ class LocationResponseHandler():
         self.__mqtt_client.publish(topic = self.__mqtt_location_publisher_topic, payload = json.dumps(built_location.__dict__), qos = self.__mqtt_location_publisher_qos)
         
 
-__all__ = ['location_response_handler']
+__all__ = ['rms_response_location_handler']

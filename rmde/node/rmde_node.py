@@ -17,17 +17,17 @@ class RMDENode(Node):
     def __init__(self) -> None:
         self.__node_name: str = 'rmde'
         self.__rclpy_flag: str = 'RCLPY'
-        self.__mqtt_client: Client = Client()
+        self.mqtt_client: Client = Client()
         
         super().__init__(self.__node_name)
         self.get_logger().info('===== {} [{}] created ====='.format(self.__rclpy_flag, self.__node_name))
         
-        self.__event_response_handler: EventResponseHandler = EventResponseHandler(self, self.__mqtt_client)
-        self.__location_response_handler: LocationResponseHandler = LocationResponseHandler(self, self.__mqtt_client)
+        self.__event_response_handler: EventResponseHandler = EventResponseHandler(self, self.mqtt_client)
+        self.__location_response_handler: LocationResponseHandler = LocationResponseHandler(self, self.mqtt_client)
         
-        self.__config_request_handler: ConfigRequestHandler = ConfigRequestHandler(self, self.__mqtt_client)
-        self.__control_request_handler: ControlRequestHandler = ControlRequestHandler(self, self.__mqtt_client)
-        self.__path_request_handler: PathRequestHandler = PathRequestHandler(self, self.__mqtt_client)
+        self.__config_request_handler: ConfigRequestHandler = ConfigRequestHandler(self, self.mqtt_client)
+        self.__control_request_handler: ControlRequestHandler = ControlRequestHandler(self, self.mqtt_client)
+        self.__path_request_handler: PathRequestHandler = PathRequestHandler(self, self.mqtt_client)
         
         __rclpy_timer_loop: float = 1.0
         self.create_timer(__rclpy_timer_loop, self.__from_uvc_to_rms)

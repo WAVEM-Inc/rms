@@ -16,4 +16,4 @@ class Control():
     controlCmd: Dict = field(default_factory = empty_dict)
         
 
-__all__ = ['control']
+__all__ = ['rms_request_control_domain']

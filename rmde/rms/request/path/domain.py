@@ -31,4 +31,4 @@ class Path():
     jobPath: Dict = field(default_factory = empty_dict)
         
         
-__all__ = ['path']
+__all__ = ['rms_request_path_domain']

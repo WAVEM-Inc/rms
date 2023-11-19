@@ -384,4 +384,4 @@ class EventResponseHandler():
         self.__mqtt_client.publish(topic = self.__mqtt_event_publisher_topic, payload = json.dumps(__built_event.__dict__), qos = 0)
         
 
-__all__ = ['event_response_handler']
+__all__ = ['rms_response_event_handler']

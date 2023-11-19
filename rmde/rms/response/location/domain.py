@@ -42,4 +42,4 @@ class Location():
     lastInfo: Dict = field(default_factory = empty_dict)
         
         
-__all__ = ['location']
+__all__ = ['rms_response_location_domain']
