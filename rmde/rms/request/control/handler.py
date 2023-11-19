@@ -10,7 +10,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from gts_navigation_msgs.msg import NavigationControl
 
-from ....mqtt import mqtt_client
+from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
 
 from .domain import Control
@@ -20,90 +20,93 @@ from typing import Any
 from typing import Dict
 
 
+RCLPY_FLAG: str = 'RCLPY'
+MQTT_FLAG: str = 'MQTT'
+
 class ControlRequestHandler():
-    rclpy_flag: str = 'RCLPY'
-    mqtt_flag: str = 'MQTT'
-    
-    
-    def __init__(self, rclpy_node: Node, mqtt_broker: mqtt_client.Client) -> None:
-        self.script_directory: str = os.path.dirname(os.path.abspath(__file__))
-        self.mqtt_config_file_path: str = '../../../mqtt/mqtt.ini'
-        self.mqtt_config_service: ConfigService = ConfigService(self.script_directory, self.mqtt_config_file_path)
-        self.mqtt_config_parser: ConfigParser = self.mqtt_config_service.read()
-        self.mqtt_control_subscription_topic: str = self.mqtt_config_parser.get('topics', 'control')
-        self.mqtt_control_subscription_qos: int = int(self.mqtt_config_parser.get('qos', 'control'))
+    def __init__(self, rclpy_node: Node, mqtt_client: Client) -> None:
+        self.__rclpy_node: Node = rclpy_node
+        self.__mqtt_client: Client = mqtt_client
+
+        self.__script_directory: str = os.path.dirname(os.path.abspath(__file__))
+        self.__mqtt_config_file_path: str = '../../../mqtt/mqtt.ini'
+        self.__mqtt_config_service: ConfigService = ConfigService(self.__script_directory, self.__mqtt_config_file_path)
+        self.__mqtt_config_parser: ConfigParser = self.__mqtt_config_service.read()
+        self.__mqtt_control_subscription_topic: str = self.__mqtt_config_parser.get('topics', 'control')
+        self.__mqtt_control_subscription_qos: int = int(self.__mqtt_config_parser.get('qos', 'control'))
         
-        self.rclpy_node: Node = rclpy_node
-        
-        self.rclpy_gts_navigation_control_publisher_name: str = '/gts_navigation/control'
-        self.rclpy_gts_navigation_control_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.rclpy_gts_navigation_control_publisher: Publisher = self.rclpy_node.create_publisher(
+        self.__rclpy_gts_navigation_control_publisher_topic: str = '/gts_navigation/control'
+        self.__rclpy_gts_navigation_control_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_gts_navigation_control_publisher: Publisher = self.__rclpy_node.create_publisher(
             msg_type = NavigationControl,
-            topic = self.rclpy_gts_navigation_control_publisher_name,
+            topic = self.__rclpy_gts_navigation_control_publisher_topic,
             qos_profile = qos_profile_system_default,
-            callback_group = self.rclpy_gts_navigation_control_publisher_cb_group
+            callback_group = self.__rclpy_gts_navigation_control_publisher_cb_group
         )
         
-        self.mqtt_broker: mqtt_client.Client = mqtt_broker
-        self.control: Control = Control()
-        self.control_cmd: ControlCmd = ControlCmd()
+        self.__control: Control = Control()
+        self.__control_cmd: ControlCmd = ControlCmd()
         
     
     def request_to_uvc(self) -> None:
-        def mqtt_control_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
-            mqtt_topic: str = mqtt_message.topic
-            mqtt_decoded_payload: str = mqtt_message.payload.decode()
-            mqtt_json: Any = json.loads(mqtt_message.payload)
+        def __mqtt_control_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
+            __mqtt_topic: str = mqtt_message.topic
+            __mqtt_decoded_payload: str = mqtt_message.payload.decode()
+            __mqtt_json: Any = json.loads(mqtt_message.payload)
             
-            self.rclpy_node.get_logger().info('{} subscription cb payload [{}] from [{}]'.format(self.mqtt_flag, mqtt_decoded_payload, mqtt_topic))
-            self.rclpy_node.get_logger().info('{} subscription cb json [{}] from [{}]'.format(self.mqtt_flag, mqtt_json, mqtt_topic))
+            self.__rclpy_node.get_logger().info('{} subscription cb payload [{}] from [{}]'.format(MQTT_FLAG, __mqtt_decoded_payload, __mqtt_topic))
+            self.__rclpy_node.get_logger().info('{} subscription cb json [{}] from [{}]'.format(MQTT_FLAG, __mqtt_json, __mqtt_topic))
 
-            self.control = Control(
-                header = mqtt_json['header'],
-                controlCmd = mqtt_json['controlCmd']
-            )
+            __header_dict: dict = __mqtt_json['header']
+            self.__control.header = __header_dict
+
+            __controlCmd_dict: dict = __mqtt_json['controlCmd']
+            self.__control.controlCmd = __controlCmd_dict
             
-            self.control_cmd = ControlCmd(
-                ready = self.control.controlCmd['ready'],
-                move = self.control.controlCmd['move'],
-                stop = self.control.controlCmd['stop']
-            )
+            __ready: bool = self.__control.controlCmd['ready']
+            self.__control_cmd.ready = __ready
+
+            __move: bool = self.__control.controlCmd['move']
+            self.__control_cmd.move = __move
+
+            __stop: bool = self.__control.controlCmd['stop']
+            self.__control_cmd.stop = __stop
             
-            self.__judge_control_cmd__()
+            self.__judge_control_cmd()
             
-        self.mqtt_broker.subscribe(topic = self.mqtt_control_subscription_topic, qos = self.mqtt_control_subscription_qos)
-        self.mqtt_broker.client.message_callback_add(self.mqtt_control_subscription_topic, mqtt_control_subscription_cb)
+        self.__mqtt_client.subscribe(topic = self.__mqtt_control_subscription_topic, qos = self.__mqtt_control_subscription_qos)
+        self.__mqtt_client.client.message_callback_add(self.__mqtt_control_subscription_topic, __mqtt_control_subscription_cb)
         
 
-    def __judge_control_cmd__(self) -> None:
-        is_cmd_ready: bool = (self.control_cmd.ready == True)
-        is_cmd_move: bool = (self.control_cmd.move == True)
-        is_cmd_stop: bool = (self.control_cmd.stop == True)
+    def __judge_control_cmd(self) -> None:
+        __is_cmd_ready: bool = (self.__control_cmd.ready == True)
+        __is_cmd_move: bool = (self.__control_cmd.move == True)
+        __is_cmd_stop: bool = (self.__control_cmd.stop == True)
             
-        if (is_cmd_ready and is_cmd_move and is_cmd_stop):
+        if (__is_cmd_ready and __is_cmd_move and __is_cmd_stop):
             return
-        elif (is_cmd_ready and is_cmd_move):
+        elif (__is_cmd_ready and __is_cmd_move):
             return
-        elif (is_cmd_move and is_cmd_stop):
+        elif (__is_cmd_move and __is_cmd_stop):
             return
-        elif (is_cmd_ready and is_cmd_stop):
+        elif (__is_cmd_ready and __is_cmd_stop):
             return
-        elif (is_cmd_stop and not is_cmd_ready and not is_cmd_move):
-            self.rclpy_node.get_logger().info("judge gts_navigation/control's command is stop")
+        elif (__is_cmd_stop and not __is_cmd_ready and not __is_cmd_move):
+            self.__rclpy_node.get_logger().info('judge gts_navigation/control command is stop')
             
-            gts_navigation_control: NavigationControl = NavigationControl()
-            gts_navigation_control.cancel_navigation = True
-            gts_navigation_control.resume_navigation = False
+            __rclpy_gts_navigation_control: NavigationControl = NavigationControl()
+            __rclpy_gts_navigation_control.cancel_navigation = True
+            __rclpy_gts_navigation_control.resume_navigation = False
             
-            self.rclpy_gts_navigation_control_publisher.publish(gts_navigation_control)
-        elif (is_cmd_move and not is_cmd_stop and not is_cmd_ready):
-            self.rclpy_node.get_logger().info("judge gts_navigation/control's command is move")
+            self.__rclpy_gts_navigation_control_publisher.publish(__rclpy_gts_navigation_control)
+        elif (__is_cmd_move and not __is_cmd_stop and not __is_cmd_ready):
+            self.__rclpy_node.get_logger().info('judge gts_navigation/control command is move')
             
-            gts_navigation_control: NavigationControl = NavigationControl()
-            gts_navigation_control.cancel_navigation = False
-            gts_navigation_control.resume_navigation = True
+            __rclpy_gts_navigation_control: NavigationControl = NavigationControl()
+            __rclpy_gts_navigation_control.cancel_navigation = False
+            __rclpy_gts_navigation_control.resume_navigation = True
             
-            self.rclpy_gts_navigation_control_publisher.publish(gts_navigation_control)
+            self.__rclpy_gts_navigation_control_publisher.publish(__rclpy_gts_navigation_control)
         else: return
             
             

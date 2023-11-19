@@ -27,9 +27,9 @@ from ..rms.common.service import UUIDService
 
 """
 class Logger:
-    __info__: str = "[INFO]"
-    __warn__: str = "[WARN]"
-    __error__: str = "[ERROR]"
+    __info: str = "[INFO]"
+    __warn: str = "[WARN]"
+    __error: str = "[ERROR]"
 
     def __init__(self) -> None:
         """ Description
@@ -127,7 +127,7 @@ class Logger:
         
         start_color: str = ""
         end_color: str = ""
-        self.__log__(start_color, self.__info__, message, end_color)
+        self.__log__(start_color, self.__info, message, end_color)
 
 
     def warn(self, message: str) -> None:
@@ -150,7 +150,7 @@ class Logger:
         
         start_color: str = "\033[33m"
         end_color: str = "\033[0m"
-        self.__log__(start_color, self.__info__, message, end_color)
+        self.__log__(start_color, self.__warn, message, end_color)
 
 
     def error(self, message: str) -> None:
@@ -173,7 +173,7 @@ class Logger:
         
         start_color: str = "\033[31m"
         end_color: str = "\033[0m"
-        self.__log__(start_color, self.__info__, message, end_color)
+        self.__log__(start_color, self.__error, message, end_color)
 
 """ Description
 
@@ -220,37 +220,37 @@ class Client:
             __mqtt_manager__: broker.mqtt_broker = broker.mqtt_broker()
         """
         
-        self.__script_directory__: str = os.path.dirname(os.path.abspath(__file__))
-        self.__config_file_path__: str = 'mqtt.ini'
-        self.__uuid_service__: UUIDService = UUIDService()
-        self.__config_service__: ConfigService = ConfigService(self.__script_directory__, self.__config_file_path__)
-        self.__config_parser__: ConfigParser = self.__config_service__.read()
+        self.__script_directory: str = os.path.dirname(os.path.abspath(__file__))
+        self.__config_file_path: str = 'mqtt.ini'
+        self.__uuid_service: UUIDService = UUIDService()
+        self.__config_service: ConfigService = ConfigService(self.__script_directory, self.__config_file_path)
+        self.__config_parser: ConfigParser = self.__config_service.read()
         
-        self.__mqtt_logger__: Logger = Logger()
-        self.broker_address: str = self.__config_parser__.get('broker', 'host')
-        self.broker_port: int = int(self.__config_parser__.get('broker', 'port'))
-        self.__client_name__: str = self.__uuid_service__.generate_uuid()
-        self.__client_keep_alive__: int = int(self.__config_parser__.get('broker', 'client_keep_alive'))
-        self.__user_name__: str = self.__config_parser__.get('broker', 'user_name')
-        self.__password__: str = self.__config_parser__.get('broker', 'password')
+        self.__mqtt_logger: Logger = Logger()
+        self.__broker_address: str = self.__config_parser.get('broker', 'host')
+        self.__broker_port: int = int(self.__config_parser.get('broker', 'port'))
+        self.__client_name: str = self.__uuid_service.generate_uuid()
+        self.__client_keep_alive: int = int(self.__config_parser.get('broker', 'client_keep_alive'))
+        self.__user_name: str = self.__config_parser.get('broker', 'user_name')
+        self.__password: str = self.__config_parser.get('broker', 'password')
         
-        self.client: mqtt.Client = mqtt.Client(self.__client_name__, clean_session = True, userdata = None, transport = 'tcp')
+        self.client: mqtt.Client = mqtt.Client(self.__client_name, clean_session = True, userdata = None, transport = 'tcp')
         # self.client: mqtt.Client = mqtt.Client(self.__client_name__, clean_session = True, userdata = None, transport = 'websockets')
         # self.client.ws_set_options(path = '/ws')
-        self.client.username_pw_set(self.__user_name__, self.__password__)
+        self.client.username_pw_set(self.__user_name, self.__password)
         
-        self.client.on_connect = self.__on_connect__
-        self.client.on_message = self.__on_message__
-        self.client.connect(self.broker_address, self.broker_port, self.__client_keep_alive__)
+        self.client.on_connect = self.__on_connect
+        self.client.on_message = self.__on_message
+        self.client.connect(self.__broker_address, self.__broker_port, self.__client_keep_alive)
 
         if self.client.is_connected:
-            self.__mqtt_logger__.info("===== MQTT connected to [%s:%d] =====" % (self.broker_address, self.broker_port))
+            self.__mqtt_logger.info("===== MQTT connected to [%s:%d] =====" % (self.__broker_address, self.__broker_port))
             self.client.loop_start()
         else:
-            self.__mqtt_logger__.error("===== MQTT failed to connect =====")
+            self.__mqtt_logger.error("===== MQTT failed to connect =====")
 
 
-    def __on_connect__(self, client: Any, user_data: Any, flags: Any, rc: Any) -> None:
+    def __on_connect(self, client: Any, user_data: Any, flags: Any, rc: Any) -> None:
         
         """ Description
         
@@ -271,12 +271,12 @@ class Client:
         """
         
         if rc == 0:
-            self.__mqtt_logger__.info("===== MQTT connection succeeded result code : [{}] =====".format(str(rc)))
+            self.__mqtt_logger.info("===== MQTT connection succeeded result code : [{}] =====".format(str(rc)))
         else:
-            self.__mqtt_logger__.error("===== MQTT connection failed result code : [{}] =====".format(str(rc)))
+            self.__mqtt_logger.error("===== MQTT connection failed result code : [{}] =====".format(str(rc)))
 
 
-    def __on_message__(self, client: Any, user_data: Any, msg: Any) -> None:
+    def __on_message(self, client: Any, user_data: Any, msg: Any) -> None:
         
         """ Description
         
@@ -335,7 +335,7 @@ class Client:
         
         """
         
-        self.__mqtt_logger__.info('MQTT granted subscription\n\ttopic : {%s}\n\tqos : {%d}' % (topic, qos))
+        self.__mqtt_logger.info('MQTT granted subscription\n\ttopic : {%s}\n\tqos : {%d}' % (topic, qos))
         self.client.subscribe(topic = topic, qos = qos)
 
 

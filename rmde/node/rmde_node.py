@@ -13,37 +13,37 @@ from ..rms.response.location.handler import LocationResponseHandler
 
 
 class RMDENode(Node):
-    node_name: str = 'rmde'
-    rclpy_flag: str = 'RCLPY'
-    mqtt_flag: str = 'MQTT'
-    mqtt_client: Client = Client()
     
     def __init__(self) -> None:
-        super().__init__(self.node_name)
-        self.get_logger().info('===== {} [{}] created ====='.format(self.rclpy_flag, self.node_name))
+        self.__node_name: str = 'rmde'
+        self.__rclpy_flag: str = 'RCLPY'
+        self.__mqtt_client: Client = Client()
         
-        self.event_response_handler: EventResponseHandler = EventResponseHandler(self, self.mqtt_client)
-        self.location_response_handler: LocationResponseHandler = LocationResponseHandler(self, self.mqtt_client)
+        super().__init__(self.__node_name)
+        self.get_logger().info('===== {} [{}] created ====='.format(self.__rclpy_flag, self.__node_name))
         
-        self.evn_config_request_handler: ConfigRequestHandler = ConfigRequestHandler(self, self.mqtt_client)
-        self.control_request_handler: ControlRequestHandler = ControlRequestHandler(self, self.mqtt_client)
-        self.path_request_handler: PathRequestHandler = PathRequestHandler(self, self.mqtt_client)
+        self.__event_response_handler: EventResponseHandler = EventResponseHandler(self, self.__mqtt_client)
+        self.__location_response_handler: LocationResponseHandler = LocationResponseHandler(self, self.__mqtt_client)
         
-        rclpy_timer_loop: float = 1.0
-        self.create_timer(rclpy_timer_loop, self.__from_uvc_to_rms__)
+        self.__config_request_handler: ConfigRequestHandler = ConfigRequestHandler(self, self.__mqtt_client)
+        self.__control_request_handler: ControlRequestHandler = ControlRequestHandler(self, self.__mqtt_client)
+        self.__path_request_handler: PathRequestHandler = PathRequestHandler(self, self.__mqtt_client)
         
-        self.__from_rms_to_uvc__()
+        __rclpy_timer_loop: float = 1.0
+        self.create_timer(__rclpy_timer_loop, self.__from_uvc_to_rms)
+        
+        self.__from_rms_to_uvc()
     
     
-    def __from_uvc_to_rms__(self) -> None:
-        self.location_response_handler.response_to_uvc()
-        self.event_response_handler.response_to_uvc()
+    def __from_uvc_to_rms(self) -> None:
+        self.__location_response_handler.response_to_uvc()
+        self.__event_response_handler.response_to_uvc()
         
     
-    def __from_rms_to_uvc__(self) -> None:
-        self.path_request_handler.request_to_uvc()
-        self.control_request_handler.request_to_uvc()
-        self.evn_config_request_handler.request_to_uvc()
+    def __from_rms_to_uvc(self) -> None:
+        self.__path_request_handler.request_to_uvc()
+        self.__control_request_handler.request_to_uvc()
+        self.__config_request_handler.request_to_uvc()
         
 
 

@@ -1,50 +1,34 @@
+from dataclasses import dataclass, field
+from typing import Dict
+from ...common.service import empty_dict
 
+
+@dataclass
 class JobInfo():
-    def __init__(
-        self,
-        jobPlanId: str = None,
-        jobGroupId: str = None,
-        jobOrderId: str = None,
-        jobGroup: str = None,
-        jobKind: str = None
-    ) -> None:
-        self.jobPlanId: str = jobPlanId
-        self.jobGroupId: str = jobGroupId
-        self.jobOrderId: str = jobOrderId
-        self.jobGroup: str = jobGroup
-        self.jobKind: str = jobKind
+    jobPlanId: str = ''
+    jobGroupId: str = ''
+    jobOrderId: str = ''
+    jobGroup: str = ''
+    jobKind: str = ''
 
 
+@dataclass
 class JobKindType():
-    def __init__(
-        self,
-        jobTargetId: str = None
-    ) -> None:
-        self.jobTargetId: str = jobTargetId
+    jobTargetId: str = ''
         
 
+@dataclass
 class JobPath():
-    def __init__(
-        self,
-        areaClsf: str = None,
-        locationList: list = None,
-        jobKindType: dict = None
-    ) -> None:
-        self.areaClsf: str = areaClsf
-        self.locationList: list = locationList
-        self.jobKindType: dict = jobKindType
-        
+    areaClsf: str = ''
+    locationList: list = ''
+    jobKindType: Dict = ''
 
+
+@dataclass
 class Path():
-    def __init__(
-        self,
-        header: dict = None,
-        jobInfo: dict = None,
-        jobPath: dict = None
-    ) -> None:
-        self.header: dict = header
-        self.jobInfo: dict = jobInfo
-        self.jobPath: dict = jobPath
+    header: Dict = field(default_factory = empty_dict)
+    jobInfo: Dict = field(default_factory = empty_dict)
+    jobPath: Dict = field(default_factory = empty_dict)
         
         
 __all__ = ['path']

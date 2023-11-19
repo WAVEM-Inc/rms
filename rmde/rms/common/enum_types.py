@@ -32,3 +32,4 @@ class TaskStatusType(Enum):
 
 class RobotType(Enum):
     AMR: str = 'AMR'
+    AGV: str = 'AGV'
