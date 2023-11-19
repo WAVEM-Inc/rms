@@ -254,17 +254,17 @@ class EventResponseHandler():
         __robotCorpId: str = self.__common_config_parser.get('header', 'robotCorpId')
         __header.robotCorpId = __robotCorpId
 
-        workCorpId: str = self.__common_config_parser.get('header', 'workCorpId')
-        __header.workCorpId = workCorpId
+        __workCorpId: str = self.__common_config_parser.get('header', 'workCorpId')
+        __header.workCorpId = __workCorpId
 
-        workSiteId: str = self.__common_config_parser.get('header', 'workSiteId')
-        __header.workSiteId = workSiteId
+        __workSiteId: str = self.__common_config_parser.get('header', 'workSiteId')
+        __header.workSiteId = __workSiteId
 
-        robotId: str = self.__common_config_parser.get('header', 'robotId')
-        __header.robotId = robotId
+        __robotId: str = self.__common_config_parser.get('header', 'robotId')
+        __header.robotId = __robotId
 
-        robotType: str = self.__common_config_parser.get('header', 'robotType')
-        __header.robotType = robotType
+        __robotType: str = self.__common_config_parser.get('header', 'robotType')
+        __header.robotType = __robotType
 
         return __header
     

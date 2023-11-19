@@ -133,17 +133,17 @@ class LocationResponseHandler():
         __robotCorpId: str = self.__common_config_parser.get('header', 'robotCorpId')
         __header.robotCorpId = __robotCorpId
 
-        workCorpId: str = self.__common_config_parser.get('header', 'workCorpId')
-        __header.workCorpId = workCorpId
+        __workCorpId: str = self.__common_config_parser.get('header', 'workCorpId')
+        __header.workCorpId = __workCorpId
 
-        workSiteId: str = self.__common_config_parser.get('header', 'workSiteId')
-        __header.workSiteId = workSiteId
+        __workSiteId: str = self.__common_config_parser.get('header', 'workSiteId')
+        __header.workSiteId = __workSiteId
 
-        robotId: str = self.__common_config_parser.get('header', 'robotId')
-        __header.robotId = robotId
+        __robotId: str = self.__common_config_parser.get('header', 'robotId')
+        __header.robotId = __robotId
 
-        robotType: str = self.__common_config_parser.get('header', 'robotType')
-        __header.robotType = robotType
+        __robotType: str = self.__common_config_parser.get('header', 'robotType')
+        __header.robotType = __robotType
 
         return __header
     
@@ -197,26 +197,26 @@ class LocationResponseHandler():
 
         __lastInfoLocation_dict: dict = __lastInfoLocation.__dict__
         
-        lastInfo: LastInfo = LastInfo()
+        __lastInfo: LastInfo = LastInfo()
 
-        lastInfo.location = __lastInfoLocation_dict
+        __lastInfo.location = __lastInfoLocation_dict
 
         __areaClsf: str = AreaCLSFType.INDOOR.value
-        lastInfo.areaClsf = __areaClsf
+        __lastInfo.areaClsf = __areaClsf
         
         __floor: str = '1F'
-        lastInfo.floor = __floor
+        __lastInfo.floor = __floor
 
         __batteryLevel: int = self.battery_level
-        lastInfo.batteryLevel = __batteryLevel
+        __lastInfo.batteryLevel = __batteryLevel
 
         __velocity: float = abs(self.velocity)
-        lastInfo.velocity = __velocity
+        __lastInfo.velocity = __velocity
         
         __totalDist: int = self.total_dist
-        lastInfo.totalDist = __totalDist
+        __lastInfo.totalDist = __totalDist
         
-        return lastInfo
+        return __lastInfo
     
     
     def response_to_uvc(self) -> None:
