@@ -10,6 +10,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import BatteryState
 from robot_status_msgs.msg import VelocityStatus
+from gps_iao_door_msgs.msg import InOutDoor
 
 from ....mqtt.mqtt_client import Client
 
@@ -79,6 +80,16 @@ class LocationResponseHandler():
             qos_profile = qos_profile_sensor_data,
             callback_group = self.__rclpy_velocity_state_subscription_cb_group
         )
+
+        self.__rclpy_in_out_door_subscription_topic: str = '/in_out_door'
+        self.__rclpy_in_out_door_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_in_out_door_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = InOutDoor,
+            topic = self.__rclpy_in_out_door_subscription_topic,
+            callback = self.__rclpy_in_out_door_subscription_cb,
+            qos_profile = qos_profile_sensor_data,
+            callback_group = self.__rclpy_in_out_door_subscription_cb_group
+        )
         
         self.__uuid_service: UUIDService = UUIDService()
         self.__time_service: TimeService = TimeService()
@@ -89,11 +100,12 @@ class LocationResponseHandler():
         self.battery_level: float = 0.0
         self.velocity: float = 0.0
         self.total_dist: int = 0
+        self.areaClsf: str = ''
         
         
     def __rclpy_gps_subscription_cb(self, gps_cb: NavSatFix) -> None:
-        self.location_xpos = gps_cb.latitude
-        self.location_ypos = gps_cb.longitude
+        self.location_xpos = gps_cb.longitude
+        self.location_ypos = gps_cb.latitude
         self.heading = gps_cb.altitude
     
     
@@ -107,6 +119,16 @@ class LocationResponseHandler():
         
         self.velocity = __current_velocity
         self.total_dist = __distance
+
+    
+    def __rclpy_in_out_door_subscription_cb(self, in_out_door_cb: InOutDoor) -> None:
+        is_out_door: bool = (in_out_door_cb.determination == True)
+
+        if is_out_door:
+            self.areaClsf = AreaCLSFType.OUTDOOR.value
+        else :
+            self.areaClsf = AreaCLSFType.INDOOR.value
+        return
     
     
     def build_location(self) -> Location:
@@ -201,8 +223,7 @@ class LocationResponseHandler():
 
         __lastInfo.location = __lastInfoLocation_dict
 
-        __areaClsf: str = AreaCLSFType.INDOOR.value
-        __lastInfo.areaClsf = __areaClsf
+        __lastInfo.areaClsf = self.areaClsf
         
         __floor: str = '1F'
         __lastInfo.floor = __floor

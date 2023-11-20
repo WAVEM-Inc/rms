@@ -13,6 +13,7 @@ from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import BatteryState
 from robot_status_msgs.msg import SensorStatus
 from robot_status_msgs.msg import NavigationStatus
+from gps_iao_door_msgs.msg import InOutDoor
 
 from ....mqtt.mqtt_client import Client
 
@@ -130,6 +131,16 @@ class EventResponseHandler():
             callback = self.__rclpy_gts_navigation_task_status_subscription_cb,
             callback_group = self.__rclpy_gts_navigation_task_status_subscription_cb_group
         )
+
+        self.__rclpy_in_out_door_subscription_topic: str = '/in_out_door'
+        self.__rclpy_in_out_door_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_in_out_door_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = InOutDoor,
+            topic = self.__rclpy_in_out_door_subscription_topic,
+            callback = self.__rclpy_in_out_door_subscription_cb,
+            qos_profile = qos_profile_sensor_data,
+            callback_group = self.__rclpy_in_out_door_subscription_cb_group
+        )
                 
         
         self.__ip_address: str = self.__network_service.get_local_ip()
@@ -153,11 +164,12 @@ class EventResponseHandler():
         self.location_xpos: float = 0.0
         self.location_ypos: float = 0.0
         self.heading: float = 0.0
+        self.areaClsf: str = ''
     
     
     def __rclpy_gps_subscription_cb(self, gps_cb: NavSatFix) -> None:        
-        self.location_xpos = gps_cb.latitude
-        self.location_ypos = gps_cb.longitude
+        self.location_xpos = gps_cb.longitude
+        self.location_ypos = gps_cb.latitude
         self.heading = gps_cb.altitude
     
     
@@ -224,6 +236,16 @@ class EventResponseHandler():
         self.job_start_dist: float = navigation_status.start_dist
         self.job_end_dist: float = navigation_status.end_dist
         self.response_to_uvc()
+
+    
+    def __rclpy_in_out_door_subscription_cb(self, in_out_door_cb: InOutDoor) -> None:
+        is_out_door: bool = (in_out_door_cb.determination == True)
+
+        if is_out_door:
+            self.areaClsf = AreaCLSFType.OUTDOOR.value
+        else :
+            self.areaClsf = AreaCLSFType.INDOOR.value
+        return
         
 
     def __build_event(self) -> Event:
@@ -346,7 +368,7 @@ class EventResponseHandler():
         __eventSubCd: str = self.sensor_type
         __event_info.eventSubCd = __eventSubCd
 
-        __areaClsf: str = AreaCLSFType.INDOOR.value
+        __areaClsf: str = self.areaClsf
         __event_info.areaClsf = __areaClsf
 
         __floor: str = '1F'
