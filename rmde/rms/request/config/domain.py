@@ -1,32 +1,24 @@
+from dataclasses import dataclass, field
+from typing import Dict
+from ...common.service import empty_dict
 
+
+@dataclass
 class SetInfo():
-    def __init__(
-        self,
-        robotType: str = None,
-        mqttIP: str = None,
-        mqttPort: str = None,
-        robotCorpId: str = None,
-        workCorpId: str = None,
-        workSiteId: str = None,
-        batteryEvent: str = None
-    ) -> None:
-        self.robotType: str = robotType
-        self.mqttIP: str = mqttIP
-        self.mqttPort: str = mqttPort
-        self.robotCorpId: str = robotCorpId
-        self.workCorpId: str = workCorpId
-        self.workSiteId: str = workSiteId
-        self.batteryEvent: str = batteryEvent
-        
+    robotType: str = '',
+    mqttIP: str = '',
+    mqttPort: str = '',
+    robotCorpId: str = '',
+    robotId: str = '',
+    workCorpId: str = '',
+    workSiteId: str = '',
+    batteryEvent: str = ''
 
-class Config():
-    def __init__(
-        self,
-        header: dict = None,
-        setInfo: dict = None
-    ) -> None:
-        self.header: dict = header
-        self.setInfo: dict = setInfo
-        
 
-__all__ = ['env_config']
+@dataclass
+class Config:
+    header: Dict = field(default_factory = empty_dict)
+    setInfo: Dict = field(default_factory = empty_dict)
+
+
+__all__ = ['rms_request_config_domain']

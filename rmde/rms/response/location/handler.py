@@ -11,7 +11,7 @@ from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import BatteryState
 from robot_status_msgs.msg import VelocityStatus
 
-from ....mqtt import mqtt_client
+from ....mqtt.mqtt_client import Client
 
 from ...common.service import UUIDService
 from ...common.service import TimeService
@@ -32,50 +32,56 @@ from .domain import LastInfoLocation
 
 
 class LocationResponseHandler():
-    
-    
-    def __init__(self, rclpy_node: Node, mqtt_broker: mqtt_client.Client) -> None:
-        self.script_directory: str = os.path.dirname(os.path.abspath(__file__))
-        self.config_file_path: str = '../../../mqtt/mqtt.ini'
-        self.config_service: ConfigService = ConfigService(self.script_directory, self.config_file_path)
-        self.config_parser: ConfigParser = self.config_service.read()
-        self.mqtt_location_publisher_topic: str = self.config_parser.get('topics', 'location')
+    def __init__(self, rclpy_node: Node, mqtt_client: Client) -> None:
+        self.__rclpy_node: Node = rclpy_node
+        self.__mqtt_client: Client = mqtt_client
+
+        self.__script_directory: str = os.path.dirname(os.path.abspath(__file__))
+        self.__mqtt_config_file_path: str = '../../../mqtt/mqtt.ini'
+        self.__mqtt_config_service: ConfigService = ConfigService(self.__script_directory, self.__mqtt_config_file_path)
+        self.__mqtt_config_parser: ConfigParser = self.__mqtt_config_service.read()
+        self.__mqtt_location_publisher_topic: str = self.__mqtt_config_parser.get('topics', 'location')
+        self.__mqtt_location_publisher_qos: int = int(self.__mqtt_config_parser.get('qos', 'location'))
+
+        self.__rclpy_node.get_logger().info('MQTT granted publisher\n\ttopic : {%s}\n\tqos : {%d}' % (self.__mqtt_location_publisher_topic, self.__mqtt_location_publisher_qos))
+
+        self.__common_config_file_path: str = '../../common/config.ini'
+        self.__common_config_service: ConfigService = ConfigService(self.__script_directory, self.__common_config_file_path)
+        self.__common_config_parser: ConfigParser = self.__common_config_service.read()
         
-        self.rclpy_node = rclpy_node
-        self.rclpy_gps_subscription_topic: str = '/ublox/fix'
-        self.rclpy_battery_state_subscription_topic: str = '/battery/state'
-        self.rclpy_velocity_state_subscription_topic: str = '/velocity/state'
         
-        self.gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.gps_subscription: Subscription = self.rclpy_node.create_subscription(
+        self.__rclpy_gps_subscription_topic: str = '/slam_to_gps'
+        self.__rclpy_gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_gps_subscription: Subscription = self.__rclpy_node.create_subscription(
             msg_type = NavSatFix,
-            topic = self.rclpy_gps_subscription_topic,
-            callback = self.rclpy_gps_subscription_cb,
+            topic = self.__rclpy_gps_subscription_topic,
+            callback = self.__rclpy_gps_subscription_cb,
             qos_profile = qos_profile_sensor_data,
-            callback_group = self.gps_subscription_cb_group
+            callback_group = self.__rclpy_gps_subscription_cb_group
         )
         
-        self.battery_state_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.battery_state_subscription: Subscription = self.rclpy_node.create_subscription(
+        self.__rclpy_battery_state_subscription_topic: str = '/battery/state'
+        self.__rclpy_battery_state_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_battery_state_subscription: Subscription = self.__rclpy_node.create_subscription(
             msg_type = BatteryState,
-            topic = self.rclpy_battery_state_subscription_topic,
-            callback = self.rclpy_battery_state_subscription_cb,
+            topic = self.__rclpy_battery_state_subscription_topic,
+            callback = self.__rclpy_battery_state_subscription_cb,
             qos_profile = qos_profile_sensor_data,
-            callback_group = self.battery_state_subscription_cb_group
+            callback_group = self.__rclpy_battery_state_subscription_cb_group
         )
         
-        self.velocity_state_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.velocity_state_subscription: Subscription = self.rclpy_node.create_subscription(
+        self.__rclpy_velocity_state_subscription_topic: str = '/velocity/state'
+        self.__rclpy_velocity_state_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_velocity_state_subscription: Subscription = self.__rclpy_node.create_subscription(
             msg_type = VelocityStatus,
-            topic = self.rclpy_velocity_state_subscription_topic,
-            callback = self.rclpy_velocity_state_subscription_cb,
+            topic = self.__rclpy_velocity_state_subscription_topic,
+            callback = self.__rclpy_velocity_state_subscription_cb,
             qos_profile = qos_profile_sensor_data,
-            callback_group = self.velocity_state_subscription_cb_group
+            callback_group = self.__rclpy_velocity_state_subscription_cb_group
         )
         
-        self.mqtt_broker: mqtt_client.Client = mqtt_broker
-        self.uuid_service: UUIDService = UUIDService()
-        self.time_service: TimeService = TimeService()
+        self.__uuid_service: UUIDService = UUIDService()
+        self.__time_service: TimeService = TimeService()
         
         self.location_xpos: float = 0.0
         self.location_ypos: float = 0.0
@@ -85,93 +91,137 @@ class LocationResponseHandler():
         self.total_dist: int = 0
         
         
-    def rclpy_gps_subscription_cb(self, gps_cb: NavSatFix) -> None:
+    def __rclpy_gps_subscription_cb(self, gps_cb: NavSatFix) -> None:
         self.location_xpos = gps_cb.latitude
         self.location_ypos = gps_cb.longitude
         self.heading = gps_cb.altitude
     
     
-    def rclpy_battery_state_subscription_cb(self, battery_state_cb: BatteryState) -> None:
+    def __rclpy_battery_state_subscription_cb(self, battery_state_cb: BatteryState) -> None:
         self.battery_level = battery_state_cb.percentage
     
     
-    def rclpy_velocity_state_subscription_cb(self, velocity_state_cb: VelocityStatus) -> None:
-        current_velocity: float = velocity_state_cb.current_velocity
-        distance: float = velocity_state_cb.distance
+    def __rclpy_velocity_state_subscription_cb(self, velocity_state_cb: VelocityStatus) -> None:
+        __current_velocity: float = velocity_state_cb.current_velocity
+        __distance: float = velocity_state_cb.distance
         
-        self.velocity = current_velocity
-        self.total_dist = distance
+        self.velocity = __current_velocity
+        self.total_dist = __distance
     
     
     def build_location(self) -> Location:
-        header: Header = self.__build_header__()
-        job_info: JobInfo = self.__build_job_info__()
-        last_info: LastInfo = self.__build_last_info__()
-        
-        location: Location = Location(
-            header = header.__dict__,
-            jobInfo = job_info.__dict__,
-            lastInfo = last_info.__dict__
-        )
-        
-        return location
-        
-        
-    def __build_header__(self) -> Header:
-        header: Header = Header(
-            robotCorpId = 'rco0000001',
-            workCorpId = 'wco0000001',
-            workSiteId = 'wst0000001',
-            robotId = 'rbt0000001',
-            robotType = RobotType.AMR.value
-        )
+        __location: Location = Location()
 
-        return header
+        __header: Header = self.__build_header()
+        __header_dict: dict = __header.__dict__
+        __location.header = __header_dict
+
+        __jobInfo: JobInfo = self.__build_job_info()
+        __jobInfo_dict: dict = __jobInfo.__dict__
+        __location.jobInfo = __jobInfo_dict
+        
+        __lastInfo: LastInfo = self.__build_last_info()
+        __lastInfo_dict: dict = __lastInfo.__dict__
+        __location.lastInfo = __lastInfo_dict
+        
+        return __location
+        
+        
+    def __build_header(self) -> Header:
+        __header: Header = Header()
+
+        __robotCorpId: str = self.__common_config_parser.get('header', 'robotCorpId')
+        __header.robotCorpId = __robotCorpId
+
+        __workCorpId: str = self.__common_config_parser.get('header', 'workCorpId')
+        __header.workCorpId = __workCorpId
+
+        __workSiteId: str = self.__common_config_parser.get('header', 'workSiteId')
+        __header.workSiteId = __workSiteId
+
+        __robotId: str = self.__common_config_parser.get('header', 'robotId')
+        __header.robotId = __robotId
+
+        __robotType: str = self.__common_config_parser.get('header', 'robotType')
+        __header.robotType = __robotType
+
+        return __header
     
 
-    def __build_job_info__(self) -> JobInfo:
-        job_plan_id: str = self.uuid_service.generate_uuid()
-        job_group_id: str = self.uuid_service.generate_uuid()
-        job_order_id: str = self.uuid_service.generate_uuid()
-        
-        task_info: TaskInfo = TaskInfo(
-            jobGroup = JobGroupType.SUPPLY.value,
-            jobKind = JobKindType.MOVE.value,
-            taskStatus = TaskStatusType.ASSIGNED.value
-        )
-        
-        job_info: JobInfo = JobInfo(
-            jobPlanId = job_plan_id,
-            jobGroupId = job_group_id,
-            jobOrderId = job_order_id,
-            taskInfo = task_info.__dict__
-        )
-        
-        return job_info
+    def __build_job_info(self) -> JobInfo:
+        __taskInfo: TaskInfo = TaskInfo()
+
+        __job_group: str = JobGroupType.SUPPLY.value
+        __taskInfo.jobGroup = __job_group
+
+        __job_kind: str = JobKindType.MOVE.value
+        __taskInfo.jobKind = __job_kind
+
+        __task_status: str = TaskStatusType.ASSIGNED.value
+        __taskInfo.taskStatus = __task_status
+
+        __task_info_dict: dict = __taskInfo.__dict__
+
+        __job_plan_id: str = self.__uuid_service.generate_uuid()
+        __job_group_id: str = self.__uuid_service.generate_uuid()
+        __job_order_id: str = self.__uuid_service.generate_uuid()
+
+        __jobInfo: JobInfo = JobInfo()
+
+        __jobPlanId: str = __job_plan_id
+        __jobInfo.jobPlanId = __jobPlanId
+
+        __jobGroupId: str = __job_group_id
+        __jobInfo.jobGroupId = __jobGroupId
+
+        __jobOrderId: str = __job_order_id
+        __jobInfo.jobOrderId = __jobOrderId
+
+        __taskInfo: dict = __task_info_dict
+        __jobInfo.taskInfo = __taskInfo
+
+        return __jobInfo
     
     
-    def __build_last_info__(self) -> LastInfo:
-        last_info_location: LastInfoLocation = LastInfoLocation(
-            xpos = self.location_xpos,
-            ypos = self.location_ypos,
-            heading = self.heading
-        )
+    def __build_last_info(self) -> LastInfo:
+        __lastInfoLocation: LastInfoLocation = LastInfoLocation()
+
+        __xpos: float = self.location_xpos
+        __lastInfoLocation.xpos = __xpos
+
+        __ypos: float = self.location_ypos
+        __lastInfoLocation.ypos = __ypos
+
+        __heading: float = self.heading
+        __lastInfoLocation.heading = __heading
+
+        __lastInfoLocation_dict: dict = __lastInfoLocation.__dict__
         
-        last_info: LastInfo = LastInfo(
-            location = last_info_location.__dict__,
-            areaClsf = AreaCLSFType.INDOOR.value,
-            floor = '1F',
-            batteryLevel = self.battery_level,
-            velocity = self.velocity,
-            totalDist = self.total_dist
-        )
+        __lastInfo: LastInfo = LastInfo()
+
+        __lastInfo.location = __lastInfoLocation_dict
+
+        __areaClsf: str = AreaCLSFType.INDOOR.value
+        __lastInfo.areaClsf = __areaClsf
         
-        return last_info
+        __floor: str = '1F'
+        __lastInfo.floor = __floor
+
+        __batteryLevel: int = self.battery_level
+        __lastInfo.batteryLevel = __batteryLevel
+
+        __velocity: float = abs(self.velocity)
+        __lastInfo.velocity = __velocity
+        
+        __totalDist: int = self.total_dist
+        __lastInfo.totalDist = __totalDist
+        
+        return __lastInfo
     
     
     def response_to_uvc(self) -> None:
         built_location: Location = self.build_location()
-        self.mqtt_broker.publish(topic = self.mqtt_location_publisher_topic, payload = json.dumps(built_location.__dict__), qos = 0)
+        self.__mqtt_client.publish(topic = self.__mqtt_location_publisher_topic, payload = json.dumps(built_location.__dict__), qos = self.__mqtt_location_publisher_qos)
         
 
-__all__ = ['location_response_handler']
+__all__ = ['rms_response_location_handler']

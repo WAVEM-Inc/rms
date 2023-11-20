@@ -1,24 +1,19 @@
+from dataclasses import dataclass, field
+from typing import Dict
+from ...common.service import empty_dict
 
+
+@dataclass
 class ControlCmd():
-    def __init__(
-        self,
-        ready: bool = None,
-        move: bool = None,
-        stop: bool = None
-    ) -> None:
-        self.ready: bool = ready
-        self.move: bool = move
-        self.stop: bool = stop
-        
+    ready: bool = False
+    move: bool = False
+    stop: bool = False
 
+
+@dataclass
 class Control():
-    def __init__(
-        self,
-        header: dict = None,
-        controlCmd: dict = None
-    ) -> None:
-        self.header: dict = header
-        self.controlCmd: dict = controlCmd
+    header: Dict = field(default_factory = empty_dict)
+    controlCmd: Dict = field(default_factory = empty_dict)
         
 
-__all__ = ['control']
+__all__ = ['rms_request_control_domain']

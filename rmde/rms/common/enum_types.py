@@ -32,3 +32,7 @@ class TaskStatusType(Enum):
 
 class RobotType(Enum):
     AMR: str = 'AMR'
+    AGV: str = 'AGV'
+
+
+__all__ = ['rms_common_enum_types']

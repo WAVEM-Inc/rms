@@ -6,13 +6,11 @@ import socket
 from configparser import ConfigParser
 from datetime import datetime
 
+from typing import Dict
 
-class JsonEncoder(json.JSONEncoder):
-    
-    def default(self, obj):
-        if hasattr(obj, '__dict__'):
-            return {'__class__': obj.__class__.__name__, '__dict__': obj.__dict__}
-        return super().default(obj)
+
+def empty_dict() -> Dict:
+        return {}
     
 
 class TimeService():
@@ -22,9 +20,10 @@ class TimeService():
     
     
     def get_current_datetime(self) -> str:
-        current_datetime: datetime = datetime.now()
-        formatted_datetime: str = current_datetime.strftime("%y%m%d%H%M%S")
-        return formatted_datetime
+        __current_datetime: datetime = datetime.now()
+        __formatted_datetime: str = __current_datetime.strftime("%y%m%d%H%M%S")
+
+        return __formatted_datetime
     
 
 class UUIDService():
@@ -33,23 +32,28 @@ class UUIDService():
         pass
     
     def generate_uuid(self) -> str:
-        uuid_obj : uuid.UUID = uuid.uuid4()
-        uuid_str : str = str(uuid_obj)
-        return uuid_str
+        __uuid_obj : uuid.UUID = uuid.uuid4()
+        __uuid_str : str = str(__uuid_obj)
+        
+        return __uuid_str
 
 
 class ConfigService():
     
     def __init__(self, file_path: str, file_name: str) -> None:
-        self.__config_parser__: ConfigParser = ConfigParser()
-        self.__config_file_path__: str = os.path.join(file_path, file_name)
+        self.config_parser: ConfigParser = ConfigParser()
+        self.__config_file_path: str = os.path.join(file_path, file_name)
     
+    @property
+    def config_file_path(self) -> str:
+        return self.__config_file_path
     
     def read(self) -> ConfigParser:
-        self.__config_parser__.read(self.__config_file_path__)
+        self.config_parser.read(self.__config_file_path)
         
-        return self.__config_parser__
-    
+        return self.config_parser
+
+
 
 class NetworkService():
     
@@ -57,10 +61,11 @@ class NetworkService():
         pass
     
     def get_local_ip(self) -> str:
-        s: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip_address: str = s.getsockname()[0]
-        return ip_address
+        __s: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        __s.connect(("8.8.8.8", 80))
+        __ip_address: str = __s.getsockname()[0]
+
+        return __ip_address
 
 
-__all__ = ['common_service']
+__all__ = ['rms_common_service']

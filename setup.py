@@ -40,7 +40,10 @@ setup(
     version='0.2.0',
     packages=packages_list,
     include_package_data=True,
-    package_data={'rmde.mqtt': ['*.ini']},
+    package_data={
+        mqtt_package_name: ['mqtt.ini'],
+        rms_common_package_name: ['config.ini']
+    },
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),

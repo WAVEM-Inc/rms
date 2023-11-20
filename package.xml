@@ -8,6 +8,7 @@
   <license>Apahce 2.0</license>
 
   <exec_depend>rclpy</exec_depend>
+  <exec_depend>gts_navigation_msgs</exec_depend>
   <exec_depend>rosbridge_library</exec_depend>
   <exec_depend>python-inject-pip</exec_depend>
   <exec_depend>python3-msgpack</exec_depend>

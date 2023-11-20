@@ -12,7 +12,7 @@ from rosbridge_library.internal import message_conversion
 
 from gts_navigation_msgs.msg import GoalWaypoints
 
-from ....mqtt import mqtt_client
+from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
 
 from ...common.domain import Header
@@ -25,101 +25,116 @@ from typing import Any
 from typing import Dict
 
 
+RCLPY_FLAG: str = 'RCLPY'
+MQTT_FLAG: str = 'MQTT'
+
 class PathRequestHandler():
-    rclpy_flag: str = 'RCLPY'
-    mqtt_flag: str = 'MQTT'
-    
-    
-    def __init__(self, rclpy_node: Node, mqtt_broker: mqtt_client.Client) -> None:
-        self.script_directory: str = os.path.dirname(os.path.abspath(__file__))
-        self.config_file_path: str = '../../../mqtt/mqtt.ini'
-        self.config_service: ConfigService = ConfigService(self.script_directory, self.config_file_path)
-        self.config_parser: ConfigParser = self.config_service.read()
-        self.mqtt_path_subscription_topic: str = self.config_parser.get('topics', 'path')
+    def __init__(self, rclpy_node: Node, mqtt_client: Client) -> None:
+        self.__rclpy_node: Node = rclpy_node
+        self.__mqtt_client: Client = mqtt_client
+
+        self.__script_directory: str = os.path.dirname(os.path.abspath(__file__))
+        self.__mqtt_config_file_path: str = '../../../mqtt/mqtt.ini'
+        self.__mqtt_config_service: ConfigService = ConfigService(self.__script_directory, self.__mqtt_config_file_path)
+        self.__mqtt_config_parser: ConfigParser = self.__mqtt_config_service.read()
+        self.__mqtt_path_subscription_topic: str = self.__mqtt_config_parser.get('topics', 'path')
+        self.__mqtt_path_subscription_qos: int = int(self.__mqtt_config_parser.get('qos', 'path'))
         
-        self.rclpy_node: Node = rclpy_node
-        self.rclpy_goal_waypoints_publisher_topic: str = '/gts_navigation/waypoints'
-        
-        self.goal_waypoints_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.goal_waypoints_publisher: Publisher = self.rclpy_node.create_publisher(
+        self.__rclpy_goal_waypoints_publisher_topic: str = '/gts_navigation/waypoints'
+        self.__rclpy_goal_waypoints_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_goal_waypoints_publisher: Publisher = self.__rclpy_node.create_publisher(
             msg_type = GoalWaypoints,
-            topic = self.rclpy_goal_waypoints_publisher_topic,
+            topic = self.__rclpy_goal_waypoints_publisher_topic,
             qos_profile = qos_profile_system_default,
-            callback_group = self.goal_waypoints_cb_group    
+            callback_group = self.__rclpy_goal_waypoints_cb_group    
         )
         
-        self.mqtt_broker: mqtt_client.Client = mqtt_broker
-        self.path: Path = Path()
-        self.header: Header = Header()
-        self.jobInfo: JobInfo = JobInfo()
-        self.jobPath: JobPath = JobPath()
+        self.__path: Path = Path()
+        self.__jobInfo: JobInfo = JobInfo()
+        self.__jobPath: JobPath = JobPath()
         
     
     def request_to_uvc(self) -> None:
-        def mqtt_path_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
-            mqtt_topic: str = mqtt_message.topic
-            mqtt_decoded_payload: str = mqtt_message.payload.decode()
-            mqtt_json: Any = json.loads(mqtt_message.payload)
+        def __mqtt_path_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
+            __mqtt_topic: str = mqtt_message.topic
+            __mqtt_decoded_payload: str = mqtt_message.payload.decode()
+            __mqtt_json: Any = json.loads(mqtt_message.payload)
             
-            self.rclpy_node.get_logger().info('{} subscription cb payload [{}] from [{}]'.format(self.mqtt_flag, mqtt_decoded_payload, mqtt_topic))
-            self.rclpy_node.get_logger().info('{} subscription cb json [{}] from [{}]'.format(self.mqtt_flag, mqtt_json, mqtt_topic))
+            self.__rclpy_node.get_logger().info('{} subscription cb payload [{}] from [{}]'.format(MQTT_FLAG, __mqtt_decoded_payload, __mqtt_topic))
+            self.__rclpy_node.get_logger().info('{} subscription cb json [{}] from [{}]'.format(MQTT_FLAG, __mqtt_json, __mqtt_topic))
             
-            self.path = Path(
-                header = mqtt_json['header'],
-                jobInfo = mqtt_json['jobInfo'],
-                jobPath = mqtt_json['jobPath']
-            )
+            __header_dict: dict = __mqtt_json['header']
+            self.__path.header = __header_dict
+
+            __jobInfo_dict: dict = __mqtt_json['jobInfo']
+            self.__path.jobInfo = __jobInfo_dict
+
+            __jobPath_dict: dict = __mqtt_json['jobPath']
+            self.__path.jobPath = __jobPath_dict
             
-            self.jobInfo = JobInfo(
-                jobPlanId = self.path.jobInfo['jobPlanId'],
-                jobGroupId = self.path.jobInfo['jobGroupId'],
-                jobOrderId = self.path.jobInfo['jobOrderId'],
-                jobGroup = self.path.jobInfo['jobGroup'],
-                jobKind = self.path.jobInfo['jobKind']
-            )
+            __jobPlanId: str = self.__path.jobInfo['jobPlanId']
+            self.__jobInfo.jobPlanId = __jobPlanId
+
+            __jobGroupId: str  = self.__path.jobInfo['jobGroupId']
+            self.__jobInfo.jobGroupId = __jobGroupId
+
+            __jobOrderId: str  = self.__path.jobInfo['jobOrderId']
+            self.__jobInfo.jobOrderId = __jobOrderId
+
+            __jobGroup: str  = self.__path.jobInfo['jobGroup']
+            self.__jobInfo.jobGroup = __jobGroup
+
+            __jobKind: str = self.__path.jobInfo['jobKind']
+            self.__jobInfo.jobKind = __jobKind
+
+            __areaClsf: str = self.__path.jobPath['areaClsf']
+            self.__jobPath.areaClsf = __areaClsf
+
+            __locationList_list: list = self.__path.jobPath['locationList']
+            self.__jobPath.locationList = __locationList_list
+
+            __jobKindType_dict: dict = self.__path.jobPath['jobKindType']
+            self.__jobPath.jobKindType = __jobKindType_dict
             
-            self.jobPath = JobPath(
-                areaClsf = self.path.jobPath['areaClsf'],
-                locationList = self.path.jobPath['locationList'],
-                jobKindType = self.path.jobPath['jobKindType']
-            )
+            self.__rclpy_node.get_logger().info('JobPath LocationList {}'.format(self.__jobPath.locationList))
+            self.__rclpy_publish_goal_waypoints_list__(self.__jobPath.locationList)
             
-            self.rclpy_node.get_logger().info('JobPath LocationList {}'.format(self.jobPath.locationList))
-            self.__publish_goal_waypoints_list__(self.jobPath.locationList)
-            
-        self.mqtt_broker.subscribe(topic = self.mqtt_path_subscription_topic, qos = 2)
-        self.mqtt_broker.client.message_callback_add(self.mqtt_path_subscription_topic, mqtt_path_subscription_cb)
+        self.__mqtt_client.subscribe(topic = self.__mqtt_path_subscription_topic, qos = self.__mqtt_path_subscription_qos)
+        self.__mqtt_client.client.message_callback_add(self.__mqtt_path_subscription_topic, __mqtt_path_subscription_cb)
 
     
     def __lookup_object__(self, module_name: str, module_class_name: str) -> Any:        
-        self.rclpy_node.get_logger().info("{} lookup object path : {}".format(self.rclpy_flag, module_name))
-        self.rclpy_node.get_logger().info("{} lookup object module_name : {}".format(self.rclpy_flag, module_name))
+        self.__rclpy_node.get_logger().info('{} lookup object path : {}'.format(RCLPY_FLAG, module_name))
+        self.__rclpy_node.get_logger().info('{} lookup object module_name : {}'.format(RCLPY_FLAG, module_name))
 
-        module = importlib.import_module(module_name, self.rclpy_node.get_name())
-        obj: Any = getattr(module, module_class_name)
+        __module = importlib.import_module(module_name, self.__rclpy_node.get_name())
+        __obj: Any = getattr(__module, module_class_name)
 
-        return obj
+        return __obj
     
     
-    def __publish_goal_waypoints_list__(self, location_list: list) -> None:
-        goal_waypoints_list: list = []
+    def __rclpy_publish_goal_waypoints_list__(self, location_list: list) -> None:
+        __rclpy_goal_waypoints_list: list = []
         
         for location in location_list:
-            rclpy_msg_type: Any = self.__lookup_object__('sensor_msgs.msg', 'NavSatFix')
-            location_to_point: dict = {
+            __rclpy_nav_sat_fix_obj: Any = self.__lookup_object__('sensor_msgs.msg', 'NavSatFix')
+
+            __rclpy_location_to_nav_sat_fix_dict: dict = {
                 'latitude': location['xpos'],
                 'longitude': location['ypos'],
                 'altitude': 0.0
             }
-            point: Any = message_conversion.populate_instance(location_to_point, rclpy_msg_type())
-            goal_waypoints_list.append(point)
+
+            __rclpy_nav_sat_fix: Any = message_conversion.populate_instance(__rclpy_location_to_nav_sat_fix_dict, __rclpy_nav_sat_fix_obj())
+            __rclpy_goal_waypoints_list.append(__rclpy_nav_sat_fix)
         
-        self.rclpy_node.get_logger().info('GoalWaypoints List : {}'.format(goal_waypoints_list))
+        self.__rclpy_node.get_logger().info('GoalWaypoints List : {}'.format(__rclpy_goal_waypoints_list))
         
-        goal_waypoints: GoalWaypoints = GoalWaypoints()
-        goal_waypoints.goal_waypoints_list = goal_waypoints_list
-        self.rclpy_node.get_logger().info('GoalWaypoints : {}'.format(goal_waypoints.goal_waypoints_list))
-        self.goal_waypoints_publisher.publish(goal_waypoints)
+        __rclpy_goal_waypoints: GoalWaypoints = GoalWaypoints()
+        __rclpy_goal_waypoints.goal_waypoints_list = __rclpy_goal_waypoints_list
+
+        self.__rclpy_node.get_logger().info('GoalWaypoints : {}'.format(__rclpy_goal_waypoints.goal_waypoints_list))
+        self.__rclpy_goal_waypoints_publisher.publish(__rclpy_goal_waypoints)
         
 
-__all__ = ['path_request_handler']
+__all__ = ['rms_request_path_handler']
