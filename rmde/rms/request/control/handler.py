@@ -50,29 +50,40 @@ class ControlRequestHandler():
     
     def request_to_uvc(self) -> None:
         def __mqtt_control_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
-            __mqtt_topic: str = mqtt_message.topic
-            __mqtt_decoded_payload: str = mqtt_message.payload.decode()
-            __mqtt_json: Any = json.loads(mqtt_message.payload)
-            
-            self.__rclpy_node.get_logger().info('{} subscription cb payload [{}] from [{}]'.format(MQTT_FLAG, __mqtt_decoded_payload, __mqtt_topic))
-            self.__rclpy_node.get_logger().info('{} subscription cb json [{}] from [{}]'.format(MQTT_FLAG, __mqtt_json, __mqtt_topic))
+            try:
+                __mqtt_topic: str = mqtt_message.topic
+                __mqtt_decoded_payload: str = mqtt_message.payload.decode()
+                __mqtt_json: Any = json.loads(mqtt_message.payload)
+                
+                self.__rclpy_node.get_logger().info('{} subscription cb payload [{}] from [{}]'.format(MQTT_FLAG, __mqtt_decoded_payload, __mqtt_topic))
+                self.__rclpy_node.get_logger().info('{} subscription cb json [{}] from [{}]'.format(MQTT_FLAG, __mqtt_json, __mqtt_topic))
 
-            __header_dict: dict = __mqtt_json['header']
-            self.__control.header = __header_dict
+                __header_dict: dict = __mqtt_json['header']
+                self.__control.header = __header_dict
 
-            __controlCmd_dict: dict = __mqtt_json['controlCmd']
-            self.__control.controlCmd = __controlCmd_dict
-            
-            __ready: bool = self.__control.controlCmd['ready']
-            self.__control_cmd.ready = __ready
+                __controlCmd_dict: dict = __mqtt_json['controlCmd']
+                self.__control.controlCmd = __controlCmd_dict
+                
+                __ready: bool = self.__control.controlCmd['ready']
+                self.__control_cmd.ready = __ready
 
-            __move: bool = self.__control.controlCmd['move']
-            self.__control_cmd.move = __move
+                __move: bool = self.__control.controlCmd['move']
+                self.__control_cmd.move = __move
 
-            __stop: bool = self.__control.controlCmd['stop']
-            self.__control_cmd.stop = __stop
-            
-            self.__judge_control_cmd()
+                __stop: bool = self.__control.controlCmd['stop']
+                self.__control_cmd.stop = __stop
+                
+                self.__judge_control_cmd()
+
+            except KeyError as ke:
+                self.__rclpy_node.get_logger().error(f'Invalid JSON Key in MQTT {self.__mqtt_control_subscription_topic} subscription callback: {ke}')
+
+            except json.JSONDecodeError as jde:
+                self.__rclpy_node.get_logger().error(f'Invalid JSON format in MQTT {self.__mqtt_control_subscription_topic} subscription callback: {jde.msg}')
+
+            except Exception as e:
+                self.__rclpy_node.get_logger().error(f'Exception in MQTT {self.__mqtt_control_subscription_topic} subscription callback: {e}')
+                raise
             
         self.__mqtt_client.subscribe(topic = self.__mqtt_control_subscription_topic, qos = self.__mqtt_control_subscription_qos)
         self.__mqtt_client.client.message_callback_add(self.__mqtt_control_subscription_topic, __mqtt_control_subscription_cb)
