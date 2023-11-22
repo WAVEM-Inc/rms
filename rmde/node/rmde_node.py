@@ -2,6 +2,8 @@ import rclpy
 import paho.mqtt.client as mqtt
 
 from rclpy.node import Node
+from rclpy.timer import Timer
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from ..mqtt.mqtt_client import Client
 
 from ..rms.request.config.handler import ConfigRequestHandler
@@ -19,6 +21,9 @@ class RMDENode(Node):
         self.__rclpy_flag: str = 'RCLPY'
         self.mqtt_client: Client = Client()
         
+        self.mqtt_client.connect()
+        self.mqtt_client.run()
+            
         super().__init__(self.__node_name)
         self.get_logger().info('===== {} [{}] created ====='.format(self.__rclpy_flag, self.__node_name))
         
@@ -29,22 +34,31 @@ class RMDENode(Node):
         self.__control_request_handler: ControlRequestHandler = ControlRequestHandler(self, self.mqtt_client)
         self.__path_request_handler: PathRequestHandler = PathRequestHandler(self, self.mqtt_client)
         
-        __rclpy_timer_loop: float = 1.0
-        self.create_timer(__rclpy_timer_loop, self.__from_uvc_to_rms)
+        __rclpy_main_timer_period_sec: float = 1.0
+        __rclpy_main_timer_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        __rclpy_main_timer: Timer = self.create_timer(
+            timer_period_sec = __rclpy_main_timer_period_sec,
+            callback_group = __rclpy_main_timer_cb_group,
+            callback = self.__from_uvc_to_rms
+        )
         
         self.__from_rms_to_uvc()
     
     
     def __from_uvc_to_rms(self) -> None:
-        self.__location_response_handler.response_to_uvc()
-        self.__event_response_handler.response_to_uvc()
+        if (self.mqtt_client.is_connected):
+            self.__location_response_handler.response_to_uvc()
+            self.__event_response_handler.response_to_uvc()
+        else:
+            return
         
     
     def __from_rms_to_uvc(self) -> None:
-        self.__path_request_handler.request_to_uvc()
-        self.__control_request_handler.request_to_uvc()
-        self.__config_request_handler.request_to_uvc()
-        
-
+        if (self.mqtt_client.is_connected):
+            self.__path_request_handler.request_to_uvc()
+            self.__control_request_handler.request_to_uvc()
+            self.__config_request_handler.request_to_uvc()
+        else:
+            return
 
 __all__ = ['rmde_node']
