@@ -220,34 +220,39 @@ class Client:
             __mqtt_manager__: broker.mqtt_broker = broker.mqtt_broker()
         """
         
-        self.__script_directory: str = os.path.dirname(os.path.abspath(__file__))
-        self.__config_file_path: str = 'mqtt.ini'
-        self.__uuid_service: UUIDService = UUIDService()
-        self.__config_service: ConfigService = ConfigService(self.__script_directory, self.__config_file_path)
-        self.__config_parser: ConfigParser = self.__config_service.read()
-        
-        self.__mqtt_logger: Logger = Logger()
-        self.__broker_address: str = self.__config_parser.get('broker', 'host')
-        self.__broker_port: int = int(self.__config_parser.get('broker', 'port'))
-        self.__client_name: str = self.__uuid_service.generate_uuid()
-        self.__client_keep_alive: int = int(self.__config_parser.get('broker', 'client_keep_alive'))
-        self.__user_name: str = self.__config_parser.get('broker', 'user_name')
-        self.__password: str = self.__config_parser.get('broker', 'password')
-        
-        # self.client: mqtt.Client = mqtt.Client(self.__client_name, clean_session = True, userdata = None, transport = 'tcp')
-        self.client: mqtt.Client = mqtt.Client(self.__client_name, clean_session = True, userdata = None, transport = 'websockets')
-        self.client.ws_set_options(path = '/ws')
-        self.client.username_pw_set(self.__user_name, self.__password)
-        
-        self.client.on_connect = self.__on_connect
-        self.client.on_message = self.__on_message
-        self.client.connect(self.__broker_address, self.__broker_port, self.__client_keep_alive)
+        try:
+            self.__script_directory: str = os.path.dirname(os.path.abspath(__file__))
+            self.__config_file_path: str = 'mqtt.ini'
+            self.__uuid_service: UUIDService = UUIDService()
+            self.__config_service: ConfigService = ConfigService(self.__script_directory, self.__config_file_path)
+            self.__config_parser: ConfigParser = self.__config_service.read()
+            
+            self.__mqtt_logger: Logger = Logger()
+            self.__broker_address: str = self.__config_parser.get('broker', 'host')
+            self.__broker_port: int = int(self.__config_parser.get('broker', 'port'))
+            self.__client_name: str = self.__uuid_service.generate_uuid()
+            self.__client_keep_alive: int = int(self.__config_parser.get('broker', 'client_keep_alive'))
+            self.__user_name: str = self.__config_parser.get('broker', 'user_name')
+            self.__password: str = self.__config_parser.get('broker', 'password')
+            
+            # self.client: mqtt.Client = mqtt.Client(self.__client_name, clean_session = True, userdata = None, transport = 'tcp')
+            self.client: mqtt.Client = mqtt.Client(self.__client_name, clean_session = True, userdata = None, transport = 'websockets')
+            self.client.ws_set_options(path = '/ws')
+            self.client.username_pw_set(self.__user_name, self.__password)
+            
+            self.client.on_connect = self.__on_connect
+            self.client.on_connect_fail = self.__on_connect_fail
+            self.client.on_message = self.__on_message
+            self.client.connect(self.__broker_address, self.__broker_port, self.__client_keep_alive)
 
-        if self.client.is_connected:
-            self.__mqtt_logger.info("===== MQTT connected to [%s:%d] =====" % (self.__broker_address, self.__broker_port))
-            self.client.loop_start()
-        else:
-            self.__mqtt_logger.error("===== MQTT failed to connect =====")
+            if self.client.is_connected:
+                self.__mqtt_logger.info("===== MQTT connected to [%s:%d] =====" % (self.__broker_address, self.__broker_port))
+                self.client.loop_start()
+                
+            else:
+                self.__mqtt_logger.error("===== MQTT failed to connect =====")
+        except Exception as e:
+            self.__mqtt_logger.error(f"")
 
 
     def __on_connect(self, client: Any, user_data: Any, flags: Any, rc: Any) -> None:
@@ -274,6 +279,11 @@ class Client:
             self.__mqtt_logger.info("===== MQTT connection succeeded result code : [{}] =====".format(str(rc)))
         else:
             self.__mqtt_logger.error("===== MQTT connection failed result code : [{}] =====".format(str(rc)))
+
+
+    def __on_connect_fail(self, client: Any, user_data: Any, flags: Any, rc: Any) -> None:
+        if rc == 0:
+            self.__mqtt_logger.info("===== MQTT connection failed result code : [{}] =====".format(str(rc)))
 
 
     def __on_message(self, client: Any, user_data: Any, msg: Any) -> None:
