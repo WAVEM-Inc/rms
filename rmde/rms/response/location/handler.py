@@ -9,7 +9,9 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import BatteryState
+from geometry_msgs.msg import PoseStamped
 from robot_status_msgs.msg import VelocityStatus
+from gps_iao_door_msgs.msg import InOutDoor
 
 from ....mqtt.mqtt_client import Client
 
@@ -17,7 +19,6 @@ from ...common.service import UUIDService
 from ...common.service import TimeService
 from ...common.service import ConfigService
 
-from ...common.enum_types import RobotType
 from ...common.enum_types import AreaCLSFType
 from ...common.enum_types import JobGroupType
 from ...common.enum_types import JobKindType
@@ -29,6 +30,7 @@ from .domain import JobInfo
 from .domain import TaskInfo
 from .domain import LastInfo
 from .domain import LastInfoLocation
+from .domain import LastInfoSubLocation
 
 
 class LocationResponseHandler():
@@ -50,14 +52,34 @@ class LocationResponseHandler():
         self.__common_config_parser: ConfigParser = self.__common_config_service.read()
         
         
-        self.__rclpy_gps_subscription_topic: str = '/slam_to_gps'
-        self.__rclpy_gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_gps_subscription: Subscription = self.__rclpy_node.create_subscription(
+        self.__rclpy_slam_to_gps_subscription_topic: str = '/slam_to_gps'
+        self.__rclpy_slam_to_gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_slam_to_gps_subscription: Subscription = self.__rclpy_node.create_subscription(
             msg_type = NavSatFix,
-            topic = self.__rclpy_gps_subscription_topic,
-            callback = self.__rclpy_gps_subscription_cb,
+            topic = self.__rclpy_slam_to_gps_subscription_topic,
+            callback = self.__rclpy_slam_to_gps_subscription_cb,
             qos_profile = qos_profile_sensor_data,
-            callback_group = self.__rclpy_gps_subscription_cb_group
+            callback_group = self.__rclpy_slam_to_gps_subscription_cb_group
+        )
+
+        self.__rclpy_ublox_gps_subscription_topic: str = '/ublox/fix'
+        self.__rclpy_ublox_gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_ublox_gps_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = NavSatFix,
+            topic = self.__rclpy_ublox_gps_subscription_topic,
+            callback = self.__rclpy_ublox_gps_subscription_cb,
+            qos_profile = qos_profile_sensor_data,
+            callback_group = self.__rclpy_ublox_gps_subscription_cb_group
+        )
+
+        self.__rclpy_rtt_odom_subscription_topic: str = '/rtt_odom'
+        self.__rclpy_rtt_odom_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_rtt_odom_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = PoseStamped,
+            topic = self.__rclpy_rtt_odom_subscription_topic,
+            callback = self.__rclpy_rtt_odom_subscription_cb,
+            qos_profile = qos_profile_sensor_data,
+            callback_group = self.__rclpy_rtt_odom_subscription_cb_group
         )
         
         self.__rclpy_battery_state_subscription_topic: str = '/battery/state'
@@ -79,23 +101,44 @@ class LocationResponseHandler():
             qos_profile = qos_profile_sensor_data,
             callback_group = self.__rclpy_velocity_state_subscription_cb_group
         )
+
+        self.__rclpy_in_out_door_subscription_topic: str = '/in_out_door'
+        self.__rclpy_in_out_door_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_in_out_door_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = InOutDoor,
+            topic = self.__rclpy_in_out_door_subscription_topic,
+            callback = self.__rclpy_in_out_door_subscription_cb,
+            qos_profile = qos_profile_sensor_data,
+            callback_group = self.__rclpy_in_out_door_subscription_cb_group
+        )
         
         self.__uuid_service: UUIDService = UUIDService()
         self.__time_service: TimeService = TimeService()
         
         self.location_xpos: float = 0.0
         self.location_ypos: float = 0.0
-        self.heading: float = 45.0
+        self.heading: float = 0.0
+        self.sub_location_xpos: float = 0.0
+        self.sub_location_ypos: float = 0.0
         self.battery_level: float = 0.0
         self.velocity: float = 0.0
         self.total_dist: int = 0
+        self.areaClsf: str = ''
         
         
-    def __rclpy_gps_subscription_cb(self, gps_cb: NavSatFix) -> None:
-        self.location_xpos = gps_cb.latitude
-        self.location_ypos = gps_cb.longitude
-        self.heading = gps_cb.altitude
+    def __rclpy_slam_to_gps_subscription_cb(self, slam_to_gps_cb: NavSatFix) -> None:
+        self.location_xpos = slam_to_gps_cb.longitude
+        self.location_ypos = slam_to_gps_cb.latitude
     
+
+    def __rclpy_ublox_gps_subscription_cb(self, ublox_gps_cb: NavSatFix) -> None:
+        self.sub_location_xpos = ublox_gps_cb.longitude
+        self.sub_location_ypos = ublox_gps_cb.latitude
+
+    
+    def __rclpy_rtt_odom_subscription_cb(self, rtt_odom_cb: PoseStamped) -> None:
+        self.heading = rtt_odom_cb.pose.orientation.y
+        
     
     def __rclpy_battery_state_subscription_cb(self, battery_state_cb: BatteryState) -> None:
         self.battery_level = battery_state_cb.percentage
@@ -107,6 +150,16 @@ class LocationResponseHandler():
         
         self.velocity = __current_velocity
         self.total_dist = __distance
+
+    
+    def __rclpy_in_out_door_subscription_cb(self, in_out_door_cb: InOutDoor) -> None:
+        is_out_door: bool = (in_out_door_cb.determination == True)
+
+        if is_out_door:
+            self.areaClsf = AreaCLSFType.OUTDOOR.value
+        else :
+            self.areaClsf = AreaCLSFType.INDOOR.value
+        return
     
     
     def build_location(self) -> Location:
@@ -196,13 +249,24 @@ class LocationResponseHandler():
         __lastInfoLocation.heading = __heading
 
         __lastInfoLocation_dict: dict = __lastInfoLocation.__dict__
+
+        __lastInfoSubLocation: LastInfoSubLocation = LastInfoSubLocation()
+        
+        __sub_xpos: float = self.sub_location_xpos
+        __lastInfoSubLocation.xpos = __sub_xpos
+
+        __sub_ypos: float = self.sub_location_ypos
+        __lastInfoSubLocation.ypos = __sub_ypos
+
+        __lastInfoSubLocation_dict: dict = __lastInfoSubLocation.__dict__
         
         __lastInfo: LastInfo = LastInfo()
 
         __lastInfo.location = __lastInfoLocation_dict
 
-        __areaClsf: str = AreaCLSFType.INDOOR.value
-        __lastInfo.areaClsf = __areaClsf
+        __lastInfo.subLocation = __lastInfoSubLocation_dict
+
+        __lastInfo.areaClsf = self.areaClsf
         
         __floor: str = '1F'
         __lastInfo.floor = __floor

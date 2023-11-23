@@ -23,11 +23,18 @@ class LastInfoLocation():
     xpos: float = 0.0
     ypos: float = 0.0
     heading: float = 0.0
-        
+
+
+@dataclass
+class LastInfoSubLocation():
+    xpos: float = 0.0
+    ypos: float = 0.0
+
 
 @dataclass
 class LastInfo():
     location: Dict = field(default_factory = empty_dict)
+    subLocation: Dict = field(default_factory = empty_dict)
     areaClsf: str = ''
     floor: str = ''
     batteryLevel: int = 0

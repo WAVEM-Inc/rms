@@ -14,6 +14,12 @@ class EventInfoLocation():
     xpos: float = 0.0
     ypos: float = 0.0
     heading: float = 0.0
+
+
+@dataclass
+class EventInfoSubLocation():
+    xpos: float = 0.0
+    ypos: float = 0.0
         
        
 class EventCdType(Enum):
@@ -31,6 +37,7 @@ class EventInfo():
     floor: str = ''
     batteryLevel: int = 0
     location: Dict = field(default_factory = empty_dict)
+    subLocation: Dict = field(default_factory = empty_dict)
         
 
 @dataclass

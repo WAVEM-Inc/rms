@@ -11,8 +11,10 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import BatteryState
+from geometry_msgs.msg import PoseStamped
 from robot_status_msgs.msg import SensorStatus
 from robot_status_msgs.msg import NavigationStatus
+from gps_iao_door_msgs.msg import InOutDoor
 
 from ....mqtt.mqtt_client import Client
 
@@ -37,6 +39,7 @@ from .domain import TaskInfo
 from .domain import JobResult
 from .domain import EventInfo
 from .domain import EventInfoLocation
+from .domain import EventInfoSubLocation
 from .domain import ComInfo
 
 
@@ -61,14 +64,34 @@ class EventResponseHandler():
         self.__network_service: NetworkService = NetworkService()
         
         
-        self.__rclpy_gps_subscription_topic: str = '/slam_to_gps'
-        self.__rclpy_gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_gps_subscription: Subscription = self.__rclpy_node.create_subscription(
+        self.__rclpy_slam_to_gps_subscription_topic: str = '/slam_to_gps'
+        self.__rclpy_slam_to_gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_slam_to_gps_subscription: Subscription = self.__rclpy_node.create_subscription(
             msg_type = NavSatFix,
-            topic = self.__rclpy_gps_subscription_topic,
+            topic = self.__rclpy_slam_to_gps_subscription_topic,
             qos_profile = qos_profile_sensor_data,
-            callback = self.__rclpy_gps_subscription_cb,
-            callback_group = self.__rclpy_gps_subscription_cb_group
+            callback = self.__rclpy_slam_to_gps_subscription_cb,
+            callback_group = self.__rclpy_slam_to_gps_subscription_cb_group
+        )
+
+        self.__rclpy_ublox_gps_subscription_topic: str = '/ublox/fix'
+        self.__rclpy_ublox_gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_ublox_gps_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = NavSatFix,
+            topic = self.__rclpy_ublox_gps_subscription_topic,
+            callback = self.__rclpy_ublox_gps_subscription_cb,
+            qos_profile = qos_profile_sensor_data,
+            callback_group = self.__rclpy_ublox_gps_subscription_cb_group
+        )
+
+        self.__rclpy_rtt_odom_subscription_topic: str = '/rtt_odom'
+        self.__rclpy_rtt_odom_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_rtt_odom_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = PoseStamped,
+            topic = self.__rclpy_rtt_odom_subscription_topic,
+            callback = self.__rclpy_rtt_odom_subscription_cb,
+            qos_profile = qos_profile_sensor_data,
+            callback_group = self.__rclpy_rtt_odom_subscription_cb_group
         )
 
         self.__rclpy_battery_state_subscription_topic: str = '/battery/state'
@@ -130,6 +153,16 @@ class EventResponseHandler():
             callback = self.__rclpy_gts_navigation_task_status_subscription_cb,
             callback_group = self.__rclpy_gts_navigation_task_status_subscription_cb_group
         )
+
+        self.__rclpy_in_out_door_subscription_topic: str = '/in_out_door'
+        self.__rclpy_in_out_door_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_in_out_door_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = InOutDoor,
+            topic = self.__rclpy_in_out_door_subscription_topic,
+            callback = self.__rclpy_in_out_door_subscription_cb,
+            qos_profile = qos_profile_sensor_data,
+            callback_group = self.__rclpy_in_out_door_subscription_cb_group
+        )
                 
         
         self.__ip_address: str = self.__network_service.get_local_ip()
@@ -153,12 +186,23 @@ class EventResponseHandler():
         self.location_xpos: float = 0.0
         self.location_ypos: float = 0.0
         self.heading: float = 0.0
+        self.sub_location_xpos: float = 0.0
+        self.sub_location_ypos: float = 0.0
+        self.areaClsf: str = ''
     
     
-    def __rclpy_gps_subscription_cb(self, gps_cb: NavSatFix) -> None:        
-        self.location_xpos = gps_cb.latitude
-        self.location_ypos = gps_cb.longitude
-        self.heading = gps_cb.altitude
+    def __rclpy_slam_to_gps_subscription_cb(self, slam_to_gps_cb: NavSatFix) -> None:
+        self.location_xpos = slam_to_gps_cb.longitude
+        self.location_ypos = slam_to_gps_cb.latitude
+    
+
+    def __rclpy_ublox_gps_subscription_cb(self, ublox_gps_cb: NavSatFix) -> None:
+        self.sub_location_xpos = ublox_gps_cb.longitude
+        self.sub_location_ypos = ublox_gps_cb.latitude
+
+    
+    def __rclpy_rtt_odom_subscription_cb(self, rtt_odom_cb: PoseStamped) -> None:
+        self.heading = rtt_odom_cb.pose.orientation.y
     
     
     def __rclpy_battery_state_subscription_cb(self, battery_state_cb: BatteryState) -> None:
@@ -224,6 +268,16 @@ class EventResponseHandler():
         self.job_start_dist: float = navigation_status.start_dist
         self.job_end_dist: float = navigation_status.end_dist
         self.response_to_uvc()
+
+    
+    def __rclpy_in_out_door_subscription_cb(self, in_out_door_cb: InOutDoor) -> None:
+        is_out_door: bool = (in_out_door_cb.determination == True)
+
+        if is_out_door:
+            self.areaClsf = AreaCLSFType.OUTDOOR.value
+        else :
+            self.areaClsf = AreaCLSFType.INDOOR.value
+        return
         
 
     def __build_event(self) -> Event:
@@ -272,39 +326,39 @@ class EventResponseHandler():
     def __build__task_info(self) -> TaskInfo:
         __formatted_datetime: str = self.__time_service.get_current_datetime()
 
-        __job_result : JobResult = JobResult()
+        __jobResult: JobResult = JobResult()
 
         __status: str = JobResultStatusType.SUCCESS.value
-        __job_result.status = __status
+        __jobResult.status = __status
 
         __startTime: str = __formatted_datetime
-        __job_result.startTime = __startTime
+        __jobResult.startTime = __startTime
 
         __endTime: str = __formatted_datetime
-        __job_result.endTime = __endTime
+        __jobResult.endTime = __endTime
 
         __startBatteryLevel: int = self.job_start_battery_level
-        __job_result.startBatteryLevel = __startBatteryLevel
+        __jobResult.startBatteryLevel = __startBatteryLevel
 
         __endBatteryLevel: int = self.job_end_battery_level
-        __job_result.endBatteryLevel = __endBatteryLevel
+        __jobResult.endBatteryLevel = __endBatteryLevel
 
         __dist: int = (self.job_end_dist - self.job_start_dist)
-        __job_result.dist = __dist
+        __jobResult.dist = __dist
         
-        __job_plan_id: str = self.__uuid_service.generate_uuid()
-        __job_group_id: str = self.__uuid_service.generate_uuid()
-        __job_order_id: str = self.__uuid_service.generate_uuid()
+        __jobPlanId: str = self.__uuid_service.generate_uuid()
+        __jobGroupId: str = self.__uuid_service.generate_uuid()
+        __jobOrderId: str = self.__uuid_service.generate_uuid()
 
         __taskInfo: TaskInfo = TaskInfo()
 
-        __jobPlanId: str = __job_plan_id
+        __jobPlanId: str = __jobPlanId
         __taskInfo.jobPlanId = __jobPlanId
 
-        __jobGroupId: str = __job_group_id
+        __jobGroupId: str = __jobGroupId
         __taskInfo.jobGroupId = __jobGroupId
 
-        __jobOrderId: str = __job_order_id
+        __jobOrderId: str = __jobOrderId
         __taskInfo.jobOrderId = __jobOrderId
         
         __jobGroup: str = JobGroupType.SUPPLY.value
@@ -313,70 +367,81 @@ class EventResponseHandler():
         __jobKind: str = JobKindType.MOVE.value
         __taskInfo.jobKind = __jobKind
 
-        __jobResult: dict = __job_result.__dict__
+        __jobResult: dict = __jobResult.__dict__
         __taskInfo.jobResult = __jobResult
         
         return __taskInfo
     
     
     def __build_event_info(self) -> EventInfo:
-        __event_location: EventInfoLocation = EventInfoLocation()
+        __eventLocation: EventInfoLocation = EventInfoLocation()
 
         __xpos: float = self.location_xpos
-        __event_location.xpos = __xpos
+        __eventLocation.xpos = __xpos
 
         __ypos: float = self.location_ypos
-        __event_location.ypos = __ypos
+        __eventLocation.ypos = __ypos
 
         __heading: float = self.heading
-        __event_location.heading = __heading
+        __eventLocation.heading = __heading
 
-        __event_location_dict: dict = __event_location.__dict__
+        __eventLocation_dict: dict = __eventLocation.__dict__
 
-        __event_info: EventInfo = EventInfo()
+        __eventSubLocation: EventInfoSubLocation = EventInfoSubLocation()
 
-        __event_id: str = self.__uuid_service.generate_uuid()
+        __sub_xpos: float = self.sub_location_xpos
+        __eventSubLocation.xpos = __sub_xpos
 
-        __eventId: str = __event_id
-        __event_info.eventId = __eventId
+        __sub_ypos: float = self.sub_location_ypos
+        __eventSubLocation.ypos = __sub_ypos
+
+        __eventSubLocation_dict: dict = __eventSubLocation.__dict__
+
+        __eventInfo: EventInfo = EventInfo()
+
+        __eventId: str = self.__uuid_service.generate_uuid()
+
+        __eventId: str = __eventId
+        __eventInfo.eventId = __eventId
 
         __eventCd: str = self.sensor_status
-        __event_info.eventCd = __eventCd
+        __eventInfo.eventCd = __eventCd
 
         __eventSubCd: str = self.sensor_type
-        __event_info.eventSubCd = __eventSubCd
+        __eventInfo.eventSubCd = __eventSubCd
 
-        __areaClsf: str = AreaCLSFType.INDOOR.value
-        __event_info.areaClsf = __areaClsf
+        __areaClsf: str = self.areaClsf
+        __eventInfo.areaClsf = __areaClsf
 
         __floor: str = '1F'
-        __event_info.floor = __floor
+        __eventInfo.floor = __floor
 
         __batteryLevel: int = self.current_battery_level
-        __event_info.batteryLevel = __batteryLevel
+        __eventInfo.batteryLevel = __batteryLevel
 
-        __location: dict = __event_location_dict
-        __event_info.location = __location
+        __eventInfo.location = __eventLocation_dict
 
-        return __event_info
+        __eventInfo.subLocation = __eventSubLocation_dict
+
+        return __eventInfo
     
 
     def __build_com_info(self) -> ComInfo:
-        __com_info: ComInfo = ComInfo()
+        __comInfo: ComInfo = ComInfo()
 
         __status: str = ComInfoStatusType.CONNECTED.value
-        __com_info.status = __status
+        __comInfo.status = __status
 
         __robotIP: str = self.__ip_address
-        __com_info.robotIP = __robotIP
+        __comInfo.robotIP = __robotIP
 
         __mqttIP: str = self.__mqtt_config_parser.get('broker', 'host')
-        __com_info.mqttIP = __mqttIP
+        __comInfo.mqttIP = __mqttIP
 
         __mqttPort: str = self.__mqtt_config_parser.get('broker', 'port')
-        __com_info.mqttPort = __mqttPort
+        __comInfo.mqttPort = __mqttPort
 
-        return __com_info
+        return __comInfo
 
 
     def response_to_uvc(self) -> None:

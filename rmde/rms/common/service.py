@@ -21,7 +21,7 @@ class TimeService():
     
     def get_current_datetime(self) -> str:
         __current_datetime: datetime = datetime.now()
-        __formatted_datetime: str = __current_datetime.strftime("%y%m%d%H%M%S")
+        __formatted_datetime: str = __current_datetime.strftime("%Y%m%d%H%M%S")
 
         return __formatted_datetime
     

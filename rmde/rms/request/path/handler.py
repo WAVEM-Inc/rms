@@ -56,48 +56,59 @@ class PathRequestHandler():
     
     def request_to_uvc(self) -> None:
         def __mqtt_path_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
-            __mqtt_topic: str = mqtt_message.topic
-            __mqtt_decoded_payload: str = mqtt_message.payload.decode()
-            __mqtt_json: Any = json.loads(mqtt_message.payload)
-            
-            self.__rclpy_node.get_logger().info('{} subscription cb payload [{}] from [{}]'.format(MQTT_FLAG, __mqtt_decoded_payload, __mqtt_topic))
-            self.__rclpy_node.get_logger().info('{} subscription cb json [{}] from [{}]'.format(MQTT_FLAG, __mqtt_json, __mqtt_topic))
-            
-            __header_dict: dict = __mqtt_json['header']
-            self.__path.header = __header_dict
+            try:
+                __mqtt_topic: str = mqtt_message.topic
+                __mqtt_decoded_payload: str = mqtt_message.payload.decode()
+                __mqtt_json: Any = json.loads(mqtt_message.payload)
+                
+                self.__rclpy_node.get_logger().info('{} subscription cb payload [{}] from [{}]'.format(MQTT_FLAG, __mqtt_decoded_payload, __mqtt_topic))
+                self.__rclpy_node.get_logger().info('{} subscription cb json [{}] from [{}]'.format(MQTT_FLAG, __mqtt_json, __mqtt_topic))
+                
+                __header_dict: dict = __mqtt_json['header']
+                self.__path.header = __header_dict
 
-            __jobInfo_dict: dict = __mqtt_json['jobInfo']
-            self.__path.jobInfo = __jobInfo_dict
+                __jobInfo_dict: dict = __mqtt_json['jobInfo']
+                self.__path.jobInfo = __jobInfo_dict
 
-            __jobPath_dict: dict = __mqtt_json['jobPath']
-            self.__path.jobPath = __jobPath_dict
-            
-            __jobPlanId: str = self.__path.jobInfo['jobPlanId']
-            self.__jobInfo.jobPlanId = __jobPlanId
+                __jobPath_dict: dict = __mqtt_json['jobPath']
+                self.__path.jobPath = __jobPath_dict
+                
+                __jobPlanId: str = self.__path.jobInfo['jobPlanId']
+                self.__jobInfo.jobPlanId = __jobPlanId
 
-            __jobGroupId: str  = self.__path.jobInfo['jobGroupId']
-            self.__jobInfo.jobGroupId = __jobGroupId
+                __jobGroupId: str  = self.__path.jobInfo['jobGroupId']
+                self.__jobInfo.jobGroupId = __jobGroupId
 
-            __jobOrderId: str  = self.__path.jobInfo['jobOrderId']
-            self.__jobInfo.jobOrderId = __jobOrderId
+                __jobOrderId: str  = self.__path.jobInfo['jobOrderId']
+                self.__jobInfo.jobOrderId = __jobOrderId
 
-            __jobGroup: str  = self.__path.jobInfo['jobGroup']
-            self.__jobInfo.jobGroup = __jobGroup
+                __jobGroup: str  = self.__path.jobInfo['jobGroup']
+                self.__jobInfo.jobGroup = __jobGroup
 
-            __jobKind: str = self.__path.jobInfo['jobKind']
-            self.__jobInfo.jobKind = __jobKind
+                __jobKind: str = self.__path.jobInfo['jobKind']
+                self.__jobInfo.jobKind = __jobKind
 
-            __areaClsf: str = self.__path.jobPath['areaClsf']
-            self.__jobPath.areaClsf = __areaClsf
+                __areaClsf: str = self.__path.jobPath['areaClsf']
+                self.__jobPath.areaClsf = __areaClsf
 
-            __locationList_list: list = self.__path.jobPath['locationList']
-            self.__jobPath.locationList = __locationList_list
+                __locationList_list: list = self.__path.jobPath['locationList']
+                self.__jobPath.locationList = __locationList_list
 
-            __jobKindType_dict: dict = self.__path.jobPath['jobKindType']
-            self.__jobPath.jobKindType = __jobKindType_dict
-            
-            self.__rclpy_node.get_logger().info('JobPath LocationList {}'.format(self.__jobPath.locationList))
-            self.__rclpy_publish_goal_waypoints_list__(self.__jobPath.locationList)
+                __jobKindType_dict: dict = self.__path.jobPath['jobKindType']
+                self.__jobPath.jobKindType = __jobKindType_dict
+                
+                self.__rclpy_node.get_logger().info('JobPath LocationList {}'.format(self.__jobPath.locationList))
+                self.__rclpy_publish_goal_waypoints_list__(self.__jobPath.locationList)
+
+            except KeyError as ke:
+                self.__rclpy_node.get_logger().error(f'Invalid JSON Key in MQTT {self.__mqtt_path_subscription_topic} subscription callback: {ke}')
+
+            except json.JSONDecodeError as jde:
+                self.__rclpy_node.get_logger().error(f'Invalid JSON format in MQTT {self.__mqtt_path_subscription_topic} subscription callback: {jde.msg}')
+
+            except Exception as e:
+                self.__rclpy_node.get_logger().error(f'Exception in MQTT {self.__mqtt_path_subscription_topic} subscription callback: {e}')
+                raise
             
         self.__mqtt_client.subscribe(topic = self.__mqtt_path_subscription_topic, qos = self.__mqtt_path_subscription_qos)
         self.__mqtt_client.client.message_callback_add(self.__mqtt_path_subscription_topic, __mqtt_path_subscription_cb)
@@ -120,8 +131,8 @@ class PathRequestHandler():
             __rclpy_nav_sat_fix_obj: Any = self.__lookup_object__('sensor_msgs.msg', 'NavSatFix')
 
             __rclpy_location_to_nav_sat_fix_dict: dict = {
-                'latitude': location['xpos'],
-                'longitude': location['ypos'],
+                'longitude': location['xpos'],
+                'latitude': location['ypos'],
                 'altitude': 0.0
             }
 

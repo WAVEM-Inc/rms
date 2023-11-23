@@ -11,11 +11,12 @@ def main(args=None) -> None:
 
     try:
         __rclpy_node: Node = RMDENode()
+        __rclpy_node_name: str = __rclpy_node.get_name()
         __rclpy_multi_threaded_executor: MultiThreadedExecutor = MultiThreadedExecutor()
         __rclpy_multi_threaded_executor.add_node(node = __rclpy_node)
         __rclpy_multi_threaded_executor.spin()
-    except ROSInterruptException:
-        __rclpy_node.get_logger().warn('===== {} [{}] terminated with Ctrl-C ====='.format(__rclpy_node.__rclpy_flag, __rclpy_node.__node_name))
+    except ROSInterruptException as rie:
+        __rclpy_node.get_logger().warn(f'===== {__rclpy_node_name} terminated with Ctrl-C {rie} =====')
         __rclpy_node.mqtt_client.disconnect()
         __rclpy_node.mqtt_client.loop_stop()
     
