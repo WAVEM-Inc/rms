@@ -1,7 +1,6 @@
 import os
 import time
 import socket
-import subprocess
 import paho.mqtt.client as mqtt
 
 from typing import Any
@@ -202,64 +201,60 @@ class Logger:
 
 
 """
+
+MQTT_CONFIG_FILE_PATH: str = 'mqtt.ini'
+MQTT_CONFIG_FILE_BROKER_SECTION: str = 'broker'
+MQTT_TRANSPORT_TYPE: str = 'websockets'
+MQTT_WEBSOCKETS_PATH: str = '/ws'
+
 class Client:
 
     def __init__(self) -> None:
         self.__mqtt_logger: Logger = Logger()
         self.client: mqtt.Client
+        
+        __script_directory: str = os.path.dirname(os.path.abspath(__file__))
+        __config_file_path: str = MQTT_CONFIG_FILE_PATH
+        __uuid_service: UUIDService = UUIDService()
+        __config_service: ConfigService = ConfigService(__script_directory, __config_file_path)
+        __config_parser: ConfigParser = __config_service.read()
+            
+        self.broker_address: str = __config_parser.get(MQTT_CONFIG_FILE_BROKER_SECTION, 'host')
+        self.broker_port: int = int(__config_parser.get(MQTT_CONFIG_FILE_BROKER_SECTION, 'port'))
+        self.__client_name: str = __uuid_service.generate_uuid()
+        self.__client_keep_alive: int = int(__config_parser.get(MQTT_CONFIG_FILE_BROKER_SECTION, 'client_keep_alive'))
+        self.__user_name: str = __config_parser.get(MQTT_CONFIG_FILE_BROKER_SECTION, 'user_name')
+        self.__password: str = __config_parser.get(MQTT_CONFIG_FILE_BROKER_SECTION, 'password')
         self.is_connected: bool = False
 
 
-    def __is_wifi_connected(self) -> bool:
-        __ip_address: str = 'www.google.com'
-        __port_number: int = 80
-        __timeout: int = 5
-
+    def check_broker_opened(self) -> bool:
         try:
             __sock: socket = socket.create_connection(
-                address = (__ip_address, __port_number),
+                address = (self.broker_address, self.broker_port),
                 timeout = None
             )
             __sock.close()
             return True
         except socket.error:
             pass
-
-        return False 
+        
+        return False
         
 
     def connect(self) -> None:
-        try:
-            __script_directory: str = os.path.dirname(os.path.abspath(__file__))
-            __config_file_path: str = 'mqtt.ini'
-            __uuid_service: UUIDService = UUIDService()
-            __config_service: ConfigService = ConfigService(__script_directory, __config_file_path)
-            __config_parser: ConfigParser = __config_service.read()
-
-            __is_broker_avaiable: bool = self.__is_wifi_connected()
-
-            if not __is_broker_avaiable:
-                self.__mqtt_logger.error('NUC PC is not connected Wi-Fi')
-                return
-            
-            __broker_address: str = __config_parser.get('broker', 'host')
-            __broker_port: int = int(__config_parser.get('broker', 'port'))
-            __client_name: str = __uuid_service.generate_uuid()
-            __client_keep_alive: int = int(__config_parser.get('broker', 'client_keep_alive'))
-            __user_name: str = __config_parser.get('broker', 'user_name')
-            __password: str = __config_parser.get('broker', 'password')
-            
-            # self.client: mqtt.Client = mqtt.Client(self.__client_name, clean_session = True, userdata = None, transport = 'tcp')
-            self.client = mqtt.Client(__client_name, clean_session = True, userdata = None, transport = 'websockets')
-            self.client.ws_set_options(path = '/ws')
-            self.client.username_pw_set(__user_name, __password)
+        try:            
+            self.client = mqtt.Client(self.__client_name, clean_session = True, userdata = None, transport = MQTT_TRANSPORT_TYPE)
+            # self.client.ws_set_options(path = MQTT_WEBSOCKETS_PATH)
+            self.client.username_pw_set(self.__user_name, self.__password)
             
             self.client.on_connect = self.__on_connect
+            self.client.on_disconnect = self.__on_disconnect
             self.client.on_message = self.__on_message
-            self.client.connect(__broker_address, __broker_port, __client_keep_alive)
+            self.client.connect(self.broker_address, self.broker_port, self.__client_keep_alive)
 
             if self.client.is_connected:
-                self.__mqtt_logger.info(f'MQTT Client is connected to [{__broker_address}:{__broker_port}]')
+                self.__mqtt_logger.info(f'MQTT Client is connected to [{self.broker_address}:{self.broker_port}]')
                 self.is_connected = self.client.is_connected
             else:
                 self.__mqtt_logger.error('MQTT failed to connect')
@@ -310,6 +305,12 @@ class Client:
         else:
             self.__mqtt_logger.error(f'MQTT connection failed result code : [{str(rc)}] ')
             
+    
+    def __on_disconnect(self, client: Any, user_data: Any, rc: Any) -> None:
+        if rc != 0:
+            self.__mqtt_logger.error(f'MQTT disconnection result code : [{str(rc)}] ')
+            self.rerun()
+            
 
     def __on_message(self, client: Any, user_data: Any, msg: Any) -> None:
         
@@ -329,8 +330,7 @@ class Client:
         Usage:
         
         """
-        
-
+    
 
     def publish(self, topic: str, payload: Any, qos: int) -> None:
         
