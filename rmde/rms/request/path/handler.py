@@ -19,6 +19,7 @@ from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
 from ...common.domain import Job
 
+
 from .domain import JobInfo
 from .domain import JobPath
 from .domain import Path
@@ -59,8 +60,6 @@ class PathRequestHandler():
         self.__path: Path = Path()
         self.__jobInfo: JobInfo = JobInfo()
         self.__jobPath: JobPath = JobPath()
-        self.__job: Job = Job()
-
         
     
     def request_to_uvc(self) -> None:
@@ -84,15 +83,15 @@ class PathRequestHandler():
                 
                 __jobPlanId: str = self.__path.jobInfo['jobPlanId']
                 self.__jobInfo.jobPlanId = __jobPlanId
-                self.__job.jobPlanId = __jobPlanId
 
                 __jobGroupId: str  = self.__path.jobInfo['jobGroupId']
                 self.__jobInfo.jobGroupId = __jobGroupId
-                self.__job.jobGroupId = __jobGroupId
 
                 __jobOrderId: str  = self.__path.jobInfo['jobOrderId']
                 self.__jobInfo.jobOrderId = __jobOrderId
-                self.__job.jobOrderId = __jobOrderId
+
+                global job
+                job = Job(__jobPlanId, __jobGroupId, __jobOrderId)
 
                 __jobGroup: str  = self.__path.jobInfo['jobGroup']
                 self.__jobInfo.jobGroup = __jobGroup

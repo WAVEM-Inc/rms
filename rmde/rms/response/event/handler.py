@@ -35,7 +35,6 @@ from .domain import EventCdType
 from .domain import ComInfoStatusType
 
 from ...common.domain import Header
-from ...common.domain import Job
 
 from .domain import Event
 from .domain import TaskInfo
@@ -372,15 +371,15 @@ class EventResponseHandler():
     
         __taskInfo: TaskInfo = TaskInfo()
 
-        __jobPlanId: str = Job.jobPlanId
+        __jobPlanId: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
         print(f'jobPlanId : {__jobPlanId}')
         __taskInfo.jobPlanId = __jobPlanId
 
-        __jobGroupId: str = Job.jobGroupId
+        __jobGroupId: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
         print(f'__jobGroupId : {__jobGroupId}')
         __taskInfo.jobGroupId = __jobGroupId
 
-        __jobOrderId: str = Job.jobOrderId
+        __jobOrderId: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
         print(f'__jobOrderId : {__jobOrderId}')
         __taskInfo.jobOrderId = __jobOrderId
         

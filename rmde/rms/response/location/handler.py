@@ -29,6 +29,8 @@ from ...common.enum_types import JobKindType
 from ...common.enum_types import TaskStatusType
 
 from ...common.domain import Header
+from ...common.domain import Job
+
 from .domain import Location
 from .domain import JobInfo
 from .domain import TaskInfo
@@ -138,8 +140,6 @@ class LocationResponseHandler():
             callback_group = self.__rclpy_in_out_door_subscription_cb_group
         )
         
-        self.__uuid_service: UUIDService = UUIDService()
-        
         self.location_xpos: float = 0.0
         self.location_ypos: float = 0.0
         self.heading: float = 0.0
@@ -154,7 +154,7 @@ class LocationResponseHandler():
         self.job_kind: str = ''
         self.task_status: str = ''
 
-        
+
     def __rclpy_slam_to_gps_subscription_cb(self, slam_to_gps_cb: NavSatFix) -> None:
         self.location_xpos = slam_to_gps_cb.longitude
         self.location_ypos = slam_to_gps_cb.latitude
@@ -259,9 +259,14 @@ class LocationResponseHandler():
 
         __task_info_dict: dict = __taskInfo.__dict__
 
-        __job_plan_id: str = self.__uuid_service.generate_uuid()
-        __job_group_id: str = self.__uuid_service.generate_uuid()
-        __job_order_id: str = self.__uuid_service.generate_uuid()
+        __job_plan_id: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
+        self.__rclpy_node.get_logger().info(f'Location JobPlanID : {Job.jobPlanId}')
+        
+        __job_group_id: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
+        #self.__rclpy_node.get_logger().info(f'Location JobGroupID : {__job_group_id}')
+
+        __job_order_id: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
+        #self.__rclpy_node.get_logger().info(f'Location JobOrderID : {__job_order_id}')
 
         __jobInfo: JobInfo = JobInfo()
 
