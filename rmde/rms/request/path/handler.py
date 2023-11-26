@@ -17,6 +17,7 @@ from gts_navigation_msgs.msg import GoalWaypoints
 
 from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
+from ...common.domain import Job
 
 from .domain import JobInfo
 from .domain import JobPath
@@ -55,18 +56,10 @@ class PathRequestHandler():
             callback_group = self.__rclpy_goal_waypoints_cb_group    
         )
         
-        self.__rclpy_robot_id_mgr_service_server_name: str = '/robot_id/service'
-        self.__rclpy_robot_id_mgr_service_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_robot_id_mgr_service_client: rclpy.client.Client = self.__rclpy_node.create_client(
-            srv_name = self.__rclpy_robot_id_mgr_service_server_name,
-            srv_type = UUID,
-            qos_profile = qos_profile_system_default,
-            callback_group = self.__rclpy_robot_id_mgr_service_client_cb_group
-        )
-        
         self.__path: Path = Path()
         self.__jobInfo: JobInfo = JobInfo()
         self.__jobPath: JobPath = JobPath()
+        self.__job: Job = Job()
 
         
     
@@ -91,12 +84,15 @@ class PathRequestHandler():
                 
                 __jobPlanId: str = self.__path.jobInfo['jobPlanId']
                 self.__jobInfo.jobPlanId = __jobPlanId
+                self.__job.jobPlanId = __jobPlanId
 
                 __jobGroupId: str  = self.__path.jobInfo['jobGroupId']
                 self.__jobInfo.jobGroupId = __jobGroupId
+                self.__job.jobGroupId = __jobGroupId
 
                 __jobOrderId: str  = self.__path.jobInfo['jobOrderId']
                 self.__jobInfo.jobOrderId = __jobOrderId
+                self.__job.jobOrderId = __jobOrderId
 
                 __jobGroup: str  = self.__path.jobInfo['jobGroup']
                 self.__jobInfo.jobGroup = __jobGroup

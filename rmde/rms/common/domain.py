@@ -9,4 +9,11 @@ class Header():
     robotType: str = ''
 
 
+@dataclass
+class Job():
+    jobPlanId: str = ''
+    jobGroupId: str = ''
+    jobOrderId: str = ''
+
+
 __all__ = ['rms_common_domain']

@@ -35,6 +35,8 @@ from .domain import EventCdType
 from .domain import ComInfoStatusType
 
 from ...common.domain import Header
+from ...common.domain import Job
+
 from .domain import Event
 from .domain import TaskInfo
 from .domain import JobResult
@@ -43,7 +45,6 @@ from .domain import EventInfoLocation
 from .domain import EventInfoSubLocation
 from .domain import ComInfo
 
-from typing import Any
 
 
 GTS_NAVIGATION_STARTED_CODE: int = 2
@@ -371,15 +372,15 @@ class EventResponseHandler():
     
         __taskInfo: TaskInfo = TaskInfo()
 
-        __jobPlanId: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
+        __jobPlanId: str = Job.jobPlanId
         print(f'jobPlanId : {__jobPlanId}')
         __taskInfo.jobPlanId = __jobPlanId
 
-        __jobGroupId: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
+        __jobGroupId: str = Job.jobGroupId
         print(f'__jobGroupId : {__jobGroupId}')
         __taskInfo.jobGroupId = __jobGroupId
 
-        __jobOrderId: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
+        __jobOrderId: str = Job.jobOrderId
         print(f'__jobOrderId : {__jobOrderId}')
         __taskInfo.jobOrderId = __jobOrderId
         
