@@ -99,16 +99,13 @@ class RobotTypeService():
         __rclpy_robot_type_select_request_msgs: Type.Request = Type.Request()
 
         if not is___rclpy_robot_type_select_service_client_ready:
-            self.__rclpy_node.get_logger().error(f'[{self.__rclpy_robot_type_select_service_server_name}] server is not ready')
             return None
         else:
             __rclpy_robot_type_select_request_msgs.check = check
             __rclpy_robot_type_select_request_msgs.type = type
             __rclpy_robot_type_select_service_call_future: Future = self.__rclpy_robot_type_select_service_client.call_async(__rclpy_robot_type_select_request_msgs)
             __is_rclpy_robot_type_select_service_call_future_done: bool = __rclpy_robot_type_select_service_call_future.done()
-            self.__rclpy_node.get_logger().info(f'[{self.__rclpy_robot_type_select_service_server_name}] call future is_done : {__is_rclpy_robot_type_select_service_call_future_done}')
             __rclpy_robot_type_select_service_call_future_result: Any = __rclpy_robot_type_select_service_call_future.result()
-            self.__rclpy_node.get_logger().info(f'[{self.__rclpy_robot_type_select_service_server_name}] call future result : {str(__rclpy_robot_type_select_service_call_future_result)}')
 
             return __rclpy_robot_type_select_service_call_future_result
     
@@ -116,8 +113,6 @@ class RobotTypeService():
     def select_current_robot_type(self) -> None:
         __robotType: str = ''
         __rclpy_robot_type_select_response: Any = self.__rclpy_robot_type_select_service_request(False, 0)
-        self.__rclpy_node.get_logger().info(f'RobotTypeService select_current_robot_type : {str(__rclpy_robot_type_select_response)}')
-
         __is_rclpy_robot_type_select_response_none: bool = (__rclpy_robot_type_select_response == None)
 
         if __is_rclpy_robot_type_select_response_none:
@@ -132,7 +127,6 @@ class RobotTypeService():
 
         with open(self.__common_config_service.config_file_path, 'w') as common_config_file:
             self.__common_config_parser.write(common_config_file)
-            self.__rclpy_node.get_logger().info('RobotTypeService write_common_config_file written')
         
 
 

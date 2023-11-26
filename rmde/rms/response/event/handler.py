@@ -1,12 +1,13 @@
 import os
 import json
-import socket
+import rclpy.client
 
 from configparser import ConfigParser
 from rclpy.node import Node
 from rclpy.subscription import Subscription
 from rclpy.qos import qos_profile_sensor_data
 from rclpy.qos import qos_profile_system_default
+from rclpy.task import Future
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from sensor_msgs.msg import NavSatFix
@@ -42,10 +43,11 @@ from .domain import EventInfoLocation
 from .domain import EventInfoSubLocation
 from .domain import ComInfo
 
+from typing import Any
+
 
 GTS_NAVIGATION_STARTED_CODE: int = 2
 GTS_NAVIGATION_COMPLETED_CODE: int = 4
-
 
 class EventResponseHandler():
     def __init__(self, rclpy_node: Node, mqtt_client: Client) -> None:
@@ -194,6 +196,10 @@ class EventResponseHandler():
         self.sub_location_xpos: float = 0.0
         self.sub_location_ypos: float = 0.0
         self.areaClsf: str = ''
+
+        self.job_plan_id: str = ''
+        self.job_group_id: str = ''
+        self.job_order_id: str = ''
     
     
     def __rclpy_slam_to_gps_subscription_cb(self, slam_to_gps_cb: NavSatFix) -> None:
@@ -228,7 +234,6 @@ class EventResponseHandler():
         if (__status_code == -1000):
             self.sensor_status = EventCdType.BROKEN.value
             self.sensor_type = 'IMU'
-            self.__response_to_uvc()
         else:
             return
         
@@ -239,7 +244,6 @@ class EventResponseHandler():
         if (__status_code == -1001):
             self.sensor_status = EventCdType.BROKEN.value
             self.sensor_type = 'LiDAR'
-            self.__response_to_uvc()
         else:
             return
         
@@ -250,7 +254,6 @@ class EventResponseHandler():
         if (__status_code == -1002):
             self.sensor_status = EventCdType.BROKEN.value
             self.sensor_type = 'GPS'
-            self.__response_to_uvc()
         else:
             return
         
@@ -261,7 +264,6 @@ class EventResponseHandler():
         if (__status_code == -1003):
             self.sensor_status = EventCdType.BROKEN.value
             self.sensor_type = 'BATTERY'
-            self.__response_to_uvc()
         else:
             return
         
@@ -298,6 +300,7 @@ class EventResponseHandler():
         else :
             self.areaClsf = AreaCLSFType.INDOOR.value
         return
+
         
 
     def __build_event(self) -> Event:
@@ -307,7 +310,7 @@ class EventResponseHandler():
         __header_dict: dict = __header.__dict__
         __event.header = __header_dict
 
-        __taskInfo: TaskInfo = self.__build__task_info()
+        __taskInfo: TaskInfo = self.__build_task_info()
         __taskInfo_dict: dict = __taskInfo.__dict__
         __event.taskInfo = __taskInfo_dict
 
@@ -343,7 +346,7 @@ class EventResponseHandler():
         return __header
     
 
-    def __build__task_info(self) -> TaskInfo:
+    def __build_task_info(self) -> TaskInfo:
         __formatted_datetime: str = self.__time_service.get_current_datetime()
 
         __jobResult: JobResult = JobResult()
@@ -365,20 +368,19 @@ class EventResponseHandler():
 
         __dist: int = (self.job_end_dist - self.job_start_dist)
         __jobResult.dist = __dist
-        
-        __jobPlanId: str = self.__uuid_service.generate_uuid()
-        __jobGroupId: str = self.__uuid_service.generate_uuid()
-        __jobOrderId: str = self.__uuid_service.generate_uuid()
-
+    
         __taskInfo: TaskInfo = TaskInfo()
 
-        __jobPlanId: str = __jobPlanId
+        __jobPlanId: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
+        print(f'jobPlanId : {__jobPlanId}')
         __taskInfo.jobPlanId = __jobPlanId
 
-        __jobGroupId: str = __jobGroupId
+        __jobGroupId: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
+        print(f'__jobGroupId : {__jobGroupId}')
         __taskInfo.jobGroupId = __jobGroupId
 
-        __jobOrderId: str = __jobOrderId
+        __jobOrderId: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
+        print(f'__jobOrderId : {__jobOrderId}')
         __taskInfo.jobOrderId = __jobOrderId
         
         __jobGroup: str = self.job_group
