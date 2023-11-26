@@ -4,19 +4,23 @@ import json
 from configparser import ConfigParser
 from rclpy.node import Node
 from rclpy.subscription import Subscription
+from rclpy.client import Client
+from rclpy.qos import qos_profile_system_default
 from rclpy.qos import qos_profile_sensor_data
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.task import Future
 
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import BatteryState
 from geometry_msgs.msg import PoseStamped
 from robot_status_msgs.msg import VelocityStatus
+from robot_status_msgs.msg import NavigationStatus
 from gps_iao_door_msgs.msg import InOutDoor
+from robot_type_msgs.srv import Type
 
 from ....mqtt.mqtt_client import Client
 
 from ...common.service import UUIDService
-from ...common.service import TimeService
 from ...common.service import ConfigService
 
 from ...common.enum_types import AreaCLSFType
@@ -31,6 +35,10 @@ from .domain import TaskInfo
 from .domain import LastInfo
 from .domain import LastInfoLocation
 from .domain import LastInfoSubLocation
+
+
+GTS_NAVIGATION_STARTED_CODE: int = 2
+GTS_NAVIGATION_COMPLETED_CODE: int = 4
 
 
 class LocationResponseHandler():
@@ -51,7 +59,15 @@ class LocationResponseHandler():
         self.__common_config_service: ConfigService = ConfigService(self.__script_directory, self.__common_config_file_path)
         self.__common_config_parser: ConfigParser = self.__common_config_service.read()
         
-        
+        self.__rclpy_robot_type_select_service_server_name: str = '/robot_type/service'
+        self.__rclpy_robot_type_select_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_robot_type_select_service_client: Client = self.__rclpy_node.create_client(
+            srv_type = Type,
+            srv_name = self.__rclpy_robot_type_select_service_server_name,
+            qos_profile = qos_profile_system_default,
+            callback_group = self.__rclpy_robot_type_select_service_cb_group
+        )
+
         self.__rclpy_slam_to_gps_subscription_topic: str = '/slam_to_gps'
         self.__rclpy_slam_to_gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.__rclpy_slam_to_gps_subscription: Subscription = self.__rclpy_node.create_subscription(
@@ -102,6 +118,16 @@ class LocationResponseHandler():
             callback_group = self.__rclpy_velocity_state_subscription_cb_group
         )
 
+        self.__rclpy_gts_navigation_task_status_subscription_topic: str = '/gts_navigation/task_status'
+        self.__rclpy_gts_navigation_task_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_gts_navigation_task_status_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = NavigationStatus,
+            topic = self.__rclpy_gts_navigation_task_status_subscription_topic,
+            qos_profile = qos_profile_system_default,
+            callback = self.__rclpy_gts_navigation_task_status_subscription_cb,
+            callback_group = self.__rclpy_gts_navigation_task_status_subscription_cb_group
+        )
+
         self.__rclpy_in_out_door_subscription_topic: str = '/in_out_door'
         self.__rclpy_in_out_door_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.__rclpy_in_out_door_subscription: Subscription = self.__rclpy_node.create_subscription(
@@ -113,7 +139,6 @@ class LocationResponseHandler():
         )
         
         self.__uuid_service: UUIDService = UUIDService()
-        self.__time_service: TimeService = TimeService()
         
         self.location_xpos: float = 0.0
         self.location_ypos: float = 0.0
@@ -124,7 +149,11 @@ class LocationResponseHandler():
         self.velocity: float = 0.0
         self.total_dist: int = 0
         self.areaClsf: str = ''
-        
+        self.job_status_code: int = 0
+        self.job_group: str = ''
+        self.job_kind: str = ''
+        self.task_status: str = ''
+
         
     def __rclpy_slam_to_gps_subscription_cb(self, slam_to_gps_cb: NavSatFix) -> None:
         self.location_xpos = slam_to_gps_cb.longitude
@@ -150,6 +179,21 @@ class LocationResponseHandler():
         
         self.velocity = __current_velocity
         self.total_dist = __distance
+
+
+    def __rclpy_gts_navigation_task_status_subscription_cb(self, navigation_status: NavigationStatus) -> None:
+        self.job_status_code = navigation_status.status_code
+
+        if self.job_status_code == GTS_NAVIGATION_STARTED_CODE:
+            self.job_group = JobGroupType.MOVE.value
+            self.job_kind = JobKindType.MOVE.value
+            self.task_status = TaskStatusType.ASSIGNED.value
+        elif self.job_status_code == GTS_NAVIGATION_COMPLETED_CODE:
+            self.job_group = JobGroupType.WAIT.value
+            self.job_kind = JobKindType.WAIT.value
+            self.task_status = TaskStatusType.UNASSIGNED.value
+        else:
+            return
 
     
     def __rclpy_in_out_door_subscription_cb(self, in_out_door_cb: InOutDoor) -> None:
@@ -204,13 +248,13 @@ class LocationResponseHandler():
     def __build_job_info(self) -> JobInfo:
         __taskInfo: TaskInfo = TaskInfo()
 
-        __job_group: str = JobGroupType.SUPPLY.value
+        __job_group: str = self.job_group
         __taskInfo.jobGroup = __job_group
 
-        __job_kind: str = JobKindType.MOVE.value
+        __job_kind: str = self.job_kind
         __taskInfo.jobKind = __job_kind
 
-        __task_status: str = TaskStatusType.ASSIGNED.value
+        __task_status: str = self.task_status
         __taskInfo.taskStatus = __task_status
 
         __task_info_dict: dict = __taskInfo.__dict__

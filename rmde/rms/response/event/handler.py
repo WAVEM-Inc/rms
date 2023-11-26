@@ -23,7 +23,7 @@ from ...common.service import TimeService
 from ...common.service import ConfigService
 from ...common.service import NetworkService
 
-from ...common.enum_types import RobotType
+from ...common.enum_types import TaskStatusType
 from ...common.enum_types import AreaCLSFType
 
 from ...common.enum_types import JobGroupType
@@ -41,6 +41,10 @@ from .domain import EventInfo
 from .domain import EventInfoLocation
 from .domain import EventInfoSubLocation
 from .domain import ComInfo
+
+
+GTS_NAVIGATION_STARTED_CODE: int = 2
+GTS_NAVIGATION_COMPLETED_CODE: int = 4
 
 
 class EventResponseHandler():
@@ -163,15 +167,16 @@ class EventResponseHandler():
             qos_profile = qos_profile_sensor_data,
             callback_group = self.__rclpy_in_out_door_subscription_cb_group
         )
-                
         
         self.__ip_address: str = self.__network_service.get_local_ip()
         
         self.__uuid_service: UUIDService = UUIDService()
         self.__time_service: TimeService = TimeService()
         
+        self.job_status_code: int = 0
         self.job_group: str = ''
         self.job_kind: str = ''
+        self.task_status: str = ''
         self.job_status: str = ''
         self.job_start_time: str = ''
         self.job_end_time: str = ''
@@ -214,7 +219,7 @@ class EventResponseHandler():
     def __report_sensor_broken_status__(self, sensor_type: str) -> None:
         self.sensor_status = EventCdType.BROKEN.value
         self.sensor_type = sensor_type
-        self.response_to_uvc()
+        self.__response_to_uvc()
     
 
     def __rclpy_imu_status_subscription_cb(self, imu_status_cb: SensorStatus) -> None:
@@ -223,6 +228,7 @@ class EventResponseHandler():
         if (__status_code == -1000):
             self.sensor_status = EventCdType.BROKEN.value
             self.sensor_type = 'IMU'
+            self.__response_to_uvc()
         else:
             return
         
@@ -233,6 +239,7 @@ class EventResponseHandler():
         if (__status_code == -1001):
             self.sensor_status = EventCdType.BROKEN.value
             self.sensor_type = 'LiDAR'
+            self.__response_to_uvc()
         else:
             return
         
@@ -243,6 +250,7 @@ class EventResponseHandler():
         if (__status_code == -1002):
             self.sensor_status = EventCdType.BROKEN.value
             self.sensor_type = 'GPS'
+            self.__response_to_uvc()
         else:
             return
         
@@ -253,21 +261,33 @@ class EventResponseHandler():
         if (__status_code == -1003):
             self.sensor_status = EventCdType.BROKEN.value
             self.sensor_type = 'BATTERY'
+            self.__response_to_uvc()
         else:
             return
         
 
     def __rclpy_gts_navigation_task_status_subscription_cb(self, navigation_status: NavigationStatus) -> None:
-        self.job_group: str = navigation_status.job_group
-        self.job_kind: str = navigation_status.job_kind
-        self.job_status: str = navigation_status.status
-        self.job_start_time: str = navigation_status.start_time
-        self.job_end_time: str = navigation_status.end_time
-        self.job_start_battery_level: float = navigation_status.start_battery_level
-        self.job_end_battery_level: float = navigation_status.end_battery_level
-        self.job_start_dist: float = navigation_status.start_dist
-        self.job_end_dist: float = navigation_status.end_dist
-        self.response_to_uvc()
+        self.job_status_code = navigation_status.status_code
+
+        if self.job_status_code == GTS_NAVIGATION_STARTED_CODE:
+            self.job_group = JobGroupType.MOVE.value
+            self.job_kind = JobKindType.MOVE.value
+            self.task_status = JobResultStatusType.SUCCESS.value
+        elif self.job_status_code == GTS_NAVIGATION_COMPLETED_CODE:
+            self.job_group = JobGroupType.WAIT.value
+            self.job_kind = JobKindType.WAIT.value
+            self.task_status = JobResultStatusType.SUCCESS.value
+        else:
+            return
+        
+        self.job_status = navigation_status.status
+        self.job_start_time = navigation_status.start_time
+        self.job_end_time = navigation_status.end_time
+        self.job_start_battery_level = navigation_status.start_battery_level
+        self.job_end_battery_level = navigation_status.end_battery_level
+        self.job_start_dist = navigation_status.start_dist
+        self.job_end_dist = navigation_status.end_dist
+        self.__response_to_uvc()
 
     
     def __rclpy_in_out_door_subscription_cb(self, in_out_door_cb: InOutDoor) -> None:
@@ -328,7 +348,7 @@ class EventResponseHandler():
 
         __jobResult: JobResult = JobResult()
 
-        __status: str = JobResultStatusType.SUCCESS.value
+        __status: str = self.task_status
         __jobResult.status = __status
 
         __startTime: str = __formatted_datetime
@@ -361,10 +381,10 @@ class EventResponseHandler():
         __jobOrderId: str = __jobOrderId
         __taskInfo.jobOrderId = __jobOrderId
         
-        __jobGroup: str = JobGroupType.SUPPLY.value
+        __jobGroup: str = self.job_group
         __taskInfo.jobGroup = __jobGroup
 
-        __jobKind: str = JobKindType.MOVE.value
+        __jobKind: str = self.job_kind
         __taskInfo.jobKind = __jobKind
 
         __jobResult: dict = __jobResult.__dict__
@@ -444,7 +464,7 @@ class EventResponseHandler():
         return __comInfo
 
 
-    def response_to_uvc(self) -> None:
+    def __response_to_uvc(self) -> None:
         __built_event: Event = self.__build_event()
         self.__mqtt_client.publish(topic = self.__mqtt_event_publisher_topic, payload = json.dumps(__built_event.__dict__), qos = 0)
         

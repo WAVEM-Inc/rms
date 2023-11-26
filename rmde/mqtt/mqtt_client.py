@@ -204,7 +204,8 @@ class Logger:
 
 MQTT_CONFIG_FILE_PATH: str = 'mqtt.ini'
 MQTT_CONFIG_FILE_BROKER_SECTION: str = 'broker'
-MQTT_TRANSPORT_TYPE: str = 'websockets'
+MQTT_TRANSPORT_TYPE_WS: str = 'websockets'
+MQTT_TRANSPORT_TYPE_TCP: str = 'tcp'
 MQTT_WEBSOCKETS_PATH: str = '/ws'
 
 class Client:
@@ -225,6 +226,7 @@ class Client:
         self.__client_keep_alive: int = int(__config_parser.get(MQTT_CONFIG_FILE_BROKER_SECTION, 'client_keep_alive'))
         self.__user_name: str = __config_parser.get(MQTT_CONFIG_FILE_BROKER_SECTION, 'user_name')
         self.__password: str = __config_parser.get(MQTT_CONFIG_FILE_BROKER_SECTION, 'password')
+        self.__type: str = __config_parser.get(MQTT_CONFIG_FILE_BROKER_SECTION, 'type')
         self.is_connected: bool = False
 
 
@@ -243,9 +245,14 @@ class Client:
         
 
     def connect(self) -> None:
-        try:            
-            self.client = mqtt.Client(self.__client_name, clean_session = True, userdata = None, transport = MQTT_TRANSPORT_TYPE)
-            # self.client.ws_set_options(path = MQTT_WEBSOCKETS_PATH)
+        try:
+            if self.__type == MQTT_TRANSPORT_TYPE_TCP:
+                self.client = mqtt.Client(self.__client_name, clean_session = True, userdata = None, transport = MQTT_TRANSPORT_TYPE_TCP)
+            elif self.__type == MQTT_TRANSPORT_TYPE_WS:
+                self.client = mqtt.Client(self.__client_name, clean_session = True, userdata = None, transport = MQTT_TRANSPORT_TYPE_WS)
+                self.client.ws_set_options(path = MQTT_WEBSOCKETS_PATH)
+            else:
+                return
             self.client.username_pw_set(self.__user_name, self.__password)
             
             self.client.on_connect = self.__on_connect

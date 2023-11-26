@@ -28,6 +28,7 @@ class JobResultStatusType(Enum):
 
 class TaskStatusType(Enum):
     ASSIGNED: str = 'assigned'
+    UNASSIGNED: str = 'unassigned'
     
 
 class RobotType(Enum):
