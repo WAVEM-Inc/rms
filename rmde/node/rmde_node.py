@@ -14,6 +14,8 @@ from ..rms.request.path.handler import PathRequestHandler
 from ..rms.response.event.handler import EventResponseHandler
 from ..rms.response.location.handler import LocationResponseHandler
 
+from ..rms.common.service import RobotTypeService
+
 MQTT_THREAD_INTERVAL: int = 60
 MQTT_RETRY_INTERVAL: int = 1
 RCLPY_NODE_NAME: str = 'rmde'
@@ -44,6 +46,7 @@ class RMDENode(Node):
         
         self.__event_response_handler: EventResponseHandler = EventResponseHandler(self, self.mqtt_client)
         self.__location_response_handler: LocationResponseHandler = LocationResponseHandler(self, self.mqtt_client)
+        self.__robot_type_service: RobotTypeService = RobotTypeService(self)
         
         self.__config_request_handler: ConfigRequestHandler = ConfigRequestHandler(self, self.mqtt_client)
         self.__control_request_handler: ControlRequestHandler = ControlRequestHandler(self, self.mqtt_client)
@@ -82,7 +85,7 @@ class RMDENode(Node):
     def __from_uvc_to_rms(self) -> None:
         if (self.mqtt_client.is_connected):
             self.__location_response_handler.response_to_uvc()
-            self.__event_response_handler.response_to_uvc()
+            self.__robot_type_service.select_current_robot_type()
         else:
             return
         

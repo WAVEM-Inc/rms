@@ -1,5 +1,7 @@
 import os
 import json
+import rclpy
+import rclpy.client
 import importlib
 import paho.mqtt.client as mqtt
 
@@ -7,6 +9,7 @@ from configparser import ConfigParser
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.qos import qos_profile_system_default
+from rclpy.task import Future
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rosbridge_library.internal import message_conversion
 
@@ -14,10 +17,10 @@ from gts_navigation_msgs.msg import GoalWaypoints
 
 from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
+from ...common.domain import Job
 
-from ...common.domain import Header
+
 from .domain import JobInfo
-from .domain import JobKindType
 from .domain import JobPath
 from .domain import Path
 
@@ -34,11 +37,16 @@ class PathRequestHandler():
         self.__mqtt_client: Client = mqtt_client
 
         self.__script_directory: str = os.path.dirname(os.path.abspath(__file__))
+
         self.__mqtt_config_file_path: str = '../../../mqtt/mqtt.ini'
         self.__mqtt_config_service: ConfigService = ConfigService(self.__script_directory, self.__mqtt_config_file_path)
         self.__mqtt_config_parser: ConfigParser = self.__mqtt_config_service.read()
         self.__mqtt_path_subscription_topic: str = self.__mqtt_config_parser.get('topics', 'path')
         self.__mqtt_path_subscription_qos: int = int(self.__mqtt_config_parser.get('qos', 'path'))
+
+        self.__common_config_file_path: str = '../../common/config.ini'
+        self.__common_config_service: ConfigService = ConfigService(self.__script_directory, self.__common_config_file_path)
+        self.__common_config_parser: ConfigParser = self.__common_config_service.read()
         
         self.__rclpy_goal_waypoints_publisher_topic: str = '/gts_navigation/waypoints'
         self.__rclpy_goal_waypoints_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
@@ -82,6 +90,9 @@ class PathRequestHandler():
                 __jobOrderId: str  = self.__path.jobInfo['jobOrderId']
                 self.__jobInfo.jobOrderId = __jobOrderId
 
+                global job
+                job = Job(__jobPlanId, __jobGroupId, __jobOrderId)
+
                 __jobGroup: str  = self.__path.jobInfo['jobGroup']
                 self.__jobInfo.jobGroup = __jobGroup
 
@@ -98,7 +109,7 @@ class PathRequestHandler():
                 self.__jobPath.jobKindType = __jobKindType_dict
                 
                 self.__rclpy_node.get_logger().info('JobPath LocationList {}'.format(self.__jobPath.locationList))
-                self.__rclpy_publish_goal_waypoints_list__(self.__jobPath.locationList)
+                self.__rclpy_publish_goal_waypoints_list(self.__jobPath.locationList)
 
             except KeyError as ke:
                 self.__rclpy_node.get_logger().error(f'Invalid JSON Key in MQTT {self.__mqtt_path_subscription_topic} subscription callback: {ke}')
@@ -124,7 +135,7 @@ class PathRequestHandler():
         return __obj
     
     
-    def __rclpy_publish_goal_waypoints_list__(self, location_list: list) -> None:
+    def __rclpy_publish_goal_waypoints_list(self, location_list: list) -> None:
         __rclpy_goal_waypoints_list: list = []
         
         for location in location_list:
