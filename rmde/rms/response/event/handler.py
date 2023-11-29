@@ -1,6 +1,5 @@
 import os
 import json
-import rclpy.client
 
 from configparser import ConfigParser
 from rclpy.node import Node
@@ -16,6 +15,7 @@ from geometry_msgs.msg import PoseStamped
 from robot_status_msgs.msg import SensorStatus
 from robot_status_msgs.msg import NavigationStatus
 from gps_iao_door_msgs.msg import InOutDoor
+from uuid_gateway_msgs.msg import UUID
 
 from ....mqtt.mqtt_client import Client
 
@@ -24,9 +24,7 @@ from ...common.service import TimeService
 from ...common.service import ConfigService
 from ...common.service import NetworkService
 
-from ...common.enum_types import TaskStatusType
 from ...common.enum_types import AreaCLSFType
-
 from ...common.enum_types import JobGroupType
 from ...common.enum_types import JobKindType
 from ...common.enum_types import JobResultStatusType
@@ -45,9 +43,9 @@ from .domain import EventInfoSubLocation
 from .domain import ComInfo
 
 
-
 GTS_NAVIGATION_STARTED_CODE: int = 2
 GTS_NAVIGATION_COMPLETED_CODE: int = 4
+
 
 class EventResponseHandler():
     def __init__(self, rclpy_node: Node, mqtt_client: Client) -> None:
@@ -68,7 +66,6 @@ class EventResponseHandler():
         self.__common_config_parser: ConfigParser = self.__common_config_service.read()
 
         self.__network_service: NetworkService = NetworkService()
-        
         
         self.__rclpy_slam_to_gps_subscription_topic: str = '/slam_to_gps'
         self.__rclpy_slam_to_gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
@@ -168,6 +165,16 @@ class EventResponseHandler():
             callback = self.__rclpy_in_out_door_subscription_cb,
             qos_profile = qos_profile_sensor_data,
             callback_group = self.__rclpy_in_out_door_subscription_cb_group
+        )
+
+        self.__rclpy_get_uuid_subscription_topic: str = '/uuid_gateway_server/get_uuid'
+        self.__rclpy_get_uuid_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_get_uuid_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = UUID,
+            topic = self.__rclpy_get_uuid_subscription_topic,
+            qos_profile = qos_profile_system_default,
+            callback_group = self.__rclpy_get_uuid_subscription_cb_group,
+            callback = self.__rclpy_get_uuid_subscription_cb
         )
         
         self.__ip_address: str = self.__network_service.get_local_ip()
@@ -301,6 +308,11 @@ class EventResponseHandler():
             self.areaClsf = AreaCLSFType.INDOOR.value
         return
 
+
+    def __rclpy_get_uuid_subscription_cb(self, get_uuid_cb: UUID) -> None:
+        self.job_plan_id = get_uuid_cb.job_plan_id
+        self.job_group_id = get_uuid_cb.job_group_id
+        self.job_order_id = get_uuid_cb.job_order_id
         
 
     def __build_event(self) -> Event:
@@ -371,16 +383,13 @@ class EventResponseHandler():
     
         __taskInfo: TaskInfo = TaskInfo()
 
-        __jobPlanId: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
-        print(f'jobPlanId : {__jobPlanId}')
+        __jobPlanId: str = self.job_plan_id
         __taskInfo.jobPlanId = __jobPlanId
 
-        __jobGroupId: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
-        print(f'__jobGroupId : {__jobGroupId}')
+        __jobGroupId: str = self.job_group_id
         __taskInfo.jobGroupId = __jobGroupId
 
-        __jobOrderId: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
-        print(f'__jobOrderId : {__jobOrderId}')
+        __jobOrderId: str = self.job_order_id
         __taskInfo.jobOrderId = __jobOrderId
         
         __jobGroup: str = self.job_group

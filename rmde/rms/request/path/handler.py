@@ -1,6 +1,5 @@
 import os
 import json
-import rclpy
 import rclpy.client
 import importlib
 import paho.mqtt.client as mqtt
@@ -9,16 +8,17 @@ from configparser import ConfigParser
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.qos import qos_profile_system_default
+from rclpy.qos import qos_profile_services_default
 from rclpy.task import Future
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rosbridge_library.internal import message_conversion
 
 from gts_navigation_msgs.msg import GoalWaypoints
+from uuid_gateway_msgs.srv import RegisterUUID
 
 from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
-from ...common.domain import Job
-
+from ...common.domain import JobUUID
 
 from .domain import JobInfo
 from .domain import JobPath
@@ -30,6 +30,18 @@ from typing import Dict
 
 RCLPY_FLAG: str = 'RCLPY'
 MQTT_FLAG: str = 'MQTT'
+
+UUID_REGISTER_KEY: str = 'qAqwmrwskdfliqnwkfnlasdkfnlas'
+
+UUID_REGISTER_KEY_EMPTY_CODE: int = -100
+UUID_REGISTER_KEY_EMPTY_MESSAGE: str = 'register_key is empty'
+
+UUID_REGISTER_KEY_INCONSISTENCY_CODE: int = -101
+UUID_REGISTER_KEY_INCONSISTENCY_MESSAGE: str = 'register_key is not equals'
+
+UUID_REGISTER_SUCCESS_CODE: int = 100
+UUID_REGISTER_SUCCESS_MESSAGE: str = 'uuid has been registered successfully'
+
 
 class PathRequestHandler():
     def __init__(self, rclpy_node: Node, mqtt_client: Client) -> None:
@@ -56,10 +68,20 @@ class PathRequestHandler():
             qos_profile = qos_profile_system_default,
             callback_group = self.__rclpy_goal_waypoints_cb_group    
         )
+
+        self.__rclpy_uuid_register_service_server_name: str = '/uuid_gateway_server/register_uuid'
+        self.__rclpy_uuid_register_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_uuid_register_client: rclpy.client.Client = self.__rclpy_node.create_client(
+            srv_name = self.__rclpy_uuid_register_service_server_name,
+            srv_type = RegisterUUID,
+            qos_profile = qos_profile_services_default,
+            callback_group = self.__rclpy_uuid_register_client_cb_group
+        )
         
         self.__path: Path = Path()
         self.__jobInfo: JobInfo = JobInfo()
         self.__jobPath: JobPath = JobPath()
+        self.__jobUUID: JobUUID = JobUUID()
         
     
     def request_to_uvc(self) -> None:
@@ -83,15 +105,18 @@ class PathRequestHandler():
                 
                 __jobPlanId: str = self.__path.jobInfo['jobPlanId']
                 self.__jobInfo.jobPlanId = __jobPlanId
+                self.__jobUUID.jobPlanId = __jobPlanId
 
                 __jobGroupId: str  = self.__path.jobInfo['jobGroupId']
                 self.__jobInfo.jobGroupId = __jobGroupId
+                self.__jobUUID.jobGroupId = __jobGroupId
 
                 __jobOrderId: str  = self.__path.jobInfo['jobOrderId']
                 self.__jobInfo.jobOrderId = __jobOrderId
+                self.__jobUUID.jobOrderId = __jobOrderId
 
-                global job
-                job = Job(__jobPlanId, __jobGroupId, __jobOrderId)
+                __rclpy_request_register_uuid_result: Any = self.__rclpy_request_register_uuid(self.__jobUUID)
+                self.__rclpy_node.get_logger().info(f'rclpy_request_register_uuid_result : {__rclpy_request_register_uuid_result}')
 
                 __jobGroup: str  = self.__path.jobInfo['jobGroup']
                 self.__jobInfo.jobGroup = __jobGroup
@@ -108,7 +133,7 @@ class PathRequestHandler():
                 __jobKindType_dict: dict = self.__path.jobPath['jobKindType']
                 self.__jobPath.jobKindType = __jobKindType_dict
                 
-                self.__rclpy_node.get_logger().info('JobPath LocationList {}'.format(self.__jobPath.locationList))
+                self.__rclpy_node.get_logger().info(f'JobPath LocationList {self.__jobPath.locationList}')
                 self.__rclpy_publish_goal_waypoints_list(self.__jobPath.locationList)
 
             except KeyError as ke:
@@ -125,7 +150,7 @@ class PathRequestHandler():
         self.__mqtt_client.client.message_callback_add(self.__mqtt_path_subscription_topic, __mqtt_path_subscription_cb)
 
     
-    def __lookup_object__(self, module_name: str, module_class_name: str) -> Any:        
+    def __rclpy_lookup_messages(self, module_name: str, module_class_name: str) -> Any:        
         self.__rclpy_node.get_logger().info('{} lookup object path : {}'.format(RCLPY_FLAG, module_name))
         self.__rclpy_node.get_logger().info('{} lookup object module_name : {}'.format(RCLPY_FLAG, module_name))
 
@@ -134,12 +159,27 @@ class PathRequestHandler():
 
         return __obj
     
+
+    def __rclpy_request_register_uuid(self, job_uuid: JobUUID) -> Any :
+        self.__rclpy_node.get_logger().info(f'request_register_uuid job_plan_id : {job_uuid.jobPlanId}')
+        self.__rclpy_node.get_logger().info(f'request_register_uuid job_group_id : {job_uuid.jobGroupId}')
+        self.__rclpy_node.get_logger().info(f'request_register_uuid job_order_id : {job_uuid.jobOrderId}')
+
+        __rclpy_register_uuid_request: RegisterUUID.Request = RegisterUUID.Request()
+        __rclpy_register_uuid_request.register_key = UUID_REGISTER_KEY
+        __rclpy_register_uuid_request.job_plan_id = job_uuid.jobPlanId
+        __rclpy_register_uuid_request.job_group_id = job_uuid.jobGroupId
+        __rclpy_register_uuid_request.job_order_id = job_uuid.jobOrderId
+
+        __rclpy_register_uuid_request_future: Future = self.__rclpy_uuid_register_client.call_async(__rclpy_register_uuid_request)
+        return __rclpy_register_uuid_request_future.result()
+
     
     def __rclpy_publish_goal_waypoints_list(self, location_list: list) -> None:
         __rclpy_goal_waypoints_list: list = []
         
         for location in location_list:
-            __rclpy_nav_sat_fix_obj: Any = self.__lookup_object__('sensor_msgs.msg', 'NavSatFix')
+            __rclpy_nav_sat_fix_obj: Any = self.__rclpy_lookup_messages('sensor_msgs.msg', 'NavSatFix')
 
             __rclpy_location_to_nav_sat_fix_dict: dict = {
                 'longitude': location['xpos'],
