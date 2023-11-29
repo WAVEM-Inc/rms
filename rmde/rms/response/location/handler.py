@@ -16,11 +16,11 @@ from geometry_msgs.msg import PoseStamped
 from robot_status_msgs.msg import VelocityStatus
 from robot_status_msgs.msg import NavigationStatus
 from gps_iao_door_msgs.msg import InOutDoor
-from robot_type_msgs.srv import Type
+# from robot_type_msgs.srv import Type
+from uuid_gateway_msgs.msg import UUID
 
 from ....mqtt.mqtt_client import Client
 
-from ...common.service import UUIDService
 from ...common.service import ConfigService
 
 from ...common.enum_types import AreaCLSFType
@@ -29,7 +29,7 @@ from ...common.enum_types import JobKindType
 from ...common.enum_types import TaskStatusType
 
 from ...common.domain import Header
-from ...common.domain import Job
+from ...common.domain import JobUUID
 
 from .domain import Location
 from .domain import JobInfo
@@ -61,14 +61,14 @@ class LocationResponseHandler():
         self.__common_config_service: ConfigService = ConfigService(self.__script_directory, self.__common_config_file_path)
         self.__common_config_parser: ConfigParser = self.__common_config_service.read()
         
-        self.__rclpy_robot_type_select_service_server_name: str = '/robot_type/service'
-        self.__rclpy_robot_type_select_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_robot_type_select_service_client: Client = self.__rclpy_node.create_client(
-            srv_type = Type,
-            srv_name = self.__rclpy_robot_type_select_service_server_name,
-            qos_profile = qos_profile_system_default,
-            callback_group = self.__rclpy_robot_type_select_service_cb_group
-        )
+        # self.__rclpy_robot_type_select_service_server_name: str = '/robot_type/service'
+        # self.__rclpy_robot_type_select_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        # self.__rclpy_robot_type_select_service_client: Client = self.__rclpy_node.create_client(
+        #     srv_type = Type,
+        #     srv_name = self.__rclpy_robot_type_select_service_server_name,
+        #     qos_profile = qos_profile_system_default,
+        #     callback_group = self.__rclpy_robot_type_select_service_cb_group
+        # )
 
         self.__rclpy_slam_to_gps_subscription_topic: str = '/slam_to_gps'
         self.__rclpy_slam_to_gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
@@ -139,6 +139,16 @@ class LocationResponseHandler():
             qos_profile = qos_profile_sensor_data,
             callback_group = self.__rclpy_in_out_door_subscription_cb_group
         )
+
+        self.__rclpy_get_uuid_subscription_topic: str = '/uuid_gateway_server/get_uuid'
+        self.__rclpy_get_uuid_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_get_uuid_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = UUID,
+            topic = self.__rclpy_get_uuid_subscription_topic,
+            qos_profile = qos_profile_system_default,
+            callback_group = self.__rclpy_get_uuid_subscription_cb_group,
+            callback = self.__rclpy_get_uuid_subscription_cb
+        )
         
         self.location_xpos: float = 0.0
         self.location_ypos: float = 0.0
@@ -153,6 +163,10 @@ class LocationResponseHandler():
         self.job_group: str = ''
         self.job_kind: str = ''
         self.task_status: str = ''
+
+        self.job_plan_id: str = ''
+        self.job_group_id: str = ''
+        self.job_order_id: str = ''
 
 
     def __rclpy_slam_to_gps_subscription_cb(self, slam_to_gps_cb: NavSatFix) -> None:
@@ -205,6 +219,12 @@ class LocationResponseHandler():
             self.areaClsf = AreaCLSFType.INDOOR.value
         return
     
+
+    def __rclpy_get_uuid_subscription_cb(self, get_uuid_cb: UUID) -> None:
+        self.job_plan_id = get_uuid_cb.job_plan_id
+        self.job_group_id = get_uuid_cb.job_group_id
+        self.job_order_id = get_uuid_cb.job_order_id
+
     
     def build_location(self) -> Location:
         __location: Location = Location()
@@ -259,24 +279,15 @@ class LocationResponseHandler():
 
         __task_info_dict: dict = __taskInfo.__dict__
 
-        __job_plan_id: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
-        self.__rclpy_node.get_logger().info(f'Location JobPlanID : {Job.jobPlanId}')
-        
-        __job_group_id: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
-        #self.__rclpy_node.get_logger().info(f'Location JobGroupID : {__job_group_id}')
-
-        __job_order_id: str = '1f4bfe0a-6e8c-456f-8285-7dcadbbf6bf9'
-        #self.__rclpy_node.get_logger().info(f'Location JobOrderID : {__job_order_id}')
-
         __jobInfo: JobInfo = JobInfo()
 
-        __jobPlanId: str = __job_plan_id
+        __jobPlanId: str = self.job_plan_id
         __jobInfo.jobPlanId = __jobPlanId
 
-        __jobGroupId: str = __job_group_id
+        __jobGroupId: str = self.job_group_id
         __jobInfo.jobGroupId = __jobGroupId
 
-        __jobOrderId: str = __job_order_id
+        __jobOrderId: str = self.job_order_id
         __jobInfo.jobOrderId = __jobOrderId
 
         __taskInfo: dict = __task_info_dict

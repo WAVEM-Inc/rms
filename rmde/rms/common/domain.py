@@ -10,7 +10,7 @@ class Header():
 
 
 @dataclass
-class Job():
+class JobUUID():
     jobPlanId: str = ''
     jobGroupId: str = ''
     jobOrderId: str = ''

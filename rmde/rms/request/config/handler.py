@@ -7,7 +7,6 @@ from configparser import ConfigParser
 
 from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
-from ...common.domain import Header
 
 from .domain import Config
 from .domain import SetInfo
@@ -18,6 +17,7 @@ from typing import Dict
 
 RCLPY_FLAG: str = 'RCLPY'
 MQTT_FLAG: str = 'MQTT'
+
 
 class ConfigRequestHandler():
     def __init__(self, rclpy_node: Node, mqtt_client: Client) -> None:
