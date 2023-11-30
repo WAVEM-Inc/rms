@@ -232,11 +232,11 @@ class Client:
 
     def check_broker_opened(self) -> bool:
         try:
-            __sock: socket = socket.create_connection(
+            sock: socket = socket.create_connection(
                 address = (self.broker_address, self.broker_port),
                 timeout = None
             )
-            __sock.close()
+            sock.close()
             return True
         except socket.error:
             pass

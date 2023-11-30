@@ -13,8 +13,6 @@
     - [Clone Project](#3-1-clone-project)
     - [Build Project](#3-2-build-project)
   - [Usage Examples](#4-usage-examples)
-    - [ROS2 to MQTT](#4-1-ros2-to-mqtt)
-    - [MQTT to ROS2](#4-2-mqtt-to-ros2)
 
 
 ## 1. Environment
@@ -64,59 +62,12 @@ git clone https://github.com/reidlo5135/rmde.git
 
 ### 3-2. Build Project
 ```bash
-cd ${your ros2 workspace}/src/rmde
-
-# install required pip3 modules
-# msgpack-python>=0.4.8
-# paho-mqtt>=1.2
-# cryptography>=2.8
-pip3 install -r requirements.txt
-
-pip install -e .
-
 # build ros2 package
+cd ~/${your ros2 workspace}/src/rmde
 colcon build --symlink-install
-cd ~/${your ros2 workspace}
-colcon build --packages-select rclpy_dynamic_bridge
-source install/setup.bash
-source /opt/ros/foxy/setup.bash
 ```
 
 ## 4. Usage Examples
-
-### 4-1. ROS2 to MQTT
 ```bash
-source /opt/ros/foxy/setup.bash
-
-# run /chatter publisher
-ros2 run demo_nodes_cpp talker
-
-# run rclpy_mqtt_bridge(as if bridge runs normally, bridge will check current ros2 topics and establish bridge connections every single 2.5s)
-ros2 run rclpy_mqtt_bridge dynamic_bridge
-
-# make your MQTT subscription and check subscription callback data
-# subscription callback data example
-# {"data": "Hello World: 53"}
-# {"data": "Hello World: 54"}
-mosquitto_sub -h localhost -p 1883 -t "/response/chatter"
-```
-
-### 4-2. MQTT to ROS2
-```bash
-source /opt/ros/foxy/setup.bash
-
-# run /chatter subscriber
-ros2 run demo_nodes_py listener
-
-# run rclpy_mqtt_bridge(as if bridge runs normally, bridge will check current ros2 topics and establish bridge connections every single 2.5s)
-ros2 run rclpy_mqtt_bridge dynamic_bridge
-
-# publish your ROS2 data by MQTT publisher
-# publishing message data example
-# '{"data": "hi bridge"}'
-mosquitto_pub -h localhost -p 1883 -t "/request/chatter" -m "'{"data":"hi bridge"}'"
-
-# check subscription callback data in ros2 listener node terminal
-# subscription callback data example
-# [INFO] [1693712975.803897966] [listener]: I heard: [hi bridge]
+ros2 launch rmde rmde_executor.launch.py
 ```

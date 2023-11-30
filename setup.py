@@ -16,7 +16,8 @@ rms_request_control_package_name: str = rms_request_package_name + '.control'
 rms_request_path_package_name: str = rms_request_package_name + '.path'
 
 rms_response_package_name: str = rms_package_name + '.response'
-rms_response_event_package_name: str = rms_response_package_name + '.event'
+rms_response_control_event_package_name: str = rms_response_package_name + '.control_event'
+rms_response_task_event_package_name: str = rms_response_package_name + '.task_event'
 rms_response_location_package_name: str = rms_response_package_name + '.location'
 
 
@@ -31,7 +32,8 @@ packages_list: list = [
     rms_request_control_package_name,
     rms_request_path_package_name,
     rms_response_package_name,
-    rms_response_event_package_name,
+    rms_response_control_event_package_name,
+    rms_response_task_event_package_name,
     rms_response_location_package_name
 ]
 
@@ -47,8 +49,7 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        (os.path.join('share', package_name), glob('launch/*launch.[pxy][yma]*')),
-        (os.path.join('share', package_name, 'parameter'), glob('parameter/*.yaml'))
+        (os.path.join('share', package_name), glob('launch/*launch.[pxy][yma]*'))
     ],
     install_requires=['setuptools'],    
     zip_safe=True,

@@ -44,6 +44,7 @@ UUID_REGISTER_SUCCESS_MESSAGE: str = 'uuid has been registered successfully'
 
 
 class PathRequestHandler():
+    
     def __init__(self, rclpy_node: Node, mqtt_client: Client) -> None:
         self.__rclpy_node: Node = rclpy_node
         self.__mqtt_client: Client = mqtt_client
@@ -53,6 +54,7 @@ class PathRequestHandler():
         self.__mqtt_config_file_path: str = '../../../mqtt/mqtt.ini'
         self.__mqtt_config_service: ConfigService = ConfigService(self.__script_directory, self.__mqtt_config_file_path)
         self.__mqtt_config_parser: ConfigParser = self.__mqtt_config_service.read()
+        
         self.__mqtt_path_subscription_topic: str = self.__mqtt_config_parser.get('topics', 'path')
         self.__mqtt_path_subscription_qos: int = int(self.__mqtt_config_parser.get('qos', 'path'))
 
@@ -81,122 +83,123 @@ class PathRequestHandler():
         self.__path: Path = Path()
         self.__jobInfo: JobInfo = JobInfo()
         self.__jobPath: JobPath = JobPath()
-        self.__jobUUID: JobUUID = JobUUID()
         
     
     def request_to_uvc(self) -> None:
         def __mqtt_path_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
             try:
-                __mqtt_topic: str = mqtt_message.topic
-                __mqtt_decoded_payload: str = mqtt_message.payload.decode()
-                __mqtt_json: Any = json.loads(mqtt_message.payload)
+                mqtt_topic: str = mqtt_message.topic
+                mqtt_decoded_payload: str = mqtt_message.payload.decode()
+                mqtt_json: Any = json.loads(mqtt_message.payload)
                 
-                self.__rclpy_node.get_logger().info('{} subscription cb payload [{}] from [{}]'.format(MQTT_FLAG, __mqtt_decoded_payload, __mqtt_topic))
-                self.__rclpy_node.get_logger().info('{} subscription cb json [{}] from [{}]'.format(MQTT_FLAG, __mqtt_json, __mqtt_topic))
+                self.__rclpy_node.get_logger().info(f'{MQTT_FLAG} subscription cb payload [{mqtt_decoded_payload}] from [{mqtt_topic}]')
+                self.__rclpy_node.get_logger().info(f'{MQTT_FLAG} subscription cb json [{mqtt_decoded_payload}] from [{mqtt_topic}]')
                 
-                __header_dict: dict = __mqtt_json['header']
-                self.__path.header = __header_dict
+                header_dict: dict = mqtt_json['header']
+                self.__path.header = header_dict
 
-                __jobInfo_dict: dict = __mqtt_json['jobInfo']
-                self.__path.jobInfo = __jobInfo_dict
+                job_info_dict: dict = mqtt_json['jobInfo']
+                self.__path.jobInfo = job_info_dict
 
-                __jobPath_dict: dict = __mqtt_json['jobPath']
-                self.__path.jobPath = __jobPath_dict
+                job_path_dict: dict = mqtt_json['jobPath']
+                self.__path.jobPath = job_path_dict
                 
-                __jobPlanId: str = self.__path.jobInfo['jobPlanId']
-                self.__jobInfo.jobPlanId = __jobPlanId
-                self.__jobUUID.jobPlanId = __jobPlanId
+                job_uuid: JobUUID = JobUUID()
+                job_plan_id: str = self.__path.jobInfo['jobPlanId']
+                self.__jobInfo.jobPlanId = job_plan_id
+                job_uuid.jobPlanId = job_plan_id
 
-                __jobGroupId: str  = self.__path.jobInfo['jobGroupId']
-                self.__jobInfo.jobGroupId = __jobGroupId
-                self.__jobUUID.jobGroupId = __jobGroupId
+                job_group_id: str  = self.__path.jobInfo['jobGroupId']
+                self.__jobInfo.jobGroupId = job_group_id
+                job_uuid.jobGroupId = job_group_id
 
-                __jobOrderId: str  = self.__path.jobInfo['jobOrderId']
-                self.__jobInfo.jobOrderId = __jobOrderId
-                self.__jobUUID.jobOrderId = __jobOrderId
+                job_order_id: str  = self.__path.jobInfo['jobOrderId']
+                self.__jobInfo.jobOrderId = job_order_id
+                job_uuid.jobOrderId = job_order_id
 
-                __rclpy_request_register_uuid_result: Any = self.__rclpy_request_register_uuid(self.__jobUUID)
-                self.__rclpy_node.get_logger().info(f'rclpy_request_register_uuid_result : {__rclpy_request_register_uuid_result}')
+                rclpy_request_register_uuid_service_result: Any = self.__rclpy_register_uuid_service_request(job_uuid)
+                self.__rclpy_node.get_logger().info(f'PathRequestHandler request_register_uuid_result : {rclpy_request_register_uuid_service_result}')
 
-                __jobGroup: str  = self.__path.jobInfo['jobGroup']
-                self.__jobInfo.jobGroup = __jobGroup
+                job_group: str  = self.__path.jobInfo['jobGroup']
+                self.__jobInfo.jobGroup = job_group
 
-                __jobKind: str = self.__path.jobInfo['jobKind']
-                self.__jobInfo.jobKind = __jobKind
+                job_kind: str = self.__path.jobInfo['jobKind']
+                self.__jobInfo.jobKind = job_kind
 
-                __areaClsf: str = self.__path.jobPath['areaClsf']
-                self.__jobPath.areaClsf = __areaClsf
+                area_clsf: str = self.__path.jobPath['areaClsf']
+                self.__jobPath.areaClsf = area_clsf
 
-                __locationList_list: list = self.__path.jobPath['locationList']
-                self.__jobPath.locationList = __locationList_list
+                location_list: list = self.__path.jobPath['locationList']
+                self.__jobPath.locationList = location_list
 
-                __jobKindType_dict: dict = self.__path.jobPath['jobKindType']
-                self.__jobPath.jobKindType = __jobKindType_dict
+                job_kind_type_dict: dict = self.__path.jobPath['jobKindType']
+                self.__jobPath.jobKindType = job_kind_type_dict
                 
-                self.__rclpy_node.get_logger().info(f'JobPath LocationList {self.__jobPath.locationList}')
+                self.__rclpy_node.get_logger().info(f'PathRequestHandler LocationList {self.__jobPath.locationList}')
                 self.__rclpy_publish_goal_waypoints_list(self.__jobPath.locationList)
 
             except KeyError as ke:
-                self.__rclpy_node.get_logger().error(f'Invalid JSON Key in MQTT {self.__mqtt_path_subscription_topic} subscription callback: {ke}')
+                self.__rclpy_node.get_logger().error(f'PathRequestHandler Invalid JSON Key in MQTT {self.__mqtt_path_subscription_topic} subscription callback: {ke}')
 
             except json.JSONDecodeError as jde:
-                self.__rclpy_node.get_logger().error(f'Invalid JSON format in MQTT {self.__mqtt_path_subscription_topic} subscription callback: {jde.msg}')
+                self.__rclpy_node.get_logger().error(f'PathRequestHandler Invalid JSON format in MQTT {self.__mqtt_path_subscription_topic} subscription callback: {jde.msg}')
 
             except Exception as e:
-                self.__rclpy_node.get_logger().error(f'Exception in MQTT {self.__mqtt_path_subscription_topic} subscription callback: {e}')
+                self.__rclpy_node.get_logger().error(f'PathRequestHandler Exception in MQTT {self.__mqtt_path_subscription_topic} subscription callback: {e}')
                 raise
             
         self.__mqtt_client.subscribe(topic = self.__mqtt_path_subscription_topic, qos = self.__mqtt_path_subscription_qos)
-        self.__mqtt_client.client.message_callback_add(self.__mqtt_path_subscription_topic, __mqtt_path_subscription_cb)
+        self.__mqtt_client.client.message_callback_add(sub = self.__mqtt_path_subscription_topic, callback = __mqtt_path_subscription_cb)
 
     
     def __rclpy_lookup_messages(self, module_name: str, module_class_name: str) -> Any:        
-        self.__rclpy_node.get_logger().info('{} lookup object path : {}'.format(RCLPY_FLAG, module_name))
-        self.__rclpy_node.get_logger().info('{} lookup object module_name : {}'.format(RCLPY_FLAG, module_name))
+        self.__rclpy_node.get_logger().info(f'{RCLPY_FLAG} lookup object module_name : {module_name}')
+        self.__rclpy_node.get_logger().info(f'{RCLPY_FLAG} lookup object module_class_name : {module_class_name}')
 
-        __module = importlib.import_module(module_name, self.__rclpy_node.get_name())
-        __obj: Any = getattr(__module, module_class_name)
+        message_path = importlib.import_module(module_name, self.__rclpy_node.get_name())
+        message_object: Any = getattr(message_path, module_class_name)
 
-        return __obj
+        return message_object
     
 
-    def __rclpy_request_register_uuid(self, job_uuid: JobUUID) -> Any :
-        self.__rclpy_node.get_logger().info(f'request_register_uuid job_plan_id : {job_uuid.jobPlanId}')
-        self.__rclpy_node.get_logger().info(f'request_register_uuid job_group_id : {job_uuid.jobGroupId}')
-        self.__rclpy_node.get_logger().info(f'request_register_uuid job_order_id : {job_uuid.jobOrderId}')
+    def __rclpy_register_uuid_service_request(self, job_uuid: JobUUID) -> Any:
+        self.__rclpy_node.get_logger().info(f'PathRequestHandler request_register_uuid job_plan_id : {job_uuid.jobPlanId}')
+        self.__rclpy_node.get_logger().info(f'PathRequestHandler request_register_uuid job_group_id : {job_uuid.jobGroupId}')
+        self.__rclpy_node.get_logger().info(f'PathRequestHandler request_register_uuid job_order_id : {job_uuid.jobOrderId}')
 
-        __rclpy_register_uuid_request: RegisterUUID.Request = RegisterUUID.Request()
-        __rclpy_register_uuid_request.register_key = UUID_REGISTER_KEY
-        __rclpy_register_uuid_request.job_plan_id = job_uuid.jobPlanId
-        __rclpy_register_uuid_request.job_group_id = job_uuid.jobGroupId
-        __rclpy_register_uuid_request.job_order_id = job_uuid.jobOrderId
+        rclpy_register_uuid_request: RegisterUUID.Request = RegisterUUID.Request()
+        rclpy_register_uuid_request.register_key = UUID_REGISTER_KEY
+        rclpy_register_uuid_request.job_plan_id = job_uuid.jobPlanId
+        rclpy_register_uuid_request.job_group_id = job_uuid.jobGroupId
+        rclpy_register_uuid_request.job_order_id = job_uuid.jobOrderId
 
-        __rclpy_register_uuid_request_future: Future = self.__rclpy_uuid_register_client.call_async(__rclpy_register_uuid_request)
-        return __rclpy_register_uuid_request_future.result()
+        rclpy_register_uuid_request_future: Future = self.__rclpy_uuid_register_client.call_async(rclpy_register_uuid_request)
+        
+        return rclpy_register_uuid_request_future.result()
 
     
     def __rclpy_publish_goal_waypoints_list(self, location_list: list) -> None:
-        __rclpy_goal_waypoints_list: list = []
+        rclpy_goal_waypoints_list: list = []
         
         for location in location_list:
-            __rclpy_nav_sat_fix_obj: Any = self.__rclpy_lookup_messages('sensor_msgs.msg', 'NavSatFix')
+            rclpy_nav_sat_fix_obj: Any = self.__rclpy_lookup_messages('sensor_msgs.msg', 'NavSatFix')
 
-            __rclpy_location_to_nav_sat_fix_dict: dict = {
+            rclpy_location_to_nav_sat_fix_dict: dict = {
                 'longitude': location['xpos'],
                 'latitude': location['ypos'],
                 'altitude': 0.0
             }
 
-            __rclpy_nav_sat_fix: Any = message_conversion.populate_instance(__rclpy_location_to_nav_sat_fix_dict, __rclpy_nav_sat_fix_obj())
-            __rclpy_goal_waypoints_list.append(__rclpy_nav_sat_fix)
+            rclpy_nav_sat_fix: Any = message_conversion.populate_instance(rclpy_location_to_nav_sat_fix_dict, rclpy_nav_sat_fix_obj())
+            rclpy_goal_waypoints_list.append(rclpy_nav_sat_fix)
         
-        self.__rclpy_node.get_logger().info('GoalWaypoints List : {}'.format(__rclpy_goal_waypoints_list))
+        self.__rclpy_node.get_logger().info('GoalWaypoints List : {}'.format(rclpy_goal_waypoints_list))
         
-        __rclpy_goal_waypoints: GoalWaypoints = GoalWaypoints()
-        __rclpy_goal_waypoints.goal_waypoints_list = __rclpy_goal_waypoints_list
+        rclpy_goal_waypoints: GoalWaypoints = GoalWaypoints()
+        rclpy_goal_waypoints.goal_waypoints_list = rclpy_goal_waypoints_list
 
-        self.__rclpy_node.get_logger().info('GoalWaypoints : {}'.format(__rclpy_goal_waypoints.goal_waypoints_list))
-        self.__rclpy_goal_waypoints_publisher.publish(__rclpy_goal_waypoints)
+        self.__rclpy_node.get_logger().info('GoalWaypoints : {}'.format(rclpy_goal_waypoints.goal_waypoints_list))
+        self.__rclpy_goal_waypoints_publisher.publish(rclpy_goal_waypoints)
         
 
 __all__ = ['rms_request_path_handler']
