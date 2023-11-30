@@ -29,6 +29,7 @@ class LastInfoLocation():
 class LastInfoSubLocation():
     xpos: float = 0.0
     ypos: float = 0.0
+    heading: float = 0.0
 
 
 @dataclass

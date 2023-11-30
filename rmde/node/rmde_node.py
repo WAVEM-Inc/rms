@@ -4,16 +4,19 @@ import threading
 from rclpy.node import Node
 from rclpy.timer import Timer
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+
 from ..mqtt.mqtt_client import Client
 
 from ..rms.request.config.handler import ConfigRequestHandler
 from ..rms.request.control.handler import ControlRequestHandler
 from ..rms.request.path.handler import PathRequestHandler
 
-from ..rms.response.event.handler import EventResponseHandler
+from ..rms.response.task_event.handler import TaskEventResponseHandler
+from ..rms.response.control_event.handler import ControlEventHandler
 from ..rms.response.location.handler import LocationResponseHandler
 
-# from ..rms.common.service import RobotTypeService
+from ..rms.common.service import RobotTypeService
+
 
 MQTT_THREAD_INTERVAL: int = 60
 MQTT_RETRY_INTERVAL: int = 1
@@ -43,13 +46,15 @@ class RMDENode(Node):
         
         self.get_logger().info(f'{RCLPY_FLAG} [{RCLPY_NODE_NAME}] node has been created')
         
-        self.__event_response_handler: EventResponseHandler = EventResponseHandler(self, self.mqtt_client)
-        self.__location_response_handler: LocationResponseHandler = LocationResponseHandler(self, self.mqtt_client)
-        # self.__robot_type_service: RobotTypeService = RobotTypeService(self)
+        self.__location_response_handler: LocationResponseHandler = LocationResponseHandler(rclpy_node = self, mqtt_client = self.mqtt_client)
+        self.__task_event_response_handler: TaskEventResponseHandler = TaskEventResponseHandler(rclpy_node = self, mqtt_client = self.mqtt_client)
+        self.__control_event_repsonse_handler: ControlEventHandler = ControlEventHandler(rclpy_node = self, mqtt_client = self.mqtt_client)
         
-        self.__config_request_handler: ConfigRequestHandler = ConfigRequestHandler(self, self.mqtt_client)
-        self.__control_request_handler: ControlRequestHandler = ControlRequestHandler(self, self.mqtt_client)
-        self.__path_request_handler: PathRequestHandler = PathRequestHandler(self, self.mqtt_client)
+        self.__robot_type_service: RobotTypeService = RobotTypeService(rclpy_node = self)
+        
+        self.__config_request_handler: ConfigRequestHandler = ConfigRequestHandler(rclpy_node = self, mqtt_client = self.mqtt_client)
+        self.__control_request_handler: ControlRequestHandler = ControlRequestHandler(rclpy_node = self, mqtt_client = self.mqtt_client)
+        self.__path_request_handler: PathRequestHandler = PathRequestHandler(rclpy_node = self, mqtt_client = self.mqtt_client)
         
         __rclpy_main_timer_period_sec: float = 1.0
         __rclpy_main_timer_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
@@ -84,7 +89,8 @@ class RMDENode(Node):
     def __from_uvc_to_rms(self) -> None:
         if (self.mqtt_client.is_connected):
             self.__location_response_handler.response_to_uvc()
-            # self.__robot_type_service.select_current_robot_type()
+            self.__control_event_repsonse_handler.response_to_uvc()
+            self.__robot_type_service.select_current_robot_type()
         else:
             return
         
