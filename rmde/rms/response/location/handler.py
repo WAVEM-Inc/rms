@@ -16,7 +16,7 @@ from geometry_msgs.msg import PoseStamped
 from robot_status_msgs.msg import VelocityStatus
 from robot_status_msgs.msg import NavigationStatus
 from gps_iao_door_msgs.msg import InOutDoor
-from uuid_gateway_msgs.msg import UUID
+from robot_status_msgs.msg import TaskStatus
 
 from ....mqtt.mqtt_client import Client
 
@@ -134,14 +134,14 @@ class LocationResponseHandler():
             callback_group = self.__rclpy_in_out_door_subscription_cb_group
         )
 
-        self.__rclpy_get_uuid_subscription_topic: str = '/uuid_gateway_server/get_uuid'
-        self.__rclpy_get_uuid_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_get_uuid_subscription: Subscription = self.__rclpy_node.create_subscription(
-            msg_type = UUID,
-            topic = self.__rclpy_get_uuid_subscription_topic,
+        self.__rclpy_task_status_subscription_topic: str = '/robot_task/status'
+        self.__rclpy_task_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_task_status_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = TaskStatus,
+            topic = self.__rclpy_task_status_subscription_topic,
             qos_profile = qos_profile_system_default,
-            callback_group = self.__rclpy_get_uuid_subscription_cb_group,
-            callback = self.__rclpy_get_uuid_subscription_cb
+            callback_group = self.__rclpy_task_status_subscription_cb_group,
+            callback = self.__rclpy_task_status_subscription_cb
         )
         
         self.__header: Header = Header()
@@ -150,6 +150,12 @@ class LocationResponseHandler():
         self.__last_info: LastInfo = LastInfo()
         self.__last_info_location: LastInfoLocation = LastInfoLocation()
         self.__sub_last_info_location: LastInfoSubLocation = LastInfoSubLocation()
+        
+        self.__job_group: str = ''
+        self.__job_kind: str = ''
+        self.__job_plan_id: str = ''
+        self.__job_group_id: str = ''
+        self.__job_order_id: str = ''
 
 
     def __rclpy_slam_to_gps_subscription_cb(self, slam_to_gps_cb: NavSatFix) -> None:
@@ -185,11 +191,11 @@ class LocationResponseHandler():
         self.job_status_code = navigation_status.status_code
 
         if self.job_status_code == GTS_NAVIGATION_STARTED_CODE:
-            self.__task_info.jobGroup = JobGroupType.MOVE.value
+            self.__task_info.jobGroup = self.__job_group
             self.__task_info.jobKind = JobKindType.MOVE.value
             self.__task_info.taskStatus = TaskStatusType.ASSIGNED.value
         elif self.job_status_code == GTS_NAVIGATION_COMPLETED_CODE:
-            self.__task_info.jobGroup = JobGroupType.WAIT.value
+            self.__task_info.jobGroup = self.__job_group
             self.__task_info.jobKind = JobKindType.WAIT.value
             self.__task_info.taskStatus = TaskStatusType.UNASSIGNED.value
         else:
@@ -206,10 +212,16 @@ class LocationResponseHandler():
         return
     
 
-    def __rclpy_get_uuid_subscription_cb(self, get_uuid_cb: UUID) -> None:
-        self.__job_info.jobPlanId = get_uuid_cb.job_plan_id
-        self.__job_info.jobGroupId = get_uuid_cb.job_group_id
-        self.__job_info.jobOrderId = get_uuid_cb.job_order_id
+    def __rclpy_task_status_subscription_cb(self, task_status_cb: TaskStatus) -> None:
+        self.__job_group = task_status_cb.job_group
+        self.__task_info.jobGroup = self.__job_group
+        
+        self.__job_kind = task_status_cb.job_kind
+        self.__task_info.jobKind = self.__job_kind
+        
+        self.__job_info.jobPlanId = task_status_cb.job_plan_id
+        self.__job_info.jobGroupId = task_status_cb.job_group_id
+        self.__job_info.jobOrderId = task_status_cb.job_order_id
 
     
     def build_location(self) -> Location:

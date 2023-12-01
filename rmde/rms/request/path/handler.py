@@ -14,7 +14,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rosbridge_library.internal import message_conversion
 
 from gts_navigation_msgs.msg import GoalWaypoints
-from uuid_gateway_msgs.srv import RegisterUUID
+from robot_status_msgs.srv import RegisterTask
 
 from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
@@ -71,13 +71,13 @@ class PathRequestHandler():
             callback_group = self.__rclpy_goal_waypoints_cb_group    
         )
 
-        self.__rclpy_uuid_register_service_server_name: str = '/uuid_gateway_server/register_uuid'
-        self.__rclpy_uuid_register_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_uuid_register_client: rclpy.client.Client = self.__rclpy_node.create_client(
-            srv_name = self.__rclpy_uuid_register_service_server_name,
-            srv_type = RegisterUUID,
+        self.__rclpy_register_task_service_server_name: str = '/robot_task/register'
+        self.__rclpy_register_task_service_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_register_task_service_client: rclpy.client.Client = self.__rclpy_node.create_client(
+            srv_name = self.__rclpy_register_task_service_server_name,
+            srv_type = RegisterTask,
             qos_profile = qos_profile_services_default,
-            callback_group = self.__rclpy_uuid_register_client_cb_group
+            callback_group = self.__rclpy_register_task_service_client_cb_group
         )
         
         self.__path: Path = Path()
@@ -117,14 +117,16 @@ class PathRequestHandler():
                 self.__jobInfo.jobOrderId = job_order_id
                 job_uuid.jobOrderId = job_order_id
 
-                rclpy_request_register_uuid_service_result: Any = self.__rclpy_register_uuid_service_request(job_uuid)
-                self.__rclpy_node.get_logger().info(f'PathRequestHandler request_register_uuid_result : {rclpy_request_register_uuid_service_result}')
-
                 job_group: str  = self.__path.jobInfo['jobGroup']
                 self.__jobInfo.jobGroup = job_group
+                job_uuid.jobGroup = job_group
 
                 job_kind: str = self.__path.jobInfo['jobKind']
                 self.__jobInfo.jobKind = job_kind
+                job_uuid.jobKind = job_kind
+                
+                rclpy_request_register_uuid_service_result: Any = self.__rclpy_register_task_service_request(job_uuid)
+                self.__rclpy_node.get_logger().info(f'PathRequestHandler request_register_uuid_result : {rclpy_request_register_uuid_service_result}')
 
                 area_clsf: str = self.__path.jobPath['areaClsf']
                 self.__jobPath.areaClsf = area_clsf
@@ -162,20 +164,22 @@ class PathRequestHandler():
         return message_object
     
 
-    def __rclpy_register_uuid_service_request(self, job_uuid: JobUUID) -> Any:
+    def __rclpy_register_task_service_request(self, job_uuid: JobUUID) -> Any:
         self.__rclpy_node.get_logger().info(f'PathRequestHandler request_register_uuid job_plan_id : {job_uuid.jobPlanId}')
         self.__rclpy_node.get_logger().info(f'PathRequestHandler request_register_uuid job_group_id : {job_uuid.jobGroupId}')
         self.__rclpy_node.get_logger().info(f'PathRequestHandler request_register_uuid job_order_id : {job_uuid.jobOrderId}')
 
-        rclpy_register_uuid_request: RegisterUUID.Request = RegisterUUID.Request()
-        rclpy_register_uuid_request.register_key = UUID_REGISTER_KEY
-        rclpy_register_uuid_request.job_plan_id = job_uuid.jobPlanId
-        rclpy_register_uuid_request.job_group_id = job_uuid.jobGroupId
-        rclpy_register_uuid_request.job_order_id = job_uuid.jobOrderId
+        rclpy_register_task_request: RegisterTask.Request = RegisterTask.Request()
+        rclpy_register_task_request.register_key = UUID_REGISTER_KEY
+        rclpy_register_task_request.job_group = job_uuid.jobGroup
+        rclpy_register_task_request.job_kind = job_uuid.jobKind
+        rclpy_register_task_request.job_plan_id = job_uuid.jobPlanId
+        rclpy_register_task_request.job_group_id = job_uuid.jobGroupId
+        rclpy_register_task_request.job_order_id = job_uuid.jobOrderId
 
-        rclpy_register_uuid_request_future: Future = self.__rclpy_uuid_register_client.call_async(rclpy_register_uuid_request)
+        rclpy_register_task_request_future: Future = self.__rclpy_register_task_service_client.call_async(rclpy_register_task_request)
         
-        return rclpy_register_uuid_request_future.result()
+        return rclpy_register_task_request_future.result()
 
     
     def __rclpy_publish_goal_waypoints_list(self, location_list: list) -> None:

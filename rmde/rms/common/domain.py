@@ -11,6 +11,8 @@ class Header():
 
 @dataclass
 class JobUUID():
+    jobGroup: str = ''
+    jobKind: str = ''
     jobPlanId: str = ''
     jobGroupId: str = ''
     jobOrderId: str = ''
