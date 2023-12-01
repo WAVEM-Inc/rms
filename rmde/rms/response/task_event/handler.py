@@ -29,7 +29,7 @@ from typing import Any
 GTS_NAVIGATION_STARTED_CODE: int = 2
 GTS_NAVIGATION_COMPLETED_CODE: int = 4
 
-UUID_REGISTER_KEY: str = 'qAqwmrwskdfliqnwkfnlasdkfnlas'
+TASK_STATUS_REGISTER_KEY: str = 'qAqwmrwskdfliqnwkfnlasdkfnlas'
 
 
 class TaskEventResponseHandler():
@@ -135,7 +135,7 @@ class TaskEventResponseHandler():
         self.__rclpy_node.get_logger().info('TaskEventHandler request_register_task by empty values / Task is completed')
 
         rclpy_register_task_request: RegisterTask.Request = RegisterTask.Request()
-        rclpy_register_task_request.register_key = UUID_REGISTER_KEY
+        rclpy_register_task_request.register_key = TASK_STATUS_REGISTER_KEY
         rclpy_register_task_request.job_group = ''
         rclpy_register_task_request.job_kind = ''
         rclpy_register_task_request.job_plan_id = ''

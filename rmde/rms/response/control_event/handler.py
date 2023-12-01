@@ -64,7 +64,7 @@ class ControlEventHandler():
             callback_group = self.__rclpy_battery_state_subscription_cb_group
         )
 
-        self.__rclpy_imu_status_subscription_topic: str = '/imu/status'
+        self.__rclpy_imu_status_subscription_topic: str = '/imu/data/status'
         self.__rclpy_imu_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.__rclpy_imu_status_subscription: Subscription = self.__rclpy_node.create_subscription(
             msg_type = SensorStatus,
@@ -74,7 +74,7 @@ class ControlEventHandler():
             callback_group = self.__rclpy_imu_status_subscription_cb_group
         )
 
-        self.__rclpy_scan_status_subscriptin_topic: str = '/scan/status'
+        self.__rclpy_scan_status_subscriptin_topic: str = '/scan/multi/status'
         self.__rclpy_scan_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.__rclpy_scan_status_subscription: Subscription = self.__rclpy_node.create_subscription(
             msg_type = SensorStatus,
@@ -84,7 +84,7 @@ class ControlEventHandler():
             callback_group = self.__rclpy_scan_status_subscription_cb_group
         )
         
-        self.__rclpy_gps_status_subscription_topic: str = '/ublox/status'
+        self.__rclpy_gps_status_subscription_topic: str = '/ublox/fix/status'
         self.__rclpy_gps_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.__rclpy_gps_status_subscription: Subscription = self.__rclpy_node.create_subscription(
             msg_type = SensorStatus,
