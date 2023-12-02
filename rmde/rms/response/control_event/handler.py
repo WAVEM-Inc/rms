@@ -64,14 +64,14 @@ class ControlEventHandler():
             callback_group = self.__rclpy_battery_state_subscription_cb_group
         )
 
-        self.__rclpy_imu_status_subscription_topic: str = '/imu/data/status'
-        self.__rclpy_imu_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_imu_status_subscription: Subscription = self.__rclpy_node.create_subscription(
+        self.__rclpy_imu_data_status_subscription_topic: str = '/imu/data/status'
+        self.__rclpy_imu_data_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_imu_data_status_subscription: Subscription = self.__rclpy_node.create_subscription(
             msg_type = SensorStatus,
-            topic = self.__rclpy_imu_status_subscription_topic,
+            topic = self.__rclpy_imu_data_status_subscription_topic,
             qos_profile = qos_profile_system_default,
             callback = self.__rclpy_imu_status_subscription_cb,
-            callback_group = self.__rclpy_imu_status_subscription_cb_group
+            callback_group = self.__rclpy_imu_data_status_subscription_cb_group
         )
 
         self.__rclpy_scan_status_subscriptin_topic: str = '/scan/multi/status'
@@ -84,14 +84,14 @@ class ControlEventHandler():
             callback_group = self.__rclpy_scan_status_subscription_cb_group
         )
         
-        self.__rclpy_gps_status_subscription_topic: str = '/ublox/fix/status'
-        self.__rclpy_gps_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_gps_status_subscription: Subscription = self.__rclpy_node.create_subscription(
+        self.__rclpy_ublox_fix_status_subscription_topic: str = '/ublox/fix/status'
+        self.__rclpy_ublox_fix_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_ublox_fix_status_subscription: Subscription = self.__rclpy_node.create_subscription(
             msg_type = SensorStatus,
-            topic = self.__rclpy_gps_status_subscription_topic,
+            topic = self.__rclpy_ublox_fix_status_subscription_topic,
             qos_profile = qos_profile_system_default,
-            callback = self.__rclpy_gps_status_subscription_cb,
-            callback_group = self.__rclpy_gps_status_subscription_cb_group
+            callback = self.__rclpy_ublox_fix_status_subscription_cb,
+            callback_group = self.__rclpy_ublox_fix_status_subscription_cb_group
         )
         
         self.__rclpy_battery_state_status_subscription_topic: str = '/battery/status'
@@ -124,14 +124,14 @@ class ControlEventHandler():
             callback_group = self.__rclpy_slam_to_gps_subscription_cb_group
         )
 
-        self.__rclpy_ublox_gps_subscription_topic: str = '/ublox/fix'
-        self.__rclpy_ublox_gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_ublox_gps_subscription: Subscription = self.__rclpy_node.create_subscription(
+        self.__rclpy_ublox_fix_subscription_topic: str = '/ublox/fix'
+        self.__rclpy_ublox_fix_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_ublox_fix_subscription: Subscription = self.__rclpy_node.create_subscription(
             msg_type = NavSatFix,
-            topic = self.__rclpy_ublox_gps_subscription_topic,
-            callback = self.__rclpy_ublox_gps_subscription_cb,
+            topic = self.__rclpy_ublox_fix_subscription_topic,
+            callback = self.__rclpy_ublox_fix_subscription_cb,
             qos_profile = qos_profile_sensor_data,
-            callback_group = self.__rclpy_ublox_gps_subscription_cb_group
+            callback_group = self.__rclpy_ublox_fix_subscription_cb_group
         )
         
         self.__rclpy_rtt_odom_subscription_topic: str = '/rtt_odom'
@@ -161,7 +161,6 @@ class ControlEventHandler():
             self.__control_event_info.areaClsf = AreaCLSFType.OUTDOOR.value
         else :
             self.__control_event_info.areaClsf = AreaCLSFType.INDOOR.value
-        return
     
     
     def __rclpy_battery_state_subscription_cb(self, battery_state_cb: BatteryState) -> None:
@@ -188,7 +187,7 @@ class ControlEventHandler():
             return
         
         
-    def __rclpy_gps_status_subscription_cb(self, gps_status_cb: SensorStatus) -> None:
+    def __rclpy_ublox_fix_status_subscription_cb(self, gps_status_cb: SensorStatus) -> None:
         status_code: int = gps_status_cb.status_code
         
         if (status_code == -1002):
@@ -213,7 +212,7 @@ class ControlEventHandler():
         self.__control_event_info_location.ypos = slam_to_gps_cb.latitude
     
 
-    def __rclpy_ublox_gps_subscription_cb(self, ublox_gps_cb: NavSatFix) -> None:
+    def __rclpy_ublox_fix_subscription_cb(self, ublox_gps_cb: NavSatFix) -> None:
         self.__control_event_info_sub_location.xpos = ublox_gps_cb.longitude
         self.__control_event_info_sub_location.ypos = ublox_gps_cb.latitude
 
