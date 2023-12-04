@@ -17,8 +17,9 @@ rms_request_path_package_name: str = rms_request_package_name + '.path'
 
 rms_response_package_name: str = rms_package_name + '.response'
 rms_response_control_event_package_name: str = rms_response_package_name + '.control_event'
-rms_response_task_event_package_name: str = rms_response_package_name + '.task_event'
 rms_response_location_package_name: str = rms_response_package_name + '.location'
+rms_response_status_event_package_name: str = rms_response_package_name + '.status_event'
+rms_response_task_event_package_name: str = rms_response_package_name + '.task_event'
 
 
 packages_list: list = [
@@ -33,8 +34,9 @@ packages_list: list = [
     rms_request_path_package_name,
     rms_response_package_name,
     rms_response_control_event_package_name,
-    rms_response_task_event_package_name,
-    rms_response_location_package_name
+    rms_response_location_package_name,
+    rms_response_status_event_package_name,
+    rms_response_task_event_package_name
 ]
 
 setup(

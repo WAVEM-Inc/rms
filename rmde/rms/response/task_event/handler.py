@@ -177,7 +177,7 @@ class TaskEventResponseHandler():
 
     def __response_to_uvc(self) -> None:
         build_task_event: TaskEvent = self.__build_task_event()
-        self.__mqtt_client.publish(topic = self.__mqtt_task_event_publisher_topic, payload = json.dumps(build_task_event.__dict__), qos = 0)
+        self.__mqtt_client.publish(topic = self.__mqtt_task_event_publisher_topic, payload = json.dumps(build_task_event.__dict__), qos = self.__mqtt_task_event_publisher_qos)
         
 
 __all__ = ['rms_response_task_event_handler']

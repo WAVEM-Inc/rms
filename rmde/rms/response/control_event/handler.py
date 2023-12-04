@@ -1,33 +1,22 @@
 import os
 import json
+import paho.mqtt.client as mqtt
 
 from configparser import ConfigParser
 from rclpy.node import Node
 from rclpy.subscription import Subscription
-from rclpy.qos import qos_profile_sensor_data
 from rclpy.qos import qos_profile_system_default
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-
-from sensor_msgs.msg import NavSatFix
-from sensor_msgs.msg import BatteryState
-from geometry_msgs.msg import PoseStamped
-from robot_status_msgs.msg import SensorStatus
-from gps_iao_door_msgs.msg import InOutDoor
 
 from ....mqtt.mqtt_client import Client
-
-from ...common.enum_types import AreaCLSFType
-from ...common.service import UUIDService
 from ...common.service import ConfigService
-from ...common.service import NetworkService
-from ...common.domain import Header
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
-from .domain import ControlEventCdType
-from .domain import ControlEventInfoLocation
-from .domain import ControlEventInfoSubLocation
-from .domain import ComInfo
-from .domain import ComInfoStatusType
-from .domain import ControlEventInfo
+from robot_status_msgs.msg import TaskStatus
+
+from ...common.domain import Header
+from .domain import ControlCmd
+from .domain import ControlResult
+from .domain import TaskEventInfo
 from .domain import ControlEvent
 
 
@@ -43,185 +32,45 @@ class ControlEventHandler():
         self.__mqtt_config_parser: ConfigParser = self.__mqtt_config_service.read()
         
         self.__mqtt_control_event_publisher_topic: str = self.__mqtt_config_parser.get('topics', 'control_event')
-        self.__mqtt_control_event_publisher_qos: int = int(self.__mqtt_config_parser.get('qos', 'control_event'))
-
+        self.__mqtt_control__event_publisher_qos: int = int(self.__mqtt_config_parser.get('qos', 'control_event'))
+        
         if self.__mqtt_client.is_connected:
-            self.__rclpy_node.get_logger().info(f'MQTT granted publisher\n\ttopic : {self.__mqtt_control_event_publisher_topic}\n\tqos : {self.__mqtt_control_event_publisher_qos}')
+            self.__rclpy_node.get_logger().info(f'MQTT granted publisher\n\ttopic : {self.__mqtt_control_event_publisher_topic}\n\tqos : {self.__mqtt_control__event_publisher_qos}')
         else:
-            self.__rclpy_node.get_logger().error(f'MQTT failed to grant publisher\n\ttopic : {self.__mqtt_control_event_publisher_topic}\n\tqos : {self.__mqtt_control_event_publisher_qos}')            
+            self.__rclpy_node.get_logger().error(f'MQTT failed to grant publisher\n\ttopic : {self.__mqtt_control_event_publisher_topic}\n\tqos : {self.__mqtt_control_event_publisher_topic}')
         
         self.__common_config_file_path: str = '../../common/config.ini'
         self.__common_config_service: ConfigService = ConfigService(self.__script_directory, self.__common_config_file_path)
         self.__common_config_parser: ConfigParser = self.__common_config_service.read()
-
-        self.__rclpy_battery_state_subscription_topic: str = '/battery/state'
-        self.__rclpy_battery_state_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_battery_state_subscription: Subscription = self.__rclpy_node.create_subscription(
-            msg_type = BatteryState,
-            topic = self.__rclpy_battery_state_subscription_topic,
-            qos_profile = qos_profile_sensor_data,
-            callback = self.__rclpy_battery_state_subscription_cb,
-            callback_group = self.__rclpy_battery_state_subscription_cb_group
-        )
-
-        self.__rclpy_imu_data_status_subscription_topic: str = '/imu/data/status'
-        self.__rclpy_imu_data_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_imu_data_status_subscription: Subscription = self.__rclpy_node.create_subscription(
-            msg_type = SensorStatus,
-            topic = self.__rclpy_imu_data_status_subscription_topic,
+        
+        self.__rclpy_task_status_subscription_topic: str = '/robot_task/status'
+        self.__rclpy_task_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_task_status_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = TaskStatus,
+            topic = self.__rclpy_task_status_subscription_topic,
             qos_profile = qos_profile_system_default,
-            callback = self.__rclpy_imu_status_subscription_cb,
-            callback_group = self.__rclpy_imu_data_status_subscription_cb_group
+            callback_group = self.__rclpy_task_status_subscription_cb_group,
+            callback = self.__rclpy_task_status_subscription_cb
         )
-
-        self.__rclpy_scan_status_subscriptin_topic: str = '/scan/multi/status'
-        self.__rclpy_scan_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_scan_status_subscription: Subscription = self.__rclpy_node.create_subscription(
-            msg_type = SensorStatus,
-            topic = self.__rclpy_scan_status_subscriptin_topic,
-            qos_profile = qos_profile_system_default,
-            callback = self.__rclpy_scan_status_subscription_cb,
-            callback_group = self.__rclpy_scan_status_subscription_cb_group
-        )
-        
-        self.__rclpy_ublox_fix_status_subscription_topic: str = '/ublox/fix/status'
-        self.__rclpy_ublox_fix_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_ublox_fix_status_subscription: Subscription = self.__rclpy_node.create_subscription(
-            msg_type = SensorStatus,
-            topic = self.__rclpy_ublox_fix_status_subscription_topic,
-            qos_profile = qos_profile_system_default,
-            callback = self.__rclpy_ublox_fix_status_subscription_cb,
-            callback_group = self.__rclpy_ublox_fix_status_subscription_cb_group
-        )
-        
-        self.__rclpy_battery_state_status_subscription_topic: str = '/battery/status'
-        self.__rclpy_battery_state_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_battery_state_status_status_subscription: Subscription = self.__rclpy_node.create_subscription(
-            msg_type = SensorStatus,
-            topic = self.__rclpy_battery_state_status_subscription_topic,
-            qos_profile = qos_profile_system_default,
-            callback = self.__rclpy_battery_state_status_subscription_cb,
-            callback_group = self.__rclpy_battery_state_status_subscription_cb_group
-        )
-        
-        self.__rclpy_in_out_door_subscription_topic: str = '/in_out_door'
-        self.__rclpy_in_out_door_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_in_out_door_subscription: Subscription = self.__rclpy_node.create_subscription(
-            msg_type = InOutDoor,
-            topic = self.__rclpy_in_out_door_subscription_topic,
-            callback = self.__rclpy_in_out_door_subscription_cb,
-            qos_profile = qos_profile_sensor_data,
-            callback_group = self.__rclpy_in_out_door_subscription_cb_group
-        )
-        
-        self.__rclpy_slam_to_gps_subscription_topic: str = '/slam_to_gps'
-        self.__rclpy_slam_to_gps_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_slam_to_gps_subscription: Subscription = self.__rclpy_node.create_subscription(
-            msg_type = NavSatFix,
-            topic = self.__rclpy_slam_to_gps_subscription_topic,
-            qos_profile = qos_profile_sensor_data,
-            callback = self.__rclpy_slam_to_gps_subscription_cb,
-            callback_group = self.__rclpy_slam_to_gps_subscription_cb_group
-        )
-
-        self.__rclpy_ublox_fix_subscription_topic: str = '/ublox/fix'
-        self.__rclpy_ublox_fix_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_ublox_fix_subscription: Subscription = self.__rclpy_node.create_subscription(
-            msg_type = NavSatFix,
-            topic = self.__rclpy_ublox_fix_subscription_topic,
-            callback = self.__rclpy_ublox_fix_subscription_cb,
-            qos_profile = qos_profile_sensor_data,
-            callback_group = self.__rclpy_ublox_fix_subscription_cb_group
-        )
-        
-        self.__rclpy_rtt_odom_subscription_topic: str = '/rtt_odom'
-        self.__rclpy_rtt_odom_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_rtt_odom_subscription: Subscription = self.__rclpy_node.create_subscription(
-            msg_type = PoseStamped,
-            topic = self.__rclpy_rtt_odom_subscription_topic,
-            callback = self.__rclpy_rtt_odom_subscription_cb,
-            qos_profile = qos_profile_sensor_data,
-            callback_group = self.__rclpy_rtt_odom_subscription_cb_group
-        )
-        
-        self.__network_service: NetworkService = NetworkService()
-        self.__uuid_service: UUIDService = UUIDService()
         
         self.__header: Header = Header()
-        self.__control_event_info_location: ControlEventInfoLocation = ControlEventInfoLocation()
-        self.__control_event_info_sub_location: ControlEventInfoSubLocation = ControlEventInfoSubLocation()
-        self.__control_event_info: ControlEventInfo = ControlEventInfo()
-        self.__com_info: ComInfo = ComInfo()
+        self.__control_cmd: ControlCmd = ControlCmd()
+        self.__control_result: ControlResult = ControlResult()
+        self.__task_event_info: TaskEventInfo = TaskEventInfo()
         
-        
-    def __rclpy_in_out_door_subscription_cb(self, in_out_door_cb: InOutDoor) -> None:
-        is_out_door: bool = (in_out_door_cb.determination == True)
-
-        if is_out_door:
-            self.__control_event_info.areaClsf = AreaCLSFType.OUTDOOR.value
-        else :
-            self.__control_event_info.areaClsf = AreaCLSFType.INDOOR.value
+        self.__job_group: str = ''
+        self.__job_kind: str = ''
+        self.__job_plan_id: str = ''
+        self.__job_group_id: str = ''
+        self.__job_order_id: str = ''
     
     
-    def __rclpy_battery_state_subscription_cb(self, battery_state_cb: BatteryState) -> None:
-        self.__control_event_info.batteryLevel = battery_state_cb.percentage
-    
-
-    def __rclpy_imu_status_subscription_cb(self, imu_status_cb: SensorStatus) -> None:
-        status_code: int = imu_status_cb.status_code
-        
-        if (status_code == -1000):
-            self.__control_event_info.eventCd = ControlEventCdType.BROKEN.value
-            self.__control_event_info.eventSubCd = 'IMU'
-        else:
-            return
-        
-    
-    def __rclpy_scan_status_subscription_cb(self, scan_status_cb: SensorStatus) -> None:
-        status_code: int = scan_status_cb.status_code
-        
-        if (status_code == -1001):
-            self.__control_event_info.eventCd = ControlEventCdType.BROKEN.value
-            self.__control_event_info.eventSubCd = 'LiDAR'
-        else:
-            return
-        
-        
-    def __rclpy_ublox_fix_status_subscription_cb(self, gps_status_cb: SensorStatus) -> None:
-        status_code: int = gps_status_cb.status_code
-        
-        if (status_code == -1002):
-            self.__control_event_info.eventCd = ControlEventCdType.BROKEN.value
-            self.__control_event_info.eventSubCd = 'GPS'
-        else:
-            return
-        
-    
-    def __rclpy_battery_state_status_subscription_cb(self, battery_state_status: SensorStatus) -> None:
-        status_code: int = battery_state_status.status_code
-        
-        if (status_code == -1003):
-            self.__control_event_info.eventCd = ControlEventCdType.BROKEN.value
-            self.__control_event_info.eventSubCd = 'BATTERY'
-        else:
-            return
-
-    
-    def __rclpy_slam_to_gps_subscription_cb(self, slam_to_gps_cb: NavSatFix) -> None:
-        self.__control_event_info_location.xpos = slam_to_gps_cb.longitude
-        self.__control_event_info_location.ypos = slam_to_gps_cb.latitude
-    
-
-    def __rclpy_ublox_fix_subscription_cb(self, ublox_gps_cb: NavSatFix) -> None:
-        self.__control_event_info_sub_location.xpos = ublox_gps_cb.longitude
-        self.__control_event_info_sub_location.ypos = ublox_gps_cb.latitude
-
-    
-    def __rclpy_rtt_odom_subscription_cb(self, rtt_odom_cb: PoseStamped) -> None:
-        heading: float = rtt_odom_cb.pose.orientation.y
-        
-        self.__control_event_info_location.heading = heading
-        self.__control_event_info_sub_location.heading = heading
+    def __rclpy_task_status_subscription_cb(self, task_status_cb: TaskStatus) -> None:
+        self.__job_group = task_status_cb.job_group
+        self.__job_kind = task_status_cb.job_kind
+        self.__job_plan_id = task_status_cb.job_plan_id
+        self.__job_group_id = task_status_cb.job_group_id
+        self.__job_order_id = task_status_cb.job_order_id
     
     
     def __build_control_event(self) -> ControlEvent:
@@ -230,14 +79,14 @@ class ControlEventHandler():
         self.__build_header()
         control_event.header = self.__header.__dict__
         
-        self.__build_control_event_info()
-        control_event.controlEventInfo = self.__control_event_info.__dict__
+        control_event.controlCmd = self.__control_cmd.__dict__
+        control_event.controlResult = self.__control_result.__dict__
         
-        self.__build_com_info()
-        control_event.comInfo = self.__com_info.__dict__
+        self.__build_task_event_info()
+        control_event.taskEventInfo = self.__task_event_info.__dict__
         
         return control_event
-    
+        
     
     def __build_header(self) -> None:
         robot_corp_id: str = self.__common_config_parser.get('header', 'robotCorpId')
@@ -254,34 +103,34 @@ class ControlEventHandler():
 
         robot_type: str = self.__common_config_parser.get('header', 'robotType')
         self.__header.robotType = robot_type
-        
     
-    def __build_control_event_info(self) -> None:
-        self.__control_event_info.eventId = self.__uuid_service.generate_uuid()
-        self.__control_event_info.location = self.__control_event_info_location.__dict__
-        self.__control_event_info.subLocation = self.__control_event_info_sub_location.__dict__
+    
+    def judge_control_cmd(self, is_stop: bool, start_time: str, end_time: str) -> None:
+        self.__control_result.status = 'success'
+        self.__control_result.startTime = start_time
+        self.__control_result.endTime = end_time
         
-        floor: str = '1F'
-        self.__control_event_info.floor = floor
-        
-
-    def __build_com_info(self) -> None:
-        status: str = ''
-        is_mqtt_connected: bool = self.__mqtt_client.is_connected
-        if is_mqtt_connected:
-            status = ComInfoStatusType.CONNECTED.value
+        if is_stop == True:
+            self.__control_cmd.stop = True
+            self.__control_cmd.move = False
+            self.__control_cmd.ready = False
         else:
-            status = ComInfoStatusType.DISCONNECTED.value
-        self.__com_info.status = status
-        
-        self.__com_info.robotIP = self.__network_service.get_local_ip()
-        self.__com_info.mqttIP = self.__mqtt_config_parser.get('broker', 'host')
-        self.__com_info.mqttPort = self.__mqtt_config_parser.get('broker', 'port')
-        
+            self.__control_cmd.stop = False
+            self.__control_cmd.move = True
+            self.__control_cmd.ready = False            
     
-    def response_to_uvc(self) -> None:
-        built_event: ControlEvent = self.__build_control_event()
-        self.__mqtt_client.publish(topic = self.__mqtt_control_event_publisher_topic, payload = json.dumps(built_event.__dict__), qos = 0)
-        
+    
+    def __build_task_event_info(self) -> None:
+        self.__task_event_info.jobPlanId = self.__job_plan_id
+        self.__task_event_info.jobGroupId = self.__job_group_id
+        self.__task_event_info.jobOrderId = self.__job_order_id
+        self.__task_event_info.jobGroup = self.__job_group
+        self.__task_event_info.jobKind = self.__job_kind
+    
+    
+    def response_to_rms(self) -> None:
+        built_control_event: ControlEvent = self.__build_control_event()
+        self.__mqtt_client.publish(topic = self.__mqtt_control_event_publisher_topic, payload = json.dumps(built_control_event.__dict__), qos = self.__mqtt_control__event_publisher_qos)
+
 
 __all__ = ['rms_response_control_event_handler']

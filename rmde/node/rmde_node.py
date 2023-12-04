@@ -12,7 +12,7 @@ from ..rms.request.control.handler import ControlRequestHandler
 from ..rms.request.path.handler import PathRequestHandler
 
 from ..rms.response.task_event.handler import TaskEventResponseHandler
-from ..rms.response.control_event.handler import ControlEventHandler
+from ..rms.response.status_event.handler import StatusEventHandler
 from ..rms.response.location.handler import LocationResponseHandler
 
 from ..rms.common.service import RobotTypeService
@@ -48,7 +48,7 @@ class RMDENode(Node):
         
         self.__location_response_handler: LocationResponseHandler = LocationResponseHandler(rclpy_node = self, mqtt_client = self.mqtt_client)
         self.__task_event_response_handler: TaskEventResponseHandler = TaskEventResponseHandler(rclpy_node = self, mqtt_client = self.mqtt_client)
-        self.__control_event_repsonse_handler: ControlEventHandler = ControlEventHandler(rclpy_node = self, mqtt_client = self.mqtt_client)
+        self.__status_event_repsonse_handler: StatusEventHandler = StatusEventHandler(rclpy_node = self, mqtt_client = self.mqtt_client)
         
         self.__robot_type_service: RobotTypeService = RobotTypeService(rclpy_node = self)
         
@@ -89,7 +89,7 @@ class RMDENode(Node):
     def __from_uvc_to_rms(self) -> None:
         if (self.mqtt_client.is_connected):
             self.__location_response_handler.response_to_uvc()
-            self.__control_event_repsonse_handler.response_to_uvc()
+            self.__status_event_repsonse_handler.response_to_uvc()
             self.__robot_type_service.select_current_robot_type()
         else:
             return

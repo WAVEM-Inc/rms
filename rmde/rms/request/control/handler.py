@@ -12,6 +12,9 @@ from gts_navigation_msgs.msg import NavigationControl
 
 from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
+from ...common.service import TimeService
+
+from ...response.control_event.handler import ControlEventHandler
 
 from .domain import Control
 from .domain import ControlCmd
@@ -46,6 +49,10 @@ class ControlRequestHandler():
             qos_profile = qos_profile_system_default,
             callback_group = self.__rclpy_gts_navigation_control_publisher_cb_group
         )
+        
+        self.__time_service: TimeService = TimeService()
+        
+        self.__control_event_handler: ControlEventHandler = ControlEventHandler(rclpy_node = self.__rclpy_node, mqtt_client = self.__mqtt_client)
         
         self.__control: Control = Control()
         self.__control_cmd: ControlCmd = ControlCmd()
@@ -107,20 +114,30 @@ class ControlRequestHandler():
             return
         elif (is_cmd_stop and not is_cmd_ready and not is_cmd_move):
             self.__rclpy_node.get_logger().info('judge gts_navigation/control command is stop')
+            start_time: str = self.__time_service.get_current_datetime()
             
             rclpy_gts_navigation_control: NavigationControl = NavigationControl()
             rclpy_gts_navigation_control.cancel_navigation = True
             rclpy_gts_navigation_control.resume_navigation = False
             
             self.__rclpy_gts_navigation_control_publisher.publish(rclpy_gts_navigation_control)
+            
+            end_time: str = self.__time_service.get_current_datetime()
+            self.__control_event_handler.judge_control_cmd(is_stop = True, start_time = start_time, end_time = end_time)
+            self.__control_event_handler.response_to_rms()
         elif (is_cmd_move and not is_cmd_stop and not is_cmd_ready):
             self.__rclpy_node.get_logger().info('judge gts_navigation/control command is move')
+            start_time: str = self.__time_service.get_current_datetime()
             
             rclpy_gts_navigation_control: NavigationControl = NavigationControl()
             rclpy_gts_navigation_control.cancel_navigation = False
             rclpy_gts_navigation_control.resume_navigation = True
             
             self.__rclpy_gts_navigation_control_publisher.publish(rclpy_gts_navigation_control)
+            
+            end_time: str = self.__time_service.get_current_datetime()
+            self.__control_event_handler.judge_control_cmd(is_stop = False, start_time = start_time, end_time = end_time)
+            self.__control_event_handler.response_to_rms()
         else: return
             
 
