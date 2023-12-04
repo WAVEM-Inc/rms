@@ -1,180 +1,13 @@
 import os
-import time
 import socket
 import paho.mqtt.client as mqtt
 
+from rclpy.node import Node
 from typing import Any
 from configparser import ConfigParser
 from ..rms.common.service import ConfigService
 from ..rms.common.service import UUIDService
 
-
-""" Description
-
-    This class for make logger in mqtt methods
-    
-    Attributes:
-        - __info__: info logging flag of mqtt (str)
-        - __warn__: warn logging flag of mqtt (str)
-        - __error__: error logging flag of mqtt (str)
-    
-    Methods:
-        - __init__: Constructor method for this class.
-        - __get_current_time__: Get current unix time and formatt into str.
-        - __log__: Log with logging level and color.
-        - info: Log in info level.
-        - warn: Log in warn level.
-        - error: Log in error level.
-
-"""
-class Logger:
-    __info: str = "[INFO]"
-    __warn: str = "[WARN]"
-    __error: str = "[ERROR]"
-
-    def __init__(self) -> None:
-        """ Description
-        
-        Constructor method for this class.
-        
-        Args:
-            - self: This class' instance
-
-        Returns:
-            None
-            
-        Usage:
-            __mqtt_logger__: mqtt_logger = mqtt_logger()
-        """
-        
-        pass
-    
-
-    def __get_current_time(self) -> str:
-        
-        """ Description
-        
-        Get current unix time and formatt into str.
-        
-        Args:
-            - self: This class' instance
-
-        Returns:
-            - formatted_time: formatted current unix time (str)
-            
-        Usage:
-            formatted_current_time: str = self.__get_current_time__()
-        
-        """
-        
-        __current_time: float = time.time()
-        __time_stamp: int = int(__current_time)
-        __micro_seconds: int = int((__current_time - __time_stamp) * 1e9)
-        formatted_time: str = "[{}.{}]".format(__time_stamp, __micro_seconds)
-
-        return formatted_time
-
-
-    def __log(self, start_color: str, level: str, message: str, end_color: str) -> None:
-        
-        """ Description
-        
-        Log with logging level and color.
-
-        Args:
-            - self: This class' instance
-            - start_color: start color format (str)
-            - level: logging level (str)
-            - message: logging message (str)
-            - end_color: end color format (str)
-
-        Returns:
-            None
-            
-        Usage:
-            start_color: str = ""
-            end_color: str = ""
-            self.__log__(start_color, self.__info__, message, end_color)
-        """
-        
-        __rclpy_node_name: str = 'rmde'
-        __formatted_current_time: str = self.__get_current_time()
-        print(
-            start_color
-            + "{} {} [{}]".format(level, __formatted_current_time, __rclpy_node_name)
-            + ": "
-            + message
-            + end_color
-        )
-
-
-    def info(self, message: str) -> None:
-        
-        """ Description
-        
-        Log in info level
-        
-        Args:
-            - self: This class' instance
-            - message: logging message (str)
-
-        Returns:
-            None
-            
-        Usage:
-            self.__mqtt_logger__.info("MQTT generated security key")
-        
-        """
-        
-        start_color: str = ""
-        end_color: str = ""
-        self.__log(start_color, self.__info, message, end_color)
-
-
-    def warn(self, message: str) -> None:
-        
-        """ Description
-        
-        Log in warn level
-        
-        Args:
-            - self: This class' instance
-            - message: logging message (str)
-
-        Returns:
-            None
-            
-        Usage:
-            self.__mqtt_logger__.warn("MQTT generated security key")
-        
-        """
-        
-        start_color: str = "\033[33m"
-        end_color: str = "\033[0m"
-        self.__log(start_color, self.__warn, message, end_color)
-
-
-    def error(self, message: str) -> None:
-        
-        """ Description
-        
-        Log in error level
-        
-        Args:
-            - self: This class' instance
-            - message: logging message (str)
-
-        Returns:
-            None
-            
-        Usage:
-            self.__mqtt_logger__.error("MQTT generated security key")
-        
-        """
-        
-        start_color: str = "\033[31m"
-        end_color: str = "\033[0m"
-        self.__log(start_color, self.__error, message, end_color)
 
 """ Description
 
@@ -210,9 +43,9 @@ MQTT_WEBSOCKETS_PATH: str = '/ws'
 
 class Client:
 
-    def __init__(self) -> None:
-        self.__mqtt_logger: Logger = Logger()
+    def __init__(self, rclpy_node: Node) -> None:
         self.client: mqtt.Client
+        self.__rclpy_node: Node = rclpy_node
         
         __script_directory: str = os.path.dirname(os.path.abspath(__file__))
         __config_file_path: str = MQTT_CONFIG_FILE_PATH
@@ -261,23 +94,23 @@ class Client:
             self.client.connect(self.broker_address, self.broker_port, self.__client_keep_alive)
 
             if self.client.is_connected:
-                self.__mqtt_logger.info(f'MQTT Client is connected to [{self.broker_address}:{self.broker_port}]')
+                self.__rclpy_node.get_logger().info(f'MQTT Client is connected to [{self.broker_address}:{self.broker_port}]')
                 self.is_connected = self.client.is_connected
             else:
-                self.__mqtt_logger.error('MQTT failed to connect')
+                self.__rclpy_node.get_logger().error('MQTT failed to connect')
                 self.is_connected = self.client.is_connected
         except OSError as ose:
-            self.__mqtt_logger.error(f'MQTT OSError : {ose}')
+            self.__rclpy_node.get_logger().error(f'MQTT OSError : {ose}')
         except Exception as e:
-            self.__mqtt_logger.error(f'MQTT Error : {e}')
+            self.__rclpy_node.get_logger().error(f'MQTT Error : {e}')
     
 
     def run(self) -> None:
         if self.is_connected:
-            self.__mqtt_logger.info('MQTT Client is running')
+            self.__rclpy_node.get_logger().info('MQTT Client is running')
             self.client.loop_start()
         else:
-            self.__mqtt_logger.error('MQTT Client is not connected to broker')
+            self.__rclpy_node.get_logger().error('MQTT Client is not connected to broker')
             return
 
 
@@ -308,14 +141,14 @@ class Client:
         """
         
         if rc == 0:
-            self.__mqtt_logger.info(f'MQTT connection succeeded result code : [{str(rc)}]')
+            self.__rclpy_node.get_logger().info(f'MQTT connection succeeded result code : [{str(rc)}]')
         else:
-            self.__mqtt_logger.error(f'MQTT connection failed result code : [{str(rc)}] ')
+            self.__rclpy_node.get_logger().error(f'MQTT connection failed result code : [{str(rc)}] ')
             
     
     def __on_disconnect(self, client: Any, user_data: Any, rc: Any) -> None:
         if rc != 0:
-            self.__mqtt_logger.error(f'MQTT disconnection result code : [{str(rc)}] ')
+            self.__rclpy_node.get_logger().error(f'MQTT disconnection result code : [{str(rc)}] ')
             self.rerun()
             
 
@@ -377,7 +210,7 @@ class Client:
         
         """
         
-        self.__mqtt_logger.info(f'MQTT granted subscription\n\ttopic : {topic}\n\tqos : {qos}')
+        self.__rclpy_node.get_logger().info(f'MQTT granted subscription\n\ttopic : {topic}\n\tqos : {qos}')
         self.client.subscribe(topic = topic, qos = qos)
 
 

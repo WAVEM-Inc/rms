@@ -28,7 +28,7 @@ class RMDENode(Node):
     
     def __init__(self) -> None:
         super().__init__(RCLPY_NODE_NAME)
-        self.mqtt_client: Client = Client()
+        self.mqtt_client: Client = Client(self)
         self.is_broker_opened: bool = self.mqtt_client.check_broker_opened()
         
         if self.is_broker_opened:
