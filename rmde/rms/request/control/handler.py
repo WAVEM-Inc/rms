@@ -5,14 +5,19 @@ import paho.mqtt.client as mqtt
 from configparser import ConfigParser
 from rclpy.node import Node
 from rclpy.publisher import Publisher
+from rclpy.subscription import Subscription
 from rclpy.qos import qos_profile_system_default
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from gts_navigation_msgs.msg import NavigationControl
+from robot_status_msgs.msg import NavigationStatus
 
 from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
 from ...common.service import TimeService
+
+from ...response.control_event.handler import ControlEventHandler
+from ...response.control_event.domain import ControlCmdType
 
 from ...response.cmd_response.handler import CmdRepsonseHandler
 from ...response.cmd_response.domain import CmdResponse
@@ -29,7 +34,8 @@ from typing import Dict
 
 RCLPY_FLAG: str = 'RCLPY'
 MQTT_FLAG: str = 'MQTT'
-
+GTS_NAVIGATION_STOPPED_CODE: int = -1
+GTS_NAVIGATION_RESUMED_CODE: int = 1
 
 class ControlRequestHandler():
     
@@ -53,12 +59,23 @@ class ControlRequestHandler():
             qos_profile = qos_profile_system_default,
             callback_group = self.__rclpy_gts_navigation_control_publisher_cb_group
         )
+
+        self.__rclpy_gts_navigation_task_status_subscription_topic: str = '/gts_navigation/task_status'
+        self.__rclpy_gts_navigation_task_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        self.__rclpy_gts_navigation_task_status_subscription: Subscription = self.__rclpy_node.create_subscription(
+            msg_type = NavigationStatus,
+            topic = self.__rclpy_gts_navigation_task_status_subscription_topic,
+            qos_profile = qos_profile_system_default,
+            callback = self.__rclpy_gts_navigation_task_status_subscription_cb,
+            callback_group = self.__rclpy_gts_navigation_task_status_subscription_cb_group
+        )
         
         self.__time_service: TimeService = TimeService()
         
         self.__control: Control = Control()
-        self.__control_cmd: ControlInfo = ControlInfo()
+        self.__control_info: ControlInfo = ControlInfo()
 
+        self.__control_event_handler: ControlEventHandler = ControlEventHandler(rclpy_node = self.__rclpy_node, mqtt_client = self.__mqtt_client)
         self.__cmd_repsonse_handler: CmdRepsonseHandler = CmdRepsonseHandler(rclpy_node = self.__rclpy_node, mqtt_client = self.__mqtt_client)
         
     
@@ -90,8 +107,14 @@ class ControlRequestHandler():
                 control_info_dict: dict = mqtt_json['controlInfo']
                 self.__control.controlInfo = control_info_dict
                 
-                controlCmd: dict = self.__control.controlInfo['controlCmd']
-                self.__control_cmd.controlCmd = controlCmd
+                controlId: str = control_info_dict['controlId']
+                self.__control_info.controlId = controlId
+                self.__control_event_handler.control_info.controlId = controlId
+
+                self.__rclpy_node.get_logger().info(f'ControlEventHandler controlInfo.controlId {self.__control_event_handler.control_info.controlId}')
+
+                controlCmd: str = self.__control.controlInfo['controlCmd']
+                self.__control_info.controlCmd = controlCmd
                 
                 self.__judge_control_cmd()
 
@@ -110,9 +133,9 @@ class ControlRequestHandler():
         
 
     def __judge_control_cmd(self) -> None:
-        is_cmd_reset: bool = (self.__control_cmd.controlCmd == ControlCmdType.RESET.value)
-        is_cmd_go: bool = (self.__control_cmd.controlCmd == ControlCmdType.GO.value)
-        is_cmd_stop: bool = (self.__control_cmd.controlCmd == ControlCmdType.STOP.value)
+        is_cmd_reset: bool = (self.__control_info.controlCmd == ControlCmdType.RESET.value)
+        is_cmd_go: bool = (self.__control_info.controlCmd == ControlCmdType.GO.value)
+        is_cmd_stop: bool = (self.__control_info.controlCmd == ControlCmdType.STOP.value)
             
         if (is_cmd_reset and is_cmd_go and is_cmd_stop):
             return
@@ -129,6 +152,7 @@ class ControlRequestHandler():
             rclpy_gts_navigation_control.cancel_navigation = True
             rclpy_gts_navigation_control.resume_navigation = False
             
+            self.__control_event_handler.control_result.startTime = self.__time_service.get_current_datetime()
             self.__rclpy_gts_navigation_control_publisher.publish(rclpy_gts_navigation_control)
         elif (is_cmd_go and not is_cmd_stop and not is_cmd_reset):
             self.__rclpy_node.get_logger().info('judge gts_navigation/control command is move')
@@ -137,8 +161,25 @@ class ControlRequestHandler():
             rclpy_gts_navigation_control.cancel_navigation = False
             rclpy_gts_navigation_control.resume_navigation = True
             
+            self.__control_event_handler.control_result.startTime = self.__time_service.get_current_datetime()
             self.__rclpy_gts_navigation_control_publisher.publish(rclpy_gts_navigation_control)
         else: return
-            
+    
+
+    def __rclpy_gts_navigation_task_status_subscription_cb(self, navigation_status: NavigationStatus) -> None:
+        self.job_status_code = navigation_status.status_code
+
+        if self.job_status_code == GTS_NAVIGATION_STOPPED_CODE:
+            self.__control_event_handler.control_result.status = 'success'
+            self.__control_event_handler.control_result.endTime = self.__time_service.get_current_datetime()
+            self.__control_event_handler.control_info.controlCmd = ControlCmdType.STOP.value
+            self.__control_event_handler.response_to_rms()
+        elif self.job_status_code == GTS_NAVIGATION_RESUMED_CODE:
+            self.__control_event_handler.control_result.status = 'success'
+            self.__control_event_handler.control_result.endTime = self.__time_service.get_current_datetime()
+            self.__control_event_handler.control_info.controlCmd = ControlCmdType.GO.value
+            self.__control_event_handler.response_to_rms()
+        else:
+            return
 
 __all__ = ['rms_request_control_handler']

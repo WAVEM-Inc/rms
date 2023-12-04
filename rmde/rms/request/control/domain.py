@@ -8,10 +8,11 @@ class ControlCmdType(Enum):
     RESET: str = 'reset'
     GO: str = 'go'
     STOP: str = 'stop'
-    
+
 
 @dataclass
 class ControlInfo():
+    controlId: str = ''
     controlCmd: str = ''
 
 

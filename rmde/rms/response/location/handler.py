@@ -268,7 +268,7 @@ class LocationResponseHandler():
         self.__last_info.floor = floor
     
     
-    def response_to_uvc(self) -> None:
+    def response_to_rms(self) -> None:
         built_location: Location = self.build_location()
         self.__mqtt_client.publish(topic = self.__mqtt_location_publisher_topic, payload = json.dumps(built_location.__dict__), qos = self.__mqtt_location_publisher_qos)
         

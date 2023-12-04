@@ -14,7 +14,7 @@ from ...common.service import ConfigService
 from robot_status_msgs.msg import TaskStatus
 
 from ...common.domain import Header
-from .domain import ControlCmd
+from .domain import ControlInfo
 from .domain import ControlResult
 from .domain import TaskEventInfo
 from .domain import ControlEvent
@@ -42,7 +42,7 @@ class ControlEventHandler():
         self.__common_config_file_path: str = '../../common/config.ini'
         self.__common_config_service: ConfigService = ConfigService(self.__script_directory, self.__common_config_file_path)
         self.__common_config_parser: ConfigParser = self.__common_config_service.read()
-        
+
         self.__rclpy_task_status_subscription_topic: str = '/robot_task/status'
         self.__rclpy_task_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.__rclpy_task_status_subscription: Subscription = self.__rclpy_node.create_subscription(
@@ -54,8 +54,8 @@ class ControlEventHandler():
         )
         
         self.__header: Header = Header()
-        self.__control_cmd: ControlCmd = ControlCmd()
-        self.__control_result: ControlResult = ControlResult()
+        self.control_info: ControlInfo = ControlInfo()
+        self.control_result: ControlResult = ControlResult()
         self.__task_event_info: TaskEventInfo = TaskEventInfo()
         
         self.__job_group: str = ''
@@ -63,7 +63,7 @@ class ControlEventHandler():
         self.__job_plan_id: str = ''
         self.__job_group_id: str = ''
         self.__job_order_id: str = ''
-    
+        
     
     def __rclpy_task_status_subscription_cb(self, task_status_cb: TaskStatus) -> None:
         self.__job_group = task_status_cb.job_group
@@ -79,8 +79,8 @@ class ControlEventHandler():
         self.__build_header()
         control_event.header = self.__header.__dict__
         
-        control_event.controlCmd = self.__control_cmd.__dict__
-        control_event.controlResult = self.__control_result.__dict__
+        control_event.controlInfo = self.control_info.__dict__
+        control_event.controlResult = self.control_result.__dict__
         
         self.__build_task_event_info()
         control_event.taskEventInfo = self.__task_event_info.__dict__
@@ -103,21 +103,6 @@ class ControlEventHandler():
 
         robot_type: str = self.__common_config_parser.get('header', 'robotType')
         self.__header.robotType = robot_type
-    
-    
-    def judge_control_cmd(self, is_stop: bool, start_time: str, end_time: str) -> None:
-        self.__control_result.status = 'success'
-        self.__control_result.startTime = start_time
-        self.__control_result.endTime = end_time
-        
-        if is_stop == True:
-            self.__control_cmd.stop = True
-            self.__control_cmd.move = False
-            self.__control_cmd.ready = False
-        else:
-            self.__control_cmd.stop = False
-            self.__control_cmd.move = True
-            self.__control_cmd.ready = False            
     
     
     def __build_task_event_info(self) -> None:

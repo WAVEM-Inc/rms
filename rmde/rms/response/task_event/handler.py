@@ -117,7 +117,7 @@ class TaskEventResponseHandler():
             self.__job_result.dist = abs(navigation_status.end_dist - navigation_status.start_dist)
             self.__task_event_info.jobResult = self.__job_result.__dict__
             self.__rclpy_node.get_logger().info(f'TaskEventHandler [{self.__task_event_info.jobOrderId}] task completed with status : {self.__job_result.status}')
-            self.__response_to_uvc()
+            self.__response_to_rms()
             self.__rclpy_register_task_service_request()
         else:
             return
@@ -175,7 +175,7 @@ class TaskEventResponseHandler():
         self.__header.robotType = robot_type
     
 
-    def __response_to_uvc(self) -> None:
+    def __response_to_rms(self) -> None:
         build_task_event: TaskEvent = self.__build_task_event()
         self.__mqtt_client.publish(topic = self.__mqtt_task_event_publisher_topic, payload = json.dumps(build_task_event.__dict__), qos = self.__mqtt_task_event_publisher_qos)
         

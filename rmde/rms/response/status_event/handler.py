@@ -288,7 +288,7 @@ class StatusEventHandler():
         self.__com_info.robotTime = self.__time_service.get_current_datetime()
         
     
-    def response_to_uvc(self) -> None:
+    def response_to_rms(self) -> None:
         built_status_event: StatusEvent = self.__build_status_event()
         self.__mqtt_client.publish(topic = self.__mqtt_status_event_publisher_topic, payload = json.dumps(built_status_event.__dict__), qos = self.__mqtt_status_event_publisher_qos)
         
