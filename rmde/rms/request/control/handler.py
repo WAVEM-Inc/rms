@@ -14,10 +14,14 @@ from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
 from ...common.service import TimeService
 
-from ...response.control_event.handler import ControlEventHandler
+from ...response.cmd_response.handler import CmdRepsonseHandler
+from ...response.cmd_response.domain import CmdResponse
+from ...response.cmd_response.domain import CmdResult
+from ...response.cmd_response.domain import CmdResultTopicKindType
 
 from .domain import Control
-from .domain import ControlCmd
+from .domain import ControlInfo
+from .domain import ControlCmdType
 
 from typing import Any
 from typing import Dict
@@ -52,10 +56,10 @@ class ControlRequestHandler():
         
         self.__time_service: TimeService = TimeService()
         
-        self.__control_event_handler: ControlEventHandler = ControlEventHandler(rclpy_node = self.__rclpy_node, mqtt_client = self.__mqtt_client)
-        
         self.__control: Control = Control()
-        self.__control_cmd: ControlCmd = ControlCmd()
+        self.__control_cmd: ControlInfo = ControlInfo()
+
+        self.__cmd_repsonse_handler: CmdRepsonseHandler = CmdRepsonseHandler(rclpy_node = self.__rclpy_node, mqtt_client = self.__mqtt_client)
         
     
     def request_to_uvc(self) -> None:
@@ -71,17 +75,23 @@ class ControlRequestHandler():
                 header_dict: dict = mqtt_json['header']
                 self.__control.header = header_dict
 
-                control_cmd_dict: dict = mqtt_json['controlCmd']
-                self.__control.controlCmd = control_cmd_dict
+                cmd_response: CmdResponse = CmdResponse()
+                cmd_response.header = header_dict
                 
-                ready: bool = self.__control.controlCmd['ready']
-                self.__control_cmd.ready = ready
+                cmd_result: CmdResult = CmdResult()
+                cmd_result.status = 'success'
+                cmd_result.startTime = self.__time_service.get_current_datetime()
+                cmd_result.topicKind = CmdResultTopicKindType.CONTROL.value
+                
+                cmd_response.cmdResult = cmd_result.__dict__
 
-                move: bool = self.__control.controlCmd['move']
-                self.__control_cmd.move = move
+                self.__cmd_repsonse_handler.response_to_rms(cmd_response = cmd_response)
 
-                stop: bool = self.__control.controlCmd['stop']
-                self.__control_cmd.stop = stop
+                control_info_dict: dict = mqtt_json['controlInfo']
+                self.__control.controlInfo = control_info_dict
+                
+                controlCmd: dict = self.__control.controlInfo['controlCmd']
+                self.__control_cmd.controlCmd = controlCmd
                 
                 self.__judge_control_cmd()
 
@@ -100,44 +110,34 @@ class ControlRequestHandler():
         
 
     def __judge_control_cmd(self) -> None:
-        is_cmd_ready: bool = (self.__control_cmd.ready == True)
-        is_cmd_move: bool = (self.__control_cmd.move == True)
-        is_cmd_stop: bool = (self.__control_cmd.stop == True)
+        is_cmd_reset: bool = (self.__control_cmd.controlCmd == ControlCmdType.RESET.value)
+        is_cmd_go: bool = (self.__control_cmd.controlCmd == ControlCmdType.GO.value)
+        is_cmd_stop: bool = (self.__control_cmd.controlCmd == ControlCmdType.STOP.value)
             
-        if (is_cmd_ready and is_cmd_move and is_cmd_stop):
+        if (is_cmd_reset and is_cmd_go and is_cmd_stop):
             return
-        elif (is_cmd_ready and is_cmd_move):
+        elif (is_cmd_reset and is_cmd_go):
             return
-        elif (is_cmd_move and is_cmd_stop):
+        elif (is_cmd_go and is_cmd_stop):
             return
-        elif (is_cmd_ready and is_cmd_stop):
+        elif (is_cmd_reset and is_cmd_stop):
             return
-        elif (is_cmd_stop and not is_cmd_ready and not is_cmd_move):
+        elif (is_cmd_stop and not is_cmd_reset and not is_cmd_go):
             self.__rclpy_node.get_logger().info('judge gts_navigation/control command is stop')
-            start_time: str = self.__time_service.get_current_datetime()
             
             rclpy_gts_navigation_control: NavigationControl = NavigationControl()
             rclpy_gts_navigation_control.cancel_navigation = True
             rclpy_gts_navigation_control.resume_navigation = False
             
             self.__rclpy_gts_navigation_control_publisher.publish(rclpy_gts_navigation_control)
-            
-            end_time: str = self.__time_service.get_current_datetime()
-            self.__control_event_handler.judge_control_cmd(is_stop = True, start_time = start_time, end_time = end_time)
-            self.__control_event_handler.response_to_rms()
-        elif (is_cmd_move and not is_cmd_stop and not is_cmd_ready):
+        elif (is_cmd_go and not is_cmd_stop and not is_cmd_reset):
             self.__rclpy_node.get_logger().info('judge gts_navigation/control command is move')
-            start_time: str = self.__time_service.get_current_datetime()
             
             rclpy_gts_navigation_control: NavigationControl = NavigationControl()
             rclpy_gts_navigation_control.cancel_navigation = False
             rclpy_gts_navigation_control.resume_navigation = True
             
             self.__rclpy_gts_navigation_control_publisher.publish(rclpy_gts_navigation_control)
-            
-            end_time: str = self.__time_service.get_current_datetime()
-            self.__control_event_handler.judge_control_cmd(is_stop = False, start_time = start_time, end_time = end_time)
-            self.__control_event_handler.response_to_rms()
         else: return
             
 

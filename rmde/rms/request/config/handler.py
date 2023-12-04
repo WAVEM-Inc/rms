@@ -7,9 +7,15 @@ from configparser import ConfigParser
 
 from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
+from ...common.service import TimeService
 
 from .domain import Config
 from .domain import SetInfo
+
+from ...response.cmd_response.handler import CmdRepsonseHandler
+from ...response.cmd_response.domain import CmdResponse
+from ...response.cmd_response.domain import CmdResult
+from ...response.cmd_response.domain import CmdResultTopicKindType
 
 from typing import Any
 from typing import Dict
@@ -17,7 +23,6 @@ from typing import Dict
 
 RCLPY_FLAG: str = 'RCLPY'
 MQTT_FLAG: str = 'MQTT'
-
 
 class ConfigRequestHandler():
     
@@ -36,9 +41,12 @@ class ConfigRequestHandler():
         self.__common_config_file_path: str = '../../common/config.ini'
         self.__common_config_service: ConfigService = ConfigService(self.__script_directory, self.__common_config_file_path)
         self.__common_config_parser: ConfigParser = self.__common_config_service.read()
+
+        self.__time_service: TimeService = TimeService()
         
         self.__config: Config = Config()
         self.__set_info: SetInfo = SetInfo()
+        self.__cmd_repsonse_handler: CmdRepsonseHandler = CmdRepsonseHandler(rclpy_node = self.__rclpy_node, mqtt_client = self.__mqtt_client)
         
     
     def request_to_uvc(self) -> None:
@@ -53,6 +61,18 @@ class ConfigRequestHandler():
                 
                 header_dict: dict = mqtt_json['header']
                 self.__config.header = header_dict
+
+                cmd_response: CmdResponse = CmdResponse()
+                cmd_response.header = header_dict
+                
+                cmd_result: CmdResult = CmdResult()
+                cmd_result.status = 'success'
+                cmd_result.startTime = self.__time_service.get_current_datetime()
+                cmd_result.topicKind = CmdResultTopicKindType.CONFIG.value
+
+                cmd_response.cmdResult = cmd_result.__dict__
+
+                self.__cmd_repsonse_handler.response_to_rms(cmd_response = cmd_response)
 
                 set_info_dict: dict = mqtt_json['setInfo']            
                 self.__config.setInfo = set_info_dict

@@ -18,6 +18,13 @@ from robot_status_msgs.srv import RegisterTask
 
 from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
+from ...common.service import TimeService
+
+from ...response.cmd_response.handler import CmdRepsonseHandler
+from ...response.cmd_response.domain import CmdResponse
+from ...response.cmd_response.domain import CmdResult
+from ...response.cmd_response.domain import CmdResultTopicKindType
+
 from ...common.domain import JobUUID
 
 from .domain import JobInfo
@@ -80,9 +87,12 @@ class PathRequestHandler():
             callback_group = self.__rclpy_register_task_service_client_cb_group
         )
         
+        self.__time_service: TimeService = TimeService()
+
         self.__path: Path = Path()
         self.__jobInfo: JobInfo = JobInfo()
         self.__jobPath: JobPath = JobPath()
+        self.__cmd_repsonse_handler: CmdRepsonseHandler = CmdRepsonseHandler(rclpy_node = self.__rclpy_node, mqtt_client = self.__mqtt_client)
         
     
     def request_to_uvc(self) -> None:
@@ -97,6 +107,18 @@ class PathRequestHandler():
                 
                 header_dict: dict = mqtt_json['header']
                 self.__path.header = header_dict
+
+                cmd_response: CmdResponse = CmdResponse()
+                cmd_response.header = header_dict
+                
+                cmd_result: CmdResult = CmdResult()
+                cmd_result.status = 'success'
+                cmd_result.startTime = self.__time_service.get_current_datetime()
+                cmd_result.topicKind = CmdResultTopicKindType.PATH.value
+                
+                cmd_response.cmdResult = cmd_result.__dict__
+
+                self.__cmd_repsonse_handler.response_to_rms(cmd_response = cmd_response)
 
                 job_info_dict: dict = mqtt_json['jobInfo']
                 self.__path.jobInfo = job_info_dict

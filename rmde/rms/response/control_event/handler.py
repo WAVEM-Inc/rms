@@ -6,10 +6,10 @@ from configparser import ConfigParser
 from rclpy.node import Node
 from rclpy.subscription import Subscription
 from rclpy.qos import qos_profile_system_default
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from ....mqtt.mqtt_client import Client
 from ...common.service import ConfigService
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from robot_status_msgs.msg import TaskStatus
 
@@ -32,10 +32,10 @@ class ControlEventHandler():
         self.__mqtt_config_parser: ConfigParser = self.__mqtt_config_service.read()
         
         self.__mqtt_control_event_publisher_topic: str = self.__mqtt_config_parser.get('topics', 'control_event')
-        self.__mqtt_control__event_publisher_qos: int = int(self.__mqtt_config_parser.get('qos', 'control_event'))
+        self.__mqtt_control_event_publisher_qos: int = int(self.__mqtt_config_parser.get('qos', 'control_event'))
         
         if self.__mqtt_client.is_connected:
-            self.__rclpy_node.get_logger().info(f'MQTT granted publisher\n\ttopic : {self.__mqtt_control_event_publisher_topic}\n\tqos : {self.__mqtt_control__event_publisher_qos}')
+            self.__rclpy_node.get_logger().info(f'MQTT granted publisher\n\ttopic : {self.__mqtt_control_event_publisher_topic}\n\tqos : {self.__mqtt_control_event_publisher_qos}')
         else:
             self.__rclpy_node.get_logger().error(f'MQTT failed to grant publisher\n\ttopic : {self.__mqtt_control_event_publisher_topic}\n\tqos : {self.__mqtt_control_event_publisher_topic}')
         
@@ -130,7 +130,7 @@ class ControlEventHandler():
     
     def response_to_rms(self) -> None:
         built_control_event: ControlEvent = self.__build_control_event()
-        self.__mqtt_client.publish(topic = self.__mqtt_control_event_publisher_topic, payload = json.dumps(built_control_event.__dict__), qos = self.__mqtt_control__event_publisher_qos)
+        self.__mqtt_client.publish(topic = self.__mqtt_control_event_publisher_topic, payload = json.dumps(built_control_event.__dict__), qos = self.__mqtt_control_event_publisher_qos)
 
 
 __all__ = ['rms_response_control_event_handler']
