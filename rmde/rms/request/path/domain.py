@@ -15,7 +15,7 @@ class JobInfo():
 @dataclass
 class JobKindType():
     jobTargetId: str = ''
-        
+
 
 @dataclass
 class JobPath():
@@ -26,9 +26,9 @@ class JobPath():
 
 @dataclass
 class Path():
-    header: Dict = field(default_factory = empty_dict)
-    jobInfo: Dict = field(default_factory = empty_dict)
-    jobPath: Dict = field(default_factory = empty_dict)
-        
-        
+    header: Dict = field(default_factory=empty_dict)
+    jobInfo: Dict = field(default_factory=empty_dict)
+    jobPath: Dict = field(default_factory=empty_dict)
+
+
 __all__ = ['rms_request_path_domain']

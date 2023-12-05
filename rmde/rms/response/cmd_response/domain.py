@@ -19,8 +19,8 @@ class CmdResult():
 
 @dataclass
 class CmdResponse():
-    header: Dict = field(default_factory = empty_dict)
-    cmdResult: Dict = field(default_factory = empty_dict)
+    header: Dict = field(default_factory=empty_dict)
+    cmdResult: Dict = field(default_factory=empty_dict)
 
 
 __all__ = ['rms_response_cmd_repsonse_domain']

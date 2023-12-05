@@ -29,14 +29,14 @@ class TaskEventInfo():
     jobOrderId: str = ''
     jobGroup: str = ''
     jobKind: str = ''
-    
+
 
 @dataclass
 class ControlEvent():
-    header: Dict = field(default_factory = empty_dict)
-    controlInfo: Dict = field(default_factory = empty_dict)
-    controlResult: Dict = field(default_factory = empty_dict)
-    taskEventInfo: Dict = field(default_factory = empty_dict)
-    
+    header: Dict = field(default_factory=empty_dict)
+    controlInfo: Dict = field(default_factory=empty_dict)
+    controlResult: Dict = field(default_factory=empty_dict)
+    taskEventInfo: Dict = field(default_factory=empty_dict)
+
 
 __all__ = ['rms_response_control_event_domain']

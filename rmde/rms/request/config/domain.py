@@ -17,8 +17,8 @@ class SetInfo():
 
 @dataclass
 class Config:
-    header: Dict = field(default_factory = empty_dict)
-    setInfo: Dict = field(default_factory = empty_dict)
+    header: Dict = field(default_factory=empty_dict)
+    setInfo: Dict = field(default_factory=empty_dict)
 
 
 __all__ = ['rms_request_config_domain']

@@ -18,8 +18,8 @@ class ControlInfo():
 
 @dataclass
 class Control():
-    header: Dict = field(default_factory = empty_dict)
-    controlInfo: Dict = field(default_factory = empty_dict)
-        
+    header: Dict = field(default_factory=empty_dict)
+    controlInfo: Dict = field(default_factory=empty_dict)
+
 
 __all__ = ['rms_request_control_domain']
