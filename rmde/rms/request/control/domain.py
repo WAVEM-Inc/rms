@@ -1,19 +1,25 @@
+from enum import Enum
 from dataclasses import dataclass, field
 from typing import Dict
 from ...common.service import empty_dict
 
 
+class ControlCmdType(Enum):
+    RESET: str = 'reset'
+    GO: str = 'go'
+    STOP: str = 'stop'
+
+
 @dataclass
-class ControlCmd():
-    ready: bool = False
-    move: bool = False
-    stop: bool = False
+class ControlInfo():
+    controlId: str = ''
+    controlCmd: str = ''
 
 
 @dataclass
 class Control():
-    header: Dict = field(default_factory = empty_dict)
-    controlCmd: Dict = field(default_factory = empty_dict)
-        
+    header: Dict = field(default_factory=empty_dict)
+    controlInfo: Dict = field(default_factory=empty_dict)
+
 
 __all__ = ['rms_request_control_domain']
