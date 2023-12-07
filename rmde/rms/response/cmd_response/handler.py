@@ -35,6 +35,7 @@ class CmdRepsonseHandler():
         else:
             self.__rclpy_node.get_logger().error(
                 f'MQTT failed to grant publisher\n\ttopic : {self.__mqtt_cmd_response_publisher_topic}\n\tqos : {self.__mqtt_cmd_response_publisher_topic}')
+            
 
     def response_to_rms(self, cmd_response: CmdResponse) -> None:
         built_cmd_response: CmdResponse = cmd_response

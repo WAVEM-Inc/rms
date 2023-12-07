@@ -14,7 +14,6 @@ from ...common.service import ConfigService
 from robot_status_msgs.msg import TaskStatus
 
 from ...common.domain import Header
-from .domain import ControlInfo
 from .domain import ControlResult
 from .domain import TaskEventInfo
 from .domain import ControlEvent
@@ -61,7 +60,6 @@ class ControlEventHandler():
         )
 
         self.__header: Header = Header()
-        self.control_info: ControlInfo = ControlInfo()
         self.control_result: ControlResult = ControlResult()
         self.__task_event_info: TaskEventInfo = TaskEventInfo()
 
@@ -83,8 +81,6 @@ class ControlEventHandler():
 
         self.__build_header()
         control_event.header = self.__header.__dict__
-
-        control_event.controlInfo = self.control_info.__dict__
         control_event.controlResult = self.control_result.__dict__
 
         self.__build_task_event_info()

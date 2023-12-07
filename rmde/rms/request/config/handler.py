@@ -129,12 +129,18 @@ class ConfigRequestHandler():
                 mqtt_topic_to_rms_format: str = 'hubilon/atcplus/ros'
                 modified_location_topic: str = f'{mqtt_topic_to_rms_format}/{self.__set_info.robotCorpId}/{self.__set_info.robotId}/location'
                 modified_task_event_topic: str = f'{mqtt_topic_to_rms_format}/{self.__set_info.robotCorpId}/{self.__set_info.robotId}/task_event'
+                modified_status_event_topic: str = f'{mqtt_topic_to_rms_format}/{self.__set_info.robotCorpId}/{self.__set_info.robotId}/status_event'
+                modified_cmd_response_topic: str = f'{mqtt_topic_to_rms_format}/{self.__set_info.robotCorpId}/{self.__set_info.robotId}/cmd_response'
                 modified_control_event_topic: str = f'{mqtt_topic_to_rms_format}/{self.__set_info.robotCorpId}/{self.__set_info.robotId}/control_event'
 
                 self.__mqtt_config_parser.set(
                     'topics', 'location', modified_location_topic)
                 self.__mqtt_config_parser.set(
                     'topics', 'task_event', modified_task_event_topic)
+                self.__mqtt_config_parser.set(
+                    'topics', 'status_event', modified_status_event_topic)
+                self.__mqtt_config_parser.set(
+                    'topics', 'cmd_response', modified_cmd_response_topic)
                 self.__mqtt_config_parser.set(
                     'topics', 'control_event', modified_control_event_topic)
 

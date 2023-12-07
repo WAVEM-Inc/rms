@@ -34,7 +34,7 @@ from typing import Dict
 
 RCLPY_FLAG: str = 'RCLPY'
 MQTT_FLAG: str = 'MQTT'
-GTS_NAVIGATION_STOPPED_CODE: int = -1
+GTS_NAVIGATION_STOPPED_CODE: int = 5
 GTS_NAVIGATION_RESUMED_CODE: int = 1
 
 
@@ -118,10 +118,10 @@ class ControlRequestHandler():
 
                 controlId: str = control_info_dict['controlId']
                 self.__control_info.controlId = controlId
-                self.__control_event_handler.control_info.controlId = controlId
+                self.__control_event_handler.control_result.controlId = controlId
 
                 self.__rclpy_node.get_logger().info(
-                    f'ControlEventHandler controlInfo.controlId {self.__control_event_handler.control_info.controlId}')
+                    f'ControlEventHandler control_result.controlId {self.__control_event_handler.control_result.controlId}')
 
                 controlCmd: str = self.__control.controlInfo['controlCmd']
                 self.__control_info.controlCmd = controlCmd
@@ -189,16 +189,17 @@ class ControlRequestHandler():
 
     def __rclpy_gts_navigation_task_status_subscription_cb(self, navigation_status: NavigationStatus) -> None:
         self.job_status_code = navigation_status.status_code
+        self.__rclpy_node.get_logger().info(f'ControlRequestHandler gts_navigation_task_status cb status_code : [{self.job_status_code}]')
 
         if self.job_status_code == GTS_NAVIGATION_STOPPED_CODE:
             self.__control_event_handler.control_result.status = 'success'
             self.__control_event_handler.control_result.endTime = self.__time_service.get_current_datetime()
-            self.__control_event_handler.control_info.controlCmd = ControlCmdType.STOP.value
+            self.__control_event_handler.control_result.controlCmd = ControlCmdType.STOP.value
             self.__control_event_handler.response_to_rms()
         elif self.job_status_code == GTS_NAVIGATION_RESUMED_CODE:
             self.__control_event_handler.control_result.status = 'success'
             self.__control_event_handler.control_result.endTime = self.__time_service.get_current_datetime()
-            self.__control_event_handler.control_info.controlCmd = ControlCmdType.GO.value
+            self.__control_event_handler.control_result.controlCmd = ControlCmdType.GO.value
             self.__control_event_handler.response_to_rms()
         else:
             return

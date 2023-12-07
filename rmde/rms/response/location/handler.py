@@ -121,16 +121,6 @@ class LocationResponseHandler():
             callback_group=self.__rclpy_velocity_state_subscription_cb_group
         )
 
-        self.__rclpy_gts_navigation_task_status_subscription_topic: str = '/gts_navigation/task_status'
-        self.__rclpy_gts_navigation_task_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_gts_navigation_task_status_subscription: Subscription = self.__rclpy_node.create_subscription(
-            msg_type=NavigationStatus,
-            topic=self.__rclpy_gts_navigation_task_status_subscription_topic,
-            qos_profile=qos_profile_system_default,
-            callback=self.__rclpy_gts_navigation_task_status_subscription_cb,
-            callback_group=self.__rclpy_gts_navigation_task_status_subscription_cb_group
-        )
-
         self.__rclpy_in_out_door_subscription_topic: str = '/in_out_door'
         self.__rclpy_in_out_door_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
         self.__rclpy_in_out_door_subscription: Subscription = self.__rclpy_node.create_subscription(
@@ -188,20 +178,6 @@ class LocationResponseHandler():
         distance: float = velocity_state_cb.distance
         self.__last_info.totalDist = distance
 
-    def __rclpy_gts_navigation_task_status_subscription_cb(self, navigation_status: NavigationStatus) -> None:
-        self.job_status_code = navigation_status.status_code
-
-        if self.job_status_code == GTS_NAVIGATION_STARTED_CODE:
-            self.__task_info.jobGroup = self.__job_group
-            self.__task_info.jobKind = JobKindType.MOVE.value
-            self.__task_info.taskStatus = TaskStatusType.ASSIGNED.value
-        elif self.job_status_code == GTS_NAVIGATION_COMPLETED_CODE:
-            self.__task_info.jobGroup = self.__job_group
-            self.__task_info.jobKind = JobKindType.WAIT.value
-            self.__task_info.taskStatus = TaskStatusType.UNASSIGNED.value
-        else:
-            return
-
     def __rclpy_in_out_door_subscription_cb(self, in_out_door_cb: InOutDoor) -> None:
         is_out_door: bool = (in_out_door_cb.determination == True)
 
@@ -217,6 +193,11 @@ class LocationResponseHandler():
 
         self.__job_kind = task_status_cb.job_kind
         self.__task_info.jobKind = self.__job_kind
+        
+        if (self.__task_info.jobGroup != '' and self.__task_info.jobKind != ''):
+            self.__task_info.taskStatus = TaskStatusType.ASSIGNED.value
+        else:
+            self.__task_info.taskStatus = TaskStatusType.UNASSIGNED.value
 
         self.__job_info.jobPlanId = task_status_cb.job_plan_id
         self.__job_info.jobGroupId = task_status_cb.job_group_id

@@ -10,16 +10,12 @@ class ControlCmdType(Enum):
 
 
 @dataclass
-class ControlInfo():
-    controlId: str = ''
-    controlCmd: str = ''
-
-
-@dataclass
 class ControlResult():
     status: str = ''
     startTime: str = ''
     endTime: str = ''
+    controlId: str = ''
+    controlCmd: str = ''
 
 
 @dataclass
@@ -34,7 +30,6 @@ class TaskEventInfo():
 @dataclass
 class ControlEvent():
     header: Dict = field(default_factory=empty_dict)
-    controlInfo: Dict = field(default_factory=empty_dict)
     controlResult: Dict = field(default_factory=empty_dict)
     taskEventInfo: Dict = field(default_factory=empty_dict)
 
