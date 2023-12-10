@@ -65,15 +65,15 @@ class ControlRequestHandler():
             callback_group=self.__rclpy_gts_navigation_control_publisher_cb_group
         )
 
-        self.__rclpy_gts_navigation_task_status_subscription_topic: str = '/gts_navigation/task_status'
-        self.__rclpy_gts_navigation_task_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
-        self.__rclpy_gts_navigation_task_status_subscription: Subscription = self.__rclpy_node.create_subscription(
-            msg_type=NavigationStatus,
-            topic=self.__rclpy_gts_navigation_task_status_subscription_topic,
-            qos_profile=qos_profile_system_default,
-            callback=self.__rclpy_gts_navigation_task_status_subscription_cb,
-            callback_group=self.__rclpy_gts_navigation_task_status_subscription_cb_group
-        )
+        # self.__rclpy_gts_navigation_task_status_subscription_topic: str = '/gts_navigation/task_status'
+        # self.__rclpy_gts_navigation_task_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        # self.__rclpy_gts_navigation_task_status_subscription: Subscription = self.__rclpy_node.create_subscription(
+        #     msg_type=NavigationStatus,
+        #     topic=self.__rclpy_gts_navigation_task_status_subscription_topic,
+        #     qos_profile=qos_profile_system_default,
+        #     callback=self.__rclpy_gts_navigation_task_status_subscription_cb,
+        #     callback_group=self.__rclpy_gts_navigation_task_status_subscription_cb_group
+        # )
 
         self.__time_service: TimeService = TimeService()
 
@@ -127,6 +127,19 @@ class ControlRequestHandler():
                 self.__control_info.controlCmd = controlCmd
 
                 self.__judge_control_cmd()
+
+                if self.__control_info.controlCmd == 'stop':
+                    self.__control_event_handler.control_result.status = 'success'
+                    self.__control_event_handler.control_result.endTime = self.__time_service.get_current_datetime()
+                    self.__control_event_handler.control_result.controlCmd = ControlCmdType.STOP.value
+                    self.__control_event_handler.response_to_rms()
+                elif self.__control_info.controlCmd == 'go':
+                    self.__control_event_handler.control_result.status = 'success'
+                    self.__control_event_handler.control_result.endTime = self.__time_service.get_current_datetime()
+                    self.__control_event_handler.control_result.controlCmd = ControlCmdType.GO.value
+                    self.__control_event_handler.response_to_rms()
+                else:
+                    return
 
             except KeyError as ke:
                 self.__rclpy_node.get_logger().error(
@@ -187,22 +200,22 @@ class ControlRequestHandler():
         else:
             return
 
-    def __rclpy_gts_navigation_task_status_subscription_cb(self, navigation_status: NavigationStatus) -> None:
-        self.job_status_code = navigation_status.status_code
-        self.__rclpy_node.get_logger().info(f'ControlRequestHandler gts_navigation_task_status cb status_code : [{self.job_status_code}]')
+    # def __rclpy_gts_navigation_task_status_subscription_cb(self, navigation_status: NavigationStatus) -> None:
+    #     self.job_status_code = navigation_status.status_code
+    #     self.__rclpy_node.get_logger().info(f'ControlRequestHandler gts_navigation_task_status cb status_code : [{self.job_status_code}]')
 
-        if self.job_status_code == GTS_NAVIGATION_STOPPED_CODE:
-            self.__control_event_handler.control_result.status = 'success'
-            self.__control_event_handler.control_result.endTime = self.__time_service.get_current_datetime()
-            self.__control_event_handler.control_result.controlCmd = ControlCmdType.STOP.value
-            self.__control_event_handler.response_to_rms()
-        elif self.job_status_code == GTS_NAVIGATION_RESUMED_CODE:
-            self.__control_event_handler.control_result.status = 'success'
-            self.__control_event_handler.control_result.endTime = self.__time_service.get_current_datetime()
-            self.__control_event_handler.control_result.controlCmd = ControlCmdType.GO.value
-            self.__control_event_handler.response_to_rms()
-        else:
-            return
+    #     if self.job_status_code == GTS_NAVIGATION_STOPPED_CODE:
+    #         self.__control_event_handler.control_result.status = 'success'
+    #         self.__control_event_handler.control_result.endTime = self.__time_service.get_current_datetime()
+    #         self.__control_event_handler.control_result.controlCmd = ControlCmdType.STOP.value
+    #         self.__control_event_handler.response_to_rms()
+    #     elif self.job_status_code == GTS_NAVIGATION_RESUMED_CODE:
+    #         self.__control_event_handler.control_result.status = 'success'
+    #         self.__control_event_handler.control_result.endTime = self.__time_service.get_current_datetime()
+    #         self.__control_event_handler.control_result.controlCmd = ControlCmdType.GO.value
+    #         self.__control_event_handler.response_to_rms()
+    #     else:
+    #         return
 
 
 __all__ = ['rms_request_control_handler']
