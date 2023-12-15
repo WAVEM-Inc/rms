@@ -8,6 +8,7 @@ class Header():
     workSiteId: str = ''
     robotId: str = ''
     robotType: str = ''
+    topicUid: str = ''
 
 
 @dataclass

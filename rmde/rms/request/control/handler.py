@@ -101,12 +101,11 @@ class ControlRequestHandler():
                 self.__control.header = header_dict
 
                 cmd_response: CmdResponse = CmdResponse()
-                cmd_response.header = header_dict
-
                 cmd_result: CmdResult = CmdResult()
                 cmd_result.status = 'success'
                 cmd_result.startTime = self.__time_service.get_current_datetime()
                 cmd_result.topicKind = CmdResultTopicKindType.CONTROL.value
+                cmd_result.resCmdId = header_dict['topicUid']
 
                 cmd_response.cmdResult = cmd_result.__dict__
 

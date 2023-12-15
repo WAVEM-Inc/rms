@@ -15,6 +15,7 @@ class CmdResult():
     status: str = ''
     startTime: str = ''
     topicKind: str = ''
+    resCmdId: str = ''
 
 
 @dataclass

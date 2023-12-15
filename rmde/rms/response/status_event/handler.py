@@ -256,6 +256,8 @@ class StatusEventHandler():
         robot_type: str = self.__common_config_parser.get(
             'header', 'robotType')
         self.__header.robotType = robot_type
+        
+        self.__header.topicUid = self.__uuid_service.generate_uuid()
 
     def __build_status_info(self) -> None:
         self.__status_info.eventId = self.__uuid_service.generate_uuid()
