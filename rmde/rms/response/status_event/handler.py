@@ -264,7 +264,7 @@ class StatusEventHandler():
 
         floor: str = '1F'
         self.__status_info.floor = floor
-
+    
     def __build_com_info(self) -> None:
         status: str = ''
         is_mqtt_connected: bool = self.__mqtt_client.is_connected
