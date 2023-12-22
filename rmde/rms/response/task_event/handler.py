@@ -17,6 +17,8 @@ from robot_status_msgs.srv import RegisterTask
 from ....mqtt.mqtt_client import Client
 
 from ...common.service import ConfigService
+from ...common.service import UUIDService
+
 from ...common.domain import Header
 
 from .domain import TaskEvent
@@ -90,7 +92,8 @@ class TaskEventResponseHandler():
             qos_profile=qos_profile_services_default,
             callback_group=self.__rclpy_register_task_service_client_cb_group
         )
-
+        self.__uuid_service: UUIDService = UUIDService()
+        
         self.__header: Header = Header()
         self.__job_result: JobResult = JobResult()
         self.__task_event_info: TaskEventInfo = TaskEventInfo()
@@ -183,6 +186,8 @@ class TaskEventResponseHandler():
         robot_type: str = self.__common_config_parser.get(
             'header', 'robotType')
         self.__header.robotType = robot_type
+        
+        self.__header.topicUid = self.__uuid_service.generate_uuid()
 
     def __response_to_rms(self) -> None:
         build_task_event: TaskEvent = self.__build_task_event()

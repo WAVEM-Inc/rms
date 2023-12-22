@@ -9,7 +9,9 @@ from rclpy.qos import qos_profile_system_default
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from ....mqtt.mqtt_client import Client
+
 from ...common.service import ConfigService
+from ...common.service import UUIDService
 
 from robot_status_msgs.msg import TaskStatus
 
@@ -59,6 +61,8 @@ class ControlEventHandler():
             callback=self.__rclpy_task_status_subscription_cb
         )
 
+        self.__uuid_service: UUIDService = UUIDService()
+        
         self.__header: Header = Header()
         self.control_result: ControlResult = ControlResult()
         self.__task_event_info: TaskEventInfo = TaskEventInfo()
@@ -107,6 +111,8 @@ class ControlEventHandler():
         robot_type: str = self.__common_config_parser.get(
             'header', 'robotType')
         self.__header.robotType = robot_type
+        
+        self.__header.topicUid = self.__uuid_service.generate_uuid()
 
     def __build_task_event_info(self) -> None:
         self.__task_event_info.jobPlanId = self.__job_plan_id

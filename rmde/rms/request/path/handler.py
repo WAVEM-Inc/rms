@@ -114,19 +114,17 @@ class PathRequestHandler():
 
                 header_dict: dict = mqtt_json['header']
                 self.__path.header = header_dict
-
+                
                 cmd_response: CmdResponse = CmdResponse()
-                cmd_response.header = header_dict
-
                 cmd_result: CmdResult = CmdResult()
                 cmd_result.status = 'success'
                 cmd_result.startTime = self.__time_service.get_current_datetime()
                 cmd_result.topicKind = CmdResultTopicKindType.PATH.value
+                cmd_result.resCmdId = header_dict['topicUid']
 
                 cmd_response.cmdResult = cmd_result.__dict__
 
-                self.__cmd_repsonse_handler.response_to_rms(
-                    cmd_response=cmd_response)
+                self.__cmd_repsonse_handler.response_to_rms(cmd_response=cmd_response)
 
                 job_info_dict: dict = mqtt_json['jobInfo']
                 self.__path.jobInfo = job_info_dict

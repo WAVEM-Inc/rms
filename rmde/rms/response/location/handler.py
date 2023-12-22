@@ -8,23 +8,20 @@ from rclpy.client import Client
 from rclpy.qos import qos_profile_system_default
 from rclpy.qos import qos_profile_sensor_data
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-from rclpy.task import Future
 
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import BatteryState
 from geometry_msgs.msg import PoseStamped
 from robot_status_msgs.msg import VelocityStatus
-from robot_status_msgs.msg import NavigationStatus
 from gps_iao_door_msgs.msg import InOutDoor
 from robot_status_msgs.msg import TaskStatus
 
 from ....mqtt.mqtt_client import Client
 
 from ...common.service import ConfigService
+from ...common.service import UUIDService
 
 from ...common.enum_types import AreaCLSFType
-from ...common.enum_types import JobGroupType
-from ...common.enum_types import JobKindType
 from ...common.enum_types import TaskStatusType
 
 from ...common.domain import Header
@@ -141,6 +138,8 @@ class LocationResponseHandler():
             callback=self.__rclpy_task_status_subscription_cb
         )
 
+        self.__uuid_service: UUIDService = UUIDService()
+        
         self.__header: Header = Header()
         self.__task_info: TaskInfo = TaskInfo()
         self.__job_info: JobInfo = JobInfo()
@@ -236,6 +235,8 @@ class LocationResponseHandler():
         robot_type: str = self.__common_config_parser.get(
             'header', 'robotType')
         self.__header.robotType = robot_type
+        
+        self.__header.topicUid = self.__uuid_service.generate_uuid()
 
     def __build_job_info(self) -> None:
         self.__job_info.taskInfo = self.__task_info.__dict__
