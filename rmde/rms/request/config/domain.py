@@ -13,6 +13,7 @@ class SetInfo():
     workCorpId: str = '',
     workSiteId: str = '',
     batteryEvent: str = ''
+    timeUpdate: str = ''
 
 
 @dataclass

@@ -38,24 +38,18 @@ class StatusEventHandler():
         self.__rclpy_node: Node = rclpy_node
         self.__mqtt_client: Client = mqtt_client
 
-        self.__script_directory: str = os.path.dirname(
-            os.path.abspath(__file__))
+        self.__script_directory: str = os.path.dirname(os.path.abspath(__file__))
         self.__mqtt_config_file_path: str = '../../../mqtt/mqtt.ini'
-        self.__mqtt_config_service: ConfigService = ConfigService(
-            self.__script_directory, self.__mqtt_config_file_path)
+        self.__mqtt_config_service: ConfigService = ConfigService(self.__script_directory, self.__mqtt_config_file_path)
         self.__mqtt_config_parser: ConfigParser = self.__mqtt_config_service.read()
 
-        self.__mqtt_status_event_publisher_topic: str = self.__mqtt_config_parser.get(
-            'topics', 'status_event')
-        self.__mqtt_status_event_publisher_qos: int = int(
-            self.__mqtt_config_parser.get('qos', 'status_event'))
+        self.__mqtt_status_event_publisher_topic: str = self.__mqtt_config_parser.get('topics', 'status_event')
+        self.__mqtt_status_event_publisher_qos: int = int(self.__mqtt_config_parser.get('qos', 'status_event'))
 
         if self.__mqtt_client.is_connected:
-            self.__rclpy_node.get_logger().info(
-                f'MQTT granted publisher\n\ttopic : {self.__mqtt_status_event_publisher_topic}\n\tqos : {self.__mqtt_status_event_publisher_qos}')
+            self.__rclpy_node.get_logger().info(f'MQTT granted publisher\n\ttopic : {self.__mqtt_status_event_publisher_topic}\n\tqos : {self.__mqtt_status_event_publisher_qos}')
         else:
-            self.__rclpy_node.get_logger().error(
-                f'MQTT failed to grant publisher\n\ttopic : {self.__mqtt_status_event_publisher_topic}\n\tqos : {self.__mqtt_status_event_publisher_qos}')
+            self.__rclpy_node.get_logger().error(f'MQTT failed to grant publisher\n\ttopic : {self.__mqtt_status_event_publisher_topic}\n\tqos : {self.__mqtt_status_event_publisher_qos}')
 
         self.__common_config_file_path: str = '../../common/config.ini'
         self.__common_config_service: ConfigService = ConfigService(
@@ -238,23 +232,19 @@ class StatusEventHandler():
         return status_event
 
     def __build_header(self) -> None:
-        robot_corp_id: str = self.__common_config_parser.get(
-            'header', 'robotCorpId')
+        robot_corp_id: str = self.__common_config_parser.get('header', 'robotCorpId')
         self.__header.robotCorpId = robot_corp_id
 
-        work_corp_id: str = self.__common_config_parser.get(
-            'header', 'workCorpId')
+        work_corp_id: str = self.__common_config_parser.get('header', 'workCorpId')
         self.__header.workCorpId = work_corp_id
 
-        work_site_id: str = self.__common_config_parser.get(
-            'header', 'workSiteId')
+        work_site_id: str = self.__common_config_parser.get('header', 'workSiteId')
         self.__header.workSiteId = work_site_id
 
         robot_id: str = self.__common_config_parser.get('header', 'robotId')
         self.__header.robotId = robot_id
 
-        robot_type: str = self.__common_config_parser.get(
-            'header', 'robotType')
+        robot_type: str = self.__common_config_parser.get('header', 'robotType')
         self.__header.robotType = robot_type
         
         self.__header.topicUid = self.__uuid_service.generate_uuid()
@@ -277,22 +267,17 @@ class StatusEventHandler():
         self.__com_info.status = status
 
         self.__com_info.robotIP = self.__network_service.get_local_ip()
-        self.__com_info.mqttIP = self.__mqtt_config_parser.get(
-            'broker', 'host')
-        self.__com_info.mqttPort = self.__mqtt_config_parser.get(
-            'broker', 'port')
+        self.__com_info.mqttIP = self.__mqtt_config_parser.get('broker', 'host')
+        self.__com_info.mqttPort = self.__mqtt_config_parser.get('broker', 'port')
 
-        battery_level: int = self.__status_info.batteryLevel
-
-        if battery_level <= 10:
-            self.__com_info.batteryEvent = str(battery_level)
-
+        battery_event: str = self.__common_config_parser.get('header', 'batteryEvent')
+        self.__com_info.batteryEvent = battery_event
+        
         self.__com_info.robotTime = self.__time_service.get_current_datetime()
 
     def response_to_rms(self) -> None:
         built_status_event: StatusEvent = self.__build_status_event()
-        self.__mqtt_client.publish(topic=self.__mqtt_status_event_publisher_topic, payload=json.dumps(
-            built_status_event.__dict__), qos=self.__mqtt_status_event_publisher_qos)
+        self.__mqtt_client.publish(topic=self.__mqtt_status_event_publisher_topic, payload=json.dumps(built_status_event.__dict__), qos=self.__mqtt_status_event_publisher_qos)
 
 
 __all__ = ['rms_response_status_event_handler']

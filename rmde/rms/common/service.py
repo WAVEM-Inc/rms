@@ -75,11 +75,9 @@ class NetworkService():
 class RobotTypeService():
 
     def __init__(self, rclpy_node: Node) -> None:
-        self.__script_directory: str = os.path.dirname(
-            os.path.abspath(__file__))
+        self.__script_directory: str = os.path.dirname(os.path.abspath(__file__))
         self.__common_config_file_path: str = '../common/config.ini'
-        self.__common_config_service: ConfigService = ConfigService(
-            self.__script_directory, self.__common_config_file_path)
+        self.__common_config_service: ConfigService = ConfigService(self.__script_directory, self.__common_config_file_path)
         self.__common_config_parser: ConfigParser = self.__common_config_service.read()
 
         self.__rclpy_node: Node = rclpy_node
@@ -93,8 +91,7 @@ class RobotTypeService():
         )
 
     def __rclpy_robot_type_select_service_request(self, check: bool, type: int) -> Any:
-        is___rclpy_robot_type_select_service_client_ready: bool = self.__rclpy_robot_type_select_service_client.wait_for_service(
-            timeout_sec=1.0)
+        is___rclpy_robot_type_select_service_client_ready: bool = self.__rclpy_robot_type_select_service_client.wait_for_service(timeout_sec=1.0)
         __rclpy_robot_type_select_request_msgs: Type.Request = Type.Request()
 
         if not is___rclpy_robot_type_select_service_client_ready:
@@ -102,8 +99,7 @@ class RobotTypeService():
         else:
             __rclpy_robot_type_select_request_msgs.check = check
             __rclpy_robot_type_select_request_msgs.type = type
-            __rclpy_robot_type_select_service_call_future: Future = self.__rclpy_robot_type_select_service_client.call_async(
-                __rclpy_robot_type_select_request_msgs)
+            __rclpy_robot_type_select_service_call_future: Future = self.__rclpy_robot_type_select_service_client.call_async(__rclpy_robot_type_select_request_msgs)
             __is_rclpy_robot_type_select_service_call_future_done: bool = __rclpy_robot_type_select_service_call_future.done()
             __rclpy_robot_type_select_service_call_future_result: Any = __rclpy_robot_type_select_service_call_future.result()
 
@@ -111,10 +107,8 @@ class RobotTypeService():
 
     def select_current_robot_type(self) -> None:
         __robotType: str = ''
-        __rclpy_robot_type_select_response: Any = self.__rclpy_robot_type_select_service_request(
-            False, 0)
-        __is_rclpy_robot_type_select_response_none: bool = (
-            __rclpy_robot_type_select_response == None)
+        __rclpy_robot_type_select_response: Any = self.__rclpy_robot_type_select_service_request(False, 0)
+        __is_rclpy_robot_type_select_response_none: bool = (__rclpy_robot_type_select_response == None)
 
         if __is_rclpy_robot_type_select_response_none:
             return
