@@ -142,8 +142,7 @@ class TaskEventResponseHandler():
         rclpy_register_task_request.job_group_id = ''
         rclpy_register_task_request.job_order_id = ''
 
-        rclpy_register_task_request_future: Future = self.__rclpy_register_task_service_client.call_async(
-            rclpy_register_task_request)
+        rclpy_register_task_request_future: Future = self.__rclpy_register_task_service_client.call_async(rclpy_register_task_request)
 
         return rclpy_register_task_request_future.result()
 

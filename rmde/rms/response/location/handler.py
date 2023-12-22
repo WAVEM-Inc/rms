@@ -145,6 +145,8 @@ class LocationResponseHandler():
         self.__job_plan_id: str = ''
         self.__job_group_id: str = ''
         self.__job_order_id: str = ''
+        
+        self.__task_info.taskStatus = TaskStatusType.UNASSIGNED.value
 
     def __rclpy_slam_to_gps_subscription_cb(self, slam_to_gps_cb: NavSatFix) -> None:
         self.__last_info_location.xpos = slam_to_gps_cb.longitude
@@ -190,7 +192,7 @@ class LocationResponseHandler():
             self.__task_info.taskStatus = TaskStatusType.ASSIGNED.value
         else:
             self.__task_info.taskStatus = TaskStatusType.UNASSIGNED.value
-
+            
         self.__job_info.jobPlanId = task_status_cb.job_plan_id
         self.__job_info.jobGroupId = task_status_cb.job_group_id
         self.__job_info.jobOrderId = task_status_cb.job_order_id
