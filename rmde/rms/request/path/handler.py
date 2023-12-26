@@ -93,6 +93,8 @@ class PathRequestHandler():
         self.__jobInfo: JobInfo = JobInfo()
         self.__jobPath: JobPath = JobPath()
         self.__cmd_repsonse_handler: CmdRepsonseHandler = CmdRepsonseHandler(rclpy_node=self.__rclpy_node, mqtt_client=self.__mqtt_client)
+        
+        self.__job_start_time: str = ''
 
     def request_to_uvc(self) -> None:
         def __mqtt_path_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
@@ -145,6 +147,7 @@ class PathRequestHandler():
                 self.__jobInfo.jobKind = job_kind
                 job_uuid.jobKind = job_kind
 
+                self.__job_start_time = self.__time_service.get_current_datetime()
                 rclpy_request_register_uuid_service_result: Any = self.__rclpy_register_task_service_request(job_uuid)
                 self.__rclpy_node.get_logger().info(f'PathRequestHandler request_register_uuid_result : {rclpy_request_register_uuid_service_result}')
 
@@ -189,6 +192,7 @@ class PathRequestHandler():
 
         rclpy_register_task_request: RegisterTask.Request = RegisterTask.Request()
         rclpy_register_task_request.register_key = UUID_REGISTER_KEY
+        rclpy_register_task_request.job_start_time = self.__job_start_time
         rclpy_register_task_request.job_group = job_uuid.jobGroup
         rclpy_register_task_request.job_kind = job_uuid.jobKind
         rclpy_register_task_request.job_plan_id = job_uuid.jobPlanId

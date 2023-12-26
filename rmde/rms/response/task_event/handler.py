@@ -91,6 +91,7 @@ class TaskEventResponseHandler():
         self.__job_result: JobResult = JobResult()
         self.__task_event_info: TaskEventInfo = TaskEventInfo()
 
+        self.__job_start_time: str = ''
         self.__job_group: str = ''
         self.__job_kind: str = ''
         self.__job_plan_id: str = ''
@@ -112,7 +113,7 @@ class TaskEventResponseHandler():
             self.__task_event_info.jobGroup = self.__job_group
             self.__task_event_info.jobKind = self.__job_kind
             self.__job_result.status = navigation_status.status
-            self.__job_result.startTime = navigation_status.start_time
+            self.__job_result.startTime = self.__job_start_time
             self.__job_result.endTime = navigation_status.end_time
             self.__job_result.startBatteryLevel = navigation_status.start_battery_level
             self.__job_result.endBatteryLevel = navigation_status.end_battery_level
@@ -125,6 +126,7 @@ class TaskEventResponseHandler():
             return
 
     def __rclpy_task_status_subscription_cb(self, task_status_cb: TaskStatus) -> None:
+        self.__job_start_time = task_status_cb.job_start_time
         self.__job_group = task_status_cb.job_group
         self.__job_kind = task_status_cb.job_kind
         self.__job_plan_id = task_status_cb.job_plan_id
@@ -136,6 +138,7 @@ class TaskEventResponseHandler():
 
         rclpy_register_task_request: RegisterTask.Request = RegisterTask.Request()
         rclpy_register_task_request.register_key = TASK_STATUS_REGISTER_KEY
+        rclpy_register_task_request.job_start_time = ''
         rclpy_register_task_request.job_group = ''
         rclpy_register_task_request.job_kind = ''
         rclpy_register_task_request.job_plan_id = ''
