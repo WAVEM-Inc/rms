@@ -26,7 +26,6 @@ class StatusEventCdType(Enum):
 
 @dataclass
 class StatusInfo():
-    eventId: str = ''
     eventCd: str = ''
     eventSubCd: str = ''
     areaClsf: str = ''

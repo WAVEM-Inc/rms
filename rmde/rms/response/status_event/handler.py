@@ -250,7 +250,6 @@ class StatusEventHandler():
         self.__header.topicUid = self.__uuid_service.generate_uuid()
 
     def __build_status_info(self) -> None:
-        self.__status_info.eventId = self.__uuid_service.generate_uuid()
         self.__status_info.location = self.__status_info_location.__dict__
         self.__status_info.subLocation = self.__status_info_sub_location.__dict__
 
