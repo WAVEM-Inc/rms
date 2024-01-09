@@ -2,7 +2,9 @@ import os
 import json
 
 from configparser import ConfigParser
+
 from rclpy.node import Node
+from rclpy.timer import Timer
 from rclpy.subscription import Subscription
 from rclpy.qos import qos_profile_sensor_data
 from rclpy.qos import qos_profile_system_default
@@ -145,6 +147,16 @@ class StatusEventHandler():
             qos_profile=qos_profile_sensor_data,
             callback_group=self.__rclpy_rtt_odom_subscription_cb_group
         )
+        
+        __rclpy_status_event_timer_period_sec: float = 1.0
+        __rclpy_status_event_timer_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup()
+        __rclpy_status_event_timer: Timer = self.__rclpy_node.create_timer(
+            timer_period_sec = __rclpy_status_event_timer_period_sec,
+            callback_group = __rclpy_status_event_timer_cb_group,
+            callback = self.__response_to_rms
+        )
+        
+        self.__is_status_event_occurred: bool = False
 
         self.__network_service: NetworkService = NetworkService()
         self.__time_service: TimeService = TimeService()
@@ -171,36 +183,44 @@ class StatusEventHandler():
         status_code: int = imu_status_cb.status_code
 
         if (status_code == -1000):
+            self.__is_status_event_occurred = True
             self.__status_info.eventCd = StatusEventCdType.BROKEN.value
             self.__status_info.eventSubCd = 'IMU'
         else:
+            self.__is_status_event_occurred = False
             return
 
     def __rclpy_scan_status_subscription_cb(self, scan_status_cb: SensorStatus) -> None:
         status_code: int = scan_status_cb.status_code
 
         if (status_code == -1001):
+            self.__is_status_event_occurred = True
             self.__status_info.eventCd = StatusEventCdType.BROKEN.value
             self.__status_info.eventSubCd = 'LiDAR'
         else:
+            self.__is_status_event_occurred = False
             return
 
     def __rclpy_ublox_fix_status_subscription_cb(self, gps_status_cb: SensorStatus) -> None:
         status_code: int = gps_status_cb.status_code
 
         if (status_code == -1002):
+            self.__is_status_event_occurred = True
             self.__status_info.eventCd = StatusEventCdType.BROKEN.value
             self.__status_info.eventSubCd = 'GPS'
         else:
+            self.__is_status_event_occurred = False
             return
 
     def __rclpy_battery_state_status_subscription_cb(self, battery_state_status: SensorStatus) -> None:
         status_code: int = battery_state_status.status_code
 
         if (status_code == -1003):
+            self.__is_status_event_occurred = True
             self.__status_info.eventCd = StatusEventCdType.BROKEN.value
             self.__status_info.eventSubCd = 'BATTERY'
         else:
+            self.__is_status_event_occurred = False
             return
 
     def __rclpy_slam_to_gps_subscription_cb(self, slam_to_gps_cb: NavSatFix) -> None:
@@ -274,9 +294,13 @@ class StatusEventHandler():
         
         self.__com_info.robotTime = self.__time_service.get_current_datetime()
 
-    def response_to_rms(self) -> None:
+    def __response_to_rms(self) -> None:
         built_status_event: StatusEvent = self.__build_status_event()
-        self.__mqtt_client.publish(topic=self.__mqtt_status_event_publisher_topic, payload=json.dumps(built_status_event.__dict__), qos=self.__mqtt_status_event_publisher_qos)
+        
+        if self.__is_status_event_occurred == True:
+            self.__mqtt_client.publish(topic=self.__mqtt_status_event_publisher_topic, payload=json.dumps(built_status_event.__dict__), qos=self.__mqtt_status_event_publisher_qos)
+        else:
+            return
 
 
 __all__ = ['rms_response_status_event_handler']

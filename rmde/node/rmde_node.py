@@ -89,7 +89,6 @@ class RMDENode(Node):
     def __from_uvc_to_rms(self) -> None:
         if (self.mqtt_client.is_connected):
             self.__location_response_handler.response_to_rms()
-            self.__status_event_repsonse_handler.response_to_rms()
             self.__robot_type_service.select_current_robot_type()
         else:
             return
