@@ -8,7 +8,7 @@ class Client:
         
         __broker_address: str = "localhost";
         __broker_port: int = 1883;
-        __client_name: str = "slqhgiqhlkjsadnguqwhjkasgnasljg";
+        __client_name: str = "";
         __client_keep_alive: int = 60;
         
         self.client: mqtt.Client = mqtt.Client(client_id=__client_name, clean_session=True, userdata=None, transport="tcp");
