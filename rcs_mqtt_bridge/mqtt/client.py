@@ -7,7 +7,7 @@ class Client:
         self.__rclpy_node: Node = rclpy_node;
         
         __broker_address: str = "localhost";
-        __broker_port: int = 1883;
+        __broker_port: int = 1884;
         __client_name: str = "";
         __client_keep_alive: int = 60;
         
@@ -18,8 +18,8 @@ class Client:
         self.client.connect(host=__broker_address, port=__broker_port, keepalive=__client_keep_alive)
 
         if self.client.is_connected:
-            self.__rclpy_node.get_logger().info("===== MQTT connected =====")
-            self.client.loop_start()
+            self.client.loop_start();
+            self.__rclpy_node.get_logger().info("===== MQTT connected =====");
         else:
             self.__rclpy_node.get_logger().error("===== MQTT failed to connect =====")
         
