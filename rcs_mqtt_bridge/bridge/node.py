@@ -27,20 +27,20 @@ class RcsMQTTBridge(Node):
     def __ros_message_init_sub(self) -> None:       
         def __ros_message_init_sub_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
             try:
-                mqtt_topic: str = mqtt_message.topic
-                mqtt_decoded_payload: str = mqtt_message.payload.decode()
-                mqtt_json: Any = json.loads(mqtt_message.payload)
+                mqtt_topic: str = mqtt_message.topic;
+                mqtt_decoded_payload: str = mqtt_message.payload.decode();
+                mqtt_json: Any = json.loads(mqtt_message.payload);
                 
                 self.get_logger().info(f'[{mqtt_topic}] subscription cb json [{mqtt_decoded_payload}]');
                 
             except KeyError as ke:
-                self.get_logger().error(f'Invalid JSON Key in MQTT [{mqtt_topic}] subscription callback: {ke}')
+                self.get_logger().error(f'Invalid JSON Key in MQTT [{mqtt_topic}] subscription callback: {ke}');
 
             except json.JSONDecodeError as jde:
-                self.get_logger().error(f'Invalid JSON format in MQTT [{mqtt_topic}] subscription callback: {jde.msg}')
+                self.get_logger().error(f'Invalid JSON format in MQTT [{mqtt_topic}] subscription callback: {jde.msg}');
 
             except Exception as e:
-                self.get_logger().error(f'Exception in MQTT [{mqtt_topic}] subscription callback: {e}')
+                self.get_logger().error(f'Exception in MQTT [{mqtt_topic}] subscription callback: {e}');
                 raise
             
         self.__mqtt_client.subscribe(topic=self.__ros_message_init_topic);
