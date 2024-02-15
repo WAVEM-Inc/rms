@@ -1,0 +1,6 @@
+string create_time
+string control_id
+string control_type
+string control_code
+int16 response_code
+ktp_data_msgs/ControlReportData data

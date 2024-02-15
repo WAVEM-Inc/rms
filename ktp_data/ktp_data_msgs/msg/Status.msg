@@ -1,0 +1,17 @@
+string map_id
+float64 battery
+int16 drive_status
+string create_time
+float64 speed
+string from_node
+string floor
+string section
+string to_node
+bool charge
+float64 x
+float64 y
+float64 heading
+bool is_indoor
+string coord_code
+ktp_data_msgs/StatusService service
+string firmware_version

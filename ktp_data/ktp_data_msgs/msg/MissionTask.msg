@@ -1,0 +1,4 @@
+string task_id
+string task_code
+int16 seq
+ktp_data_msgs/MissionTaskData task_data
