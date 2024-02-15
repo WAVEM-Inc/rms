@@ -4,10 +4,15 @@ import paho.mqtt.client as mqtt
 
 from rclpy.node import Node
 from rclpy.publisher import Publisher
+from rclpy.client import Client
+from rclpy.task import Future
+from rclpy.action import ActionClient
 from rclpy.qos import qos_profile_system_default
 from rclpy.qos import qos_profile_services_default
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rosbridge_library.internal import message_conversion
+from rosbridge_library.internal.ros_loader import get_service_class
+# from rosbridge_library.internal.ros_loader import get_action_class
 
 from typing import Any
 from typing import Dict
@@ -51,7 +56,7 @@ class RcsMQTTBridge(Node):
                     elif ros_connection_type == "pub":
                         self.__create_rcl_publisher(topic=ros_connection_name, message_type=ros_connection_message_type);
                     elif ros_connection_type == "call":
-                        pass;
+                        self.__create_rcl_service_client(service_name=ros_connection_name, service_type=ros_connection_message_type);
                     elif ros_connection_type == "goal":
                         pass;
                 
@@ -68,7 +73,7 @@ class RcsMQTTBridge(Node):
         self.__mqtt_client.subscribe(topic=self.__ros_message_init_topic);
         self.__mqtt_client.client.message_callback_add(sub=self.__ros_message_init_topic, callback=__ros_message_init_sub_cb);
     
-    def __extract_ros_messages(self, message_type: str) -> None:
+    def __extract_ros_message_class(self, message_type: str) -> None:
         message_type_split: list[str] = message_type.split("/", 3);
         message_package_module_name: str = f'{message_type_split[0]}.{message_type_split[1]}';
         message_class_name: str = f'{message_type_split[2]}';
@@ -101,7 +106,7 @@ class RcsMQTTBridge(Node):
              self.__mqtt_client.publish(topic=mqtt_topic_name, payload=mqtt_serialized_message);
 
         self.create_subscription(
-            msg_type=self.__extract_ros_messages(message_type),
+            msg_type=self.__extract_ros_message_class(message_type),
             topic=topic,
             qos_profile=qos_profile_system_default,
             callback_group=MutuallyExclusiveCallbackGroup(),
@@ -110,7 +115,7 @@ class RcsMQTTBridge(Node):
     
     def __create_rcl_publisher(self, topic: str, message_type: str) -> None:
         rcl_publisher: Publisher = self.create_publisher(
-            msg_type=self.__extract_ros_messages(message_type),
+            msg_type=self.__extract_ros_message_class(message_type),
             topic=topic,
             qos_profile=qos_profile_system_default,
             callback_group=MutuallyExclusiveCallbackGroup()
@@ -118,7 +123,7 @@ class RcsMQTTBridge(Node):
 
         self.get_logger().info(f'create_rcl_publisher topic : [{topic}], message_type : [{message_type}]');
 
-        def __publisher_mqtt_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage):
+        def __publisher_mqtt_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
             try:
                 mqtt_topic: str = mqtt_message.topic;
                 mqtt_decoded_payload: str = mqtt_message.payload.decode();
@@ -130,19 +135,135 @@ class RcsMQTTBridge(Node):
                 ros_message_obj: Any = self.__lookup_ros_messages(f"{ros_message_type_split[0]}.{ros_message_type_split[1]}", f"{ros_message_type_split[2]}");
                 ros_message_class: Any = message_conversion.populate_instance(mqtt_json["data"], ros_message_obj());
                 
-                if mqtt_json["mode"]:
+                if mqtt_json["mode"] == "pub":
                     rcl_publisher.publish(ros_message_class);
                 else:
                     pass;
             except KeyError as ke:
-                self.get_logger().error(f'Invalid JSON Key in MQTT {mqtt_topic} subscription callback: {ke}')
-
+                self.get_logger().error(f'Invalid JSON Key in MQTT {mqtt_topic} subscription callback: {ke}');
+                return;
             except json.JSONDecodeError as jde:
-                self.get_logger().error(f'Invalid JSON format in MQTT {mqtt_topic} subscription callback: {jde.msg}')
-
+                self.get_logger().error(f'Invalid JSON format in MQTT {mqtt_topic} subscription callback: {jde.msg}');
+                return;
             except Exception as e:
-                self.get_logger().error(f'Exception in MQTT {mqtt_topic} subscription callback: {e}')
-                raise;
+                self.get_logger().error(f'Exception in MQTT {mqtt_topic} subscription callback: {e}');
+                return;
 
         self.__mqtt_client.subscribe(topic=topic);
         self.__mqtt_client.client.message_callback_add(sub=topic, callback=__publisher_mqtt_subscription_cb);
+
+    def __create_rcl_service_client(self, service_name: str, service_type: str) -> None:
+        rcl_client: Client = self.create_client(
+            srv_type=self.__extract_ros_message_class(service_type),
+            srv_name=service_name,
+            qos_profile=qos_profile_services_default,
+            callback_group=MutuallyExclusiveCallbackGroup()
+        );
+
+        self.get_logger().info(f"cretae_rcl_service_client name : [{service_name}], service_type : [{service_type}]");
+
+        def __service_client_mqtt_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
+            try:
+                mqtt_topic: str = mqtt_message.topic;
+                mqtt_decoded_payload: str = mqtt_message.payload.decode();
+                mqtt_json: Any = json.loads(mqtt_message.payload);
+
+                self.get_logger().info(f"[{mqtt_topic}] service_client mqtt_cb json [{mqtt_decoded_payload}]");
+
+                ros_message_type_split: list[str] = service_type.split("/", 3);
+                ros_message_obj: Any = self.__lookup_ros_messages(f"{ros_message_type_split[0]}.{ros_message_type_split[1]}", f"{ros_message_type_split[2]}");
+
+                ros_service_class: Any = get_service_class(typestring=service_type);
+                ros_message_class: Any = message_conversion.populate_instance(mqtt_json["data"], ros_service_class.Request());
+
+                self.get_logger().info(f"request service message : [{ros_message_class}]");
+                
+                if mqtt_json["mode"] == "call":
+                    is_rcl_service_ready: bool = rcl_client.wait_for_service(timeout_sec=1.0);
+                    self.get_logger().info(f"is service server ready : [{is_rcl_service_ready}]");
+
+                    if not is_rcl_service_ready:
+                        self.get_logger().error(f"service server is not ready...aborting");
+                        return;
+                    else:
+                        request_future: Future = rcl_client.call_async(ros_service_class);
+                        self.get_logger().info(f"request_future : [{request_future}]");
+
+                        request_future_done: bool = request_future.done();
+                        self.get_logger().info(f"request_future_done : [{request_future_done}]");
+
+                        if request_future_done:
+                            request_future_result: Any = request_future_done.result();
+                            self.get_logger().info(f"request_future_result : [{request_future_result}]");
+
+                            request_future_result_json: Any = json.dumps(message_conversion.extract_values(request_future_result));
+                            mqtt_response_topic: str = f"{service_name}/response";
+                            self.__mqtt_client.publish(topic=mqtt_response_topic, payload=request_future_result_json);
+                else:
+                    pass;
+            except KeyError as ke:
+                self.get_logger().error(f'Invalid JSON Key in MQTT {mqtt_topic} subscription callback: {ke}');
+                return;
+            except json.JSONDecodeError as jde:
+                self.get_logger().error(f'Invalid JSON format in MQTT {mqtt_topic} subscription callback: {jde.msg}');
+                return;
+            except Exception as e:
+                self.get_logger().error(f'Exception in MQTT {mqtt_topic} subscription callback: {e}');
+                return;
+        
+        mqtt_request_topic: str = f"{service_name}/request";
+        self.__mqtt_client.subscribe(topic=mqtt_request_topic);
+        self.__mqtt_client.client.message_callback_add(sub=mqtt_request_topic, callback=__service_client_mqtt_subscription_cb);
+    
+    def __create_action_client(self, action_name: str, action_type: str) -> None:
+        rcl_action_client: ActionClient = ActionClient(self, self.__extract_ros_message_class(action_type), action_name);
+
+        def __action_client_mqtt_subscription_cb(mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
+            try:
+                mqtt_topic: str = mqtt_message.topic;
+                mqtt_decoded_payload: str = mqtt_message.payload.decode();
+                mqtt_json: Any = json.loads(mqtt_message.payload);
+                
+                self.get_logger().info(f"[{mqtt_topic}] action_client mqtt_cb json [{mqtt_decoded_payload}]");
+
+                ros_message_type_split: list[str] = action_type.split("/", 3);
+                ros_message_obj: Any = self.__lookup_ros_messages(f"{ros_message_type_split[0]}.{ros_message_type_split[1]}", f"{ros_message_type_split[2]}");
+
+                ros_action_class: Any = get_action_class(typestring=action_type);
+                ros_message_class: Any = message_conversion.populate_instance(mqtt_json["data"], ros_action_class.Goal());
+
+                self.get_logger().info(f"send action goal message data : [{ros_message_class}]");
+
+                if mqtt_json["mode"] == "goal":
+                    is_rcl_action_server_ready: bool = rcl_action_client.wait_for_server(timeout_sec=1.0);
+                    self.get_logger().info(f"is action server ready : [{is_rcl_action_server_ready}]");
+
+                    if not is_rcl_action_server_ready:
+                        self.get_logger().error(f"action server is not ready...aborting");
+                        return;
+                    else:
+                        send_goal_future: Future = rcl_action_client.send_goal_async(ros_message_class);
+                        self.get_logger().info(f"send_goal_future : [{send_goal_future}]");
+
+                        send_goal_future_done: Any = send_goal_future.done();
+                        self.get_logger().info(f"send_goal_future_done : [{send_goal_future_done}]");
+
+                        if send_goal_future_done:
+                            send_goal_future_result: Any = send_goal_future_done.result();
+                            self.get_logger().info(f"send_goal_future_result : [{send_goal_future_result}]");
+
+                            send_goal_future_result_json: Any = json.dumps(message_conversion.extract_values(send_goal_future_result));
+                            mqtt_response_topic: str = f"{action_name}/response";
+                            self.__mqtt_client.publish(topic=mqtt_response_topic, payload=send_goal_future_result_json);
+            except KeyError as ke:
+                self.get_logger().error(f'Invalid JSON Key in MQTT {mqtt_topic} subscription callback: {ke}');
+                return;
+            except json.JSONDecodeError as jde:
+                self.get_logger().error(f'Invalid JSON format in MQTT {mqtt_topic} subscription callback: {jde.msg}');
+                return;
+            except Exception as e:
+                self.get_logger().error(f'Exception in MQTT {mqtt_topic} subscription callback: {e}');
+                return;
+
+
+__all__ = ["rcs_mqtt_bridge.bridge.node"];
