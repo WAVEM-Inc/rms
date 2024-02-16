@@ -1,7 +1,10 @@
-#ifndef KTP_DATA_MANAGER__HXX
-#define KTP_DATA_MANAGER__HXX
+#ifndef BROADCASTER__HXX
+#define BROADCASTER__HXX
+
+#include "builder/builder.hxx"
 
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/executors.hpp>
 #include <rcutils/logging_macros.h>
 
 #include <ktp_data_msgs/msg/status.hpp>
@@ -31,6 +34,8 @@
 #include <ktp_data_msgs/msg/graph_zone_list.hpp>
 #include <ktp_data_msgs/msg/graph_zone_vertices.hpp>
 
+#include <sensor_msgs/msg/battery_state.hpp>
+
 #define NODE_NAME "ktp_data_manager"
 #define DEFAULT_QOS 10
 
@@ -49,14 +54,16 @@ namespace ktp
 {
     namespace data
     {
-        class Manager : public rclcpp::Node
+        class BroadCaster final : public rclcpp::Node
         {
         private:
             rclcpp::Node::SharedPtr node_;
-
+            
+            std::shared_ptr<ktp::data::Builder> builder_;
+            
             rclcpp::CallbackGroup::SharedPtr rbt_status_publisher_timer_cb_group_;
             rclcpp::TimerBase::SharedPtr rbt_status_publisher_timer_;
-
+            
             rclcpp::CallbackGroup::SharedPtr rbt_status_publisher_cb_group_;
             rclcpp::Publisher<ktp_data_msgs::msg::Status>::SharedPtr rbt_status_publisher_;
 
@@ -80,8 +87,8 @@ namespace ktp
 
             void rbt_status_publisher_timer_cb();
         public:
-            explicit Manager();
-            virtual ~Manager();
+            explicit BroadCaster();
+            virtual ~BroadCaster();
         };
     }
 }

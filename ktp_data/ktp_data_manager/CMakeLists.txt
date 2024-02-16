@@ -13,9 +13,12 @@ include_directories(
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(ktp_data_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 set(SOURCES
-  src/ktp_data_manager/ktp_data_manager.cxx
+  src/broadcaster/broadcaster.cxx
+  src/builder/builder.cxx
   src/main.cxx
 )
 
@@ -30,6 +33,8 @@ add_executable(${EXEC_NAME}
 set(DEPENDS
   rclcpp
   ktp_data_msgs
+  sensor_msgs
+  geometry_msgs
 )
 
 ament_target_dependencies(${EXEC_NAME}
