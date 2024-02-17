@@ -65,17 +65,38 @@ ktp_data_msgs::msg::Status ktp::data::Builder::build_rbt_status()
 {
     ktp_data_msgs::msg::Status::UniquePtr rbt_status = std::make_unique<ktp_data_msgs::msg::Status>();
 
-    double battery = 0.0;
+    const char *map_id = "";
+    rbt_status->set__map_id(map_id);
 
+    double battery = 0.0;
     if (this->battery_state_cb_ != nullptr)
     {
         battery = this->battery_state_cb_->percentage;
+
+        if (battery < 0 || battery > 100)
+        {
+            RCLCPP_ERROR(this->node_->get_logger(), "Builder RbtStatus battery is lower than 0 or over than 100...");
+            return;
+        }
+        else
+        {
+            rbt_status->set__battery(battery);
+        }
     }
-    rbt_status->set__battery(battery);
+    else
+    {
+        RCLCPP_ERROR(this->node_->get_logger(), "Builder RbtStatus battery_ptr is nullptr...");
+        battery = 0.0;
+        rbt_status->set__battery(battery);
+    }
+
+    rbt_status->set__drive_status(ktp::enums::DriveStatus::DRIVING_NORMALLY);
+
+    const std::string &create_time = this->get_current_time();
+    rbt_status->set__create_time(create_time);
 
     double longitude = 0.0;
     double latitude = 0.0;
-
     if (this->gps_cb_ != nullptr)
     {
         longitude = this->gps_cb_->longitude;
@@ -85,15 +106,11 @@ ktp_data_msgs::msg::Status ktp::data::Builder::build_rbt_status()
     rbt_status->set__y(latitude);
 
     double heading = 0.0;
-
     if (this->rtt_odom_cb_ != nullptr)
     {
         heading = this->rtt_odom_cb_->pose.orientation.y;
     }
     rbt_status->set__heading(heading);
-
-    const std::string &create_time = this->get_current_time();
-    rbt_status->set__create_time(create_time);
 
     RCLCPP_INFO(
         this->node_->get_logger(),
@@ -107,4 +124,9 @@ ktp_data_msgs::msg::Status ktp::data::Builder::build_rbt_status()
     const ktp_data_msgs::msg::Status &&rbt_status_moved = std::move(*rbt_status);
 
     return rbt_status_moved;
+}
+
+ktp_data_msgs::msg::ServiceStatus ktp::data::Builder::build_rbt_service_status()
+{
+
 }

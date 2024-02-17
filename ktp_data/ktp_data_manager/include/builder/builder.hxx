@@ -39,6 +39,8 @@
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 
+#include "model/model_enums.hxx"
+
 #define DEFAULT_QOS 10
 
 #define BATTERY_STATE_TOPIC "/battery/state"
@@ -78,6 +80,7 @@ namespace ktp
             explicit Builder(rclcpp::Node::SharedPtr node);
             virtual ~Builder();
             ktp_data_msgs::msg::Status build_rbt_status();
+            ktp_data_msgs::msg::ServiceStatus build_rbt_service_status();
         };
     }
 }
