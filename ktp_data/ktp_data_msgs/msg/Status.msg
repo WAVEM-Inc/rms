@@ -13,5 +13,6 @@ float64 y
 float64 heading
 bool is_indoor
 string coord_code
+string service_mode
 ktp_data_msgs/StatusService service
 string firmware_version

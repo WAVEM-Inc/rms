@@ -17,8 +17,16 @@ find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 
 set(SOURCES
+  src/utils/utils.cxx
   src/broadcaster/broadcaster.cxx
   src/builder/builder.cxx
+  src/builder/control/control_builder.cxx
+  src/builder/control_report/control_report_builder.cxx
+  src/builder/error_report/error_report_builder.cxx
+  src/builder/graph_list/graph_list_builder.cxx
+  src/builder/mission/mission_builder.cxx
+  src/builder/robot_status/robot_status_builder.cxx
+  src/builder/service_status/service_status_builder.cxx
   src/main.cxx
 )
 

@@ -59,7 +59,7 @@ namespace ktp
         private:
             rclcpp::Node::SharedPtr node_;
             
-            std::shared_ptr<ktp::data::Builder> builder_;
+            std::shared_ptr<ktp::build::MainBuilder> builder_;
             
             rclcpp::CallbackGroup::SharedPtr rbt_status_publisher_timer_cb_group_;
             rclcpp::TimerBase::SharedPtr rbt_status_publisher_timer_;
@@ -89,6 +89,8 @@ namespace ktp
         public:
             explicit BroadCaster();
             virtual ~BroadCaster();
+        public:
+            using SharedPtr = std::shared_ptr<BroadCaster>;
         };
     }
 }

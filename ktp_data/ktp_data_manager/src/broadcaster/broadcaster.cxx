@@ -8,7 +8,7 @@ ktp::data::BroadCaster::BroadCaster()
     if (this->node_ != nullptr)
     {
         RCLCPP_INFO(this->node_->get_logger(), "[%s] node has been created", NODE_NAME);
-        this->builder_ = std::make_shared<ktp::data::Builder>(this->node_);
+        this->builder_ = std::make_shared<ktp::build::MainBuilder>(this->node_);
     }
     else
     {

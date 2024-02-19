@@ -1,11 +1,6 @@
 #ifndef BUILDER__HXX
 #define BUILDER__HXX
 
-#include <iostream>
-#include <chrono>
-#include <sstream>
-#include <iomanip>
-
 #include <rclcpp/rclcpp.hpp>
 
 #include <ktp_data_msgs/msg/status.hpp>
@@ -41,6 +36,14 @@
 
 #include "model/model_enums.hxx"
 
+#include "builder/control/control_builder.hxx"
+#include "builder/control_report/control_report_builder.hxx"
+#include "builder/error_report/error_report_builder.hxx"
+#include "builder/graph_list/graph_list_builder.hxx"
+#include "builder/mission/mission_builder.hxx"
+#include "builder/robot_status/robot_status_builder.hxx"
+#include "builder/service_status/service_status_builder.hxx"
+
 #define DEFAULT_QOS 10
 
 #define BATTERY_STATE_TOPIC "/battery/state"
@@ -53,34 +56,21 @@ using std::placeholders::_2;
 
 namespace ktp
 {
-    namespace data
+    namespace build
     {
-        class Builder final
+        class MainBuilder final
         {
         private:
             rclcpp::Node::SharedPtr node_;
-            sensor_msgs::msg::BatteryState::SharedPtr battery_state_cb_;
-            sensor_msgs::msg::NavSatFix::SharedPtr gps_cb_;
-            geometry_msgs::msg::PoseStamped::SharedPtr rtt_odom_cb_;
-
-            rclcpp::CallbackGroup::SharedPtr battery_state_subscription_cb_group_;
-            rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_state_subscription_;
-            void battery_state_subscription_cb(const sensor_msgs::msg::BatteryState::SharedPtr battery_state_cb);
-
-            rclcpp::CallbackGroup::SharedPtr gps_subscription_cb_group_;
-            rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gps_subscription_;
-            void gps_subscription_cb(const sensor_msgs::msg::NavSatFix::SharedPtr gps_fix_cb);
-
-            rclcpp::CallbackGroup::SharedPtr rtt_odom_subscription_cb_group_;
-            rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr rtt_odom_subscription_;
-            void rtt_odom_subscription_cb(const geometry_msgs::msg::PoseStamped::SharedPtr rtt_odom_cb);
-
-            std::string get_current_time();
+            ktp::build::RobotStatusBuilder::SharedPtr robot_status_builder_;
+            std::shared_ptr<ktp::build::ControlBuilder> control_builder_;
         public:
-            explicit Builder(rclcpp::Node::SharedPtr node);
-            virtual ~Builder();
+            explicit MainBuilder(rclcpp::Node::SharedPtr node);
+            virtual ~MainBuilder();
             ktp_data_msgs::msg::Status build_rbt_status();
             ktp_data_msgs::msg::ServiceStatus build_rbt_service_status();
+        public:
+            using SharedPtr = std::shared_ptr<MainBuilder>;
         };
     }
 }
