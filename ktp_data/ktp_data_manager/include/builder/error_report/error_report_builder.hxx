@@ -5,6 +5,7 @@
 #include <ktp_data_msgs/msg/error_report.hpp>
 
 #include "model/model_enums.hxx"
+#include "utils/utils.hxx"
 
 #define DEFAULT_QOS 10
 
@@ -22,6 +23,9 @@ namespace ktp
         public:
             explicit ErrorReportBuilder(rclcpp::Node::SharedPtr node);
             virtual ~ErrorReportBuilder();
+            ktp_data_msgs::msg::ErrorReport build_error_report();
+        public:
+            using SharedPtr = std::shared_ptr<ErrorReportBuilder>;
         };
     }
 }

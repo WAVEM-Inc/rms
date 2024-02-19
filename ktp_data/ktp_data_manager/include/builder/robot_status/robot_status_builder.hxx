@@ -53,7 +53,7 @@ namespace ktp
             rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr rtt_odom_subscription_;
             void rtt_odom_subscription_cb(const geometry_msgs::msg::PoseStamped::SharedPtr rtt_odom_cb);
 
-            ktp_data_msgs::msg::StatusService build_rbt_status_service();
+            ktp_data_msgs::msg::StatusService build_service();
         public:
             explicit RobotStatusBuilder(rclcpp::Node::SharedPtr node);
             virtual ~RobotStatusBuilder();

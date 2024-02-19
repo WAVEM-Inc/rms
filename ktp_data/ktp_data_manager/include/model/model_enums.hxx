@@ -67,6 +67,11 @@ namespace ktp
             {Status::CANCELLED, "Cancelled"},
             {Status::FAILED, "Failed"},
         };
+
+        enum ControlReportResponseCode
+        {
+            
+        };
     }
 }
 

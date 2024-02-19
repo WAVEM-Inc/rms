@@ -95,7 +95,7 @@ void ktp::build::RobotStatusBuilder::rtt_odom_subscription_cb(const geometry_msg
     }
 }
 
-ktp_data_msgs::msg::StatusService ktp::build::RobotStatusBuilder::build_rbt_status_service()
+ktp_data_msgs::msg::StatusService ktp::build::RobotStatusBuilder::build_service()
 {
     ktp_data_msgs::msg::StatusService::UniquePtr rbt_status_service = std::make_unique<ktp_data_msgs::msg::StatusService>();
 
@@ -245,7 +245,7 @@ ktp_data_msgs::msg::Status ktp::build::RobotStatusBuilder::build_rbt_status()
     // ############################################
     // service
     // 서비스 특화 데이터
-    const ktp_data_msgs::msg::StatusService &rbt_status_service = this->build_rbt_status_service();
+    const ktp_data_msgs::msg::StatusService &rbt_status_service = this->build_service();
     rbt_status->set__service(rbt_status_service);
     // ############################################
 

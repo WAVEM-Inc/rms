@@ -25,8 +25,8 @@ namespace ktp
         private:
             rclcpp::Node::SharedPtr node_;
 
-            ktp_data_msgs::msg::ServiceStatusTaskData build_rbt_service_status_task_data();
-            std::vector<ktp_data_msgs::msg::ServiceStatusTask> build_rbt_service_status_task();
+            ktp_data_msgs::msg::ServiceStatusTaskData build_task_data();
+            std::vector<ktp_data_msgs::msg::ServiceStatusTask> build_task();
         public:
             explicit ServiceStatusBuilder(rclcpp::Node::SharedPtr node);
             virtual ~ServiceStatusBuilder();
