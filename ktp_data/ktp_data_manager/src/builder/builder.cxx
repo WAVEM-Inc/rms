@@ -12,10 +12,7 @@ ktp::build::MainBuilder::~MainBuilder()
 
 ktp_data_msgs::msg::Status ktp::build::MainBuilder::build_rbt_status()
 {
-    printf("=====================================\n");
     const ktp_data_msgs::msg::Status &rbt_status = this->robot_status_builder_->build_rbt_status();
-    printf("=====================================\n");
-
     return rbt_status;
 }
 

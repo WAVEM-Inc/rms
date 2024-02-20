@@ -64,10 +64,10 @@ namespace ktp
             rclcpp::Node::SharedPtr node_;
 
             ktp::build::RobotStatusBuilder::SharedPtr robot_status_builder_;
-            ktp::build::ServiceStatusBuilder::SharedPtr service_status_builder_;
-            ktp::build::ErrorReportBuilder::SharedPtr error_report_builder_;
+            // ktp::build::ServiceStatusBuilder::SharedPtr service_status_builder_;
+            // ktp::build::ErrorReportBuilder::SharedPtr error_report_builder_;
 
-            std::shared_ptr<ktp::build::ControlBuilder> control_builder_;
+            // std::shared_ptr<ktp::build::ControlBuilder> control_builder_;
         public:
             explicit MainBuilder(rclcpp::Node::SharedPtr node);
             virtual ~MainBuilder();

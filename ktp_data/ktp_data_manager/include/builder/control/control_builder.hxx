@@ -22,6 +22,9 @@ namespace ktp
         public:
             explicit ControlBuilder(rclcpp::Node::SharedPtr node);
             virtual ~ControlBuilder();
+            ktp_data_msgs::msg::Control build_control();
+        public:
+            using SharedPtr = std::shared_ptr<ControlBuilder>;
         };
     }
 }

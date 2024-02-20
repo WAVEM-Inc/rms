@@ -18,7 +18,9 @@ find_package(geometry_msgs REQUIRED)
 
 set(SOURCES
   src/utils/utils.cxx
-  src/broadcaster/broadcaster.cxx
+  src/manager/manager.cxx
+  src/manager/request/request_manager.cxx
+  src/manager/response/response_manager.cxx
   src/builder/builder.cxx
   src/builder/control/control_builder.cxx
   src/builder/control_report/control_report_builder.cxx
