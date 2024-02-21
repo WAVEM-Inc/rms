@@ -1,0 +1,1 @@
+#include "controller/assignment/mission/mission_assigner.hxx"

@@ -15,7 +15,15 @@ find_package(rclcpp REQUIRED)
 find_package(ktp_data_msgs REQUIRED)
 
 set(SOURCES
-  src/ktp_task_controller/ktp_task_controller.cxx
+  src/controller/assignment/assignment_controller.cxx
+  src/controller/assignment/control/control_assigner.cxx
+  src/controller/assignment/mission/mission_assigner.cxx
+  src/controller/notification/notification_controller.cxx
+  src/controller/notification/control/control_notificator.cxx
+  src/controller/notification/mission/mission_notificator.cxx
+  src/controller/controller.cxx
+  src/domain/control/control.cxx
+  src/domain/mission/mission.cxx
   src/main.cxx
 )
 

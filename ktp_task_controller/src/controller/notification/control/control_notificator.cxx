@@ -1,0 +1,1 @@
+#include "controller/notification/control/control_notificator.hxx"
