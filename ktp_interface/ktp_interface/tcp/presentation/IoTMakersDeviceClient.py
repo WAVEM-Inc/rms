@@ -10,14 +10,13 @@
  *
  */
  '''
-import os, sys
+import sys
 import time
-import ctypes
 
 if sys.version_info >= (3, 0) :
-	from .libs import IotmakersStdDevicePy3 as client
+	from ..libs import IotmakersStdDevicePy3 as client
 else :
-    from .libs import IotmakersStdDevicePy2 as client
+    from ..libs import IotmakersStdDevicePy2 as client
 
 class IoTMakersDeviceClient:
 
