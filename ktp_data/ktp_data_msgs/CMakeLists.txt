@@ -32,6 +32,10 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/GraphEdgeList.msg"
   "msg/GraphZoneList.msg"
   "msg/GraphZoneVertices.msg"
+  "msg/ObjectDetect.msg"
+  "msg/ObjectDetectSize.msg"
+  "srv/AssignControl.srv"
+  "srv/AssignMission.srv"
   DEPENDENCIES std_msgs
 )
 
