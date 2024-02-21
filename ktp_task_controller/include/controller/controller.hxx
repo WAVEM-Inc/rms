@@ -24,6 +24,7 @@ namespace ktp
 
             ktp::controller::AssignmentController::SharedPtr assignment_controller_;
             ktp::controller::NotificationController::SharedPtr notification_controller_;
+
         public:
             explicit MainController();
             virtual ~MainController();

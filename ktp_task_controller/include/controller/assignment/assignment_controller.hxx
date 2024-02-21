@@ -6,8 +6,14 @@
 #include <ktp_data_msgs/msg/mission.hpp>
 #include <ktp_data_msgs/msg/mission_task.hpp>
 #include <ktp_data_msgs/msg/mission_task_data.hpp>
+
+#include <ktp_data_msgs/msg/control.hpp>
+
 #include <ktp_data_msgs/srv/assign_mission.hpp>
 #include <ktp_data_msgs/srv/assign_control.hpp>
+
+#include "controller/assignment/mission/mission_assigner.hxx"
+#include "controller/assignment/control/control_assigner.hxx"
 
 #include "domain/mission/mission.hxx"
 #include "domain/control/control.hxx"
@@ -34,25 +40,15 @@ namespace ktp
         private:
             rclcpp::Node::SharedPtr node_;
 
-            ktp::domain::Mission::SharedPtr mission_;
-            ktp::domain::Control::SharedPtr control_;
+            ktp::controller::MissionAssigner::SharedPtr mission_assigner_;
+            ktp::controller::ControlAssigner::SharedPtr control_assigner_;
 
-            rclcpp::Service<ktp_data_msgs::srv::AssignMission>::SharedPtr assign_mission_service_;
-            void assign_mission_service_cb(
-                const std::shared_ptr<rmw_request_id_t> request_header,
-                const std::shared_ptr<ktp_data_msgs::srv::AssignMission::Request> request,
-                const std::shared_ptr<ktp_data_msgs::srv::AssignMission::Response> response);
-
-            rclcpp::Service<ktp_data_msgs::srv::AssignControl>::SharedPtr assign_control_service_;
-            void assign_control_service_cb(
-                const std::shared_ptr<rmw_request_id_t> request_header,
-                const std::shared_ptr<ktp_data_msgs::srv::AssignControl::Request> request,
-                const std::shared_ptr<ktp_data_msgs::srv::AssignControl::Response> response);
         public:
             explicit AssignmentController(rclcpp::Node::SharedPtr node);
             virtual ~AssignmentController();
-            ktp::domain::Mission::SharedPtr transmiss_mission_to_notification();
-            ktp::domain::Control::SharedPtr transmiss_control_to_notification();
+            ktp_data_msgs::msg::Mission transmiss_mission_to_notification();
+            ktp_data_msgs::msg::Control transmiss_control_to_notification();
+            
         public:
             using SharedPtr = std::shared_ptr<AssignmentController>;
         };
