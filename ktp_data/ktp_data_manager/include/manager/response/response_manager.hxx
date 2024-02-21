@@ -3,11 +3,11 @@
 
 #include "builder/builder.hxx"
 
-#define STATUS_TO_ITF_TOPIC "/ktp/data/rbt_status"
+#define STATUS_TO_ITF_TOPIC "/ktp/data/robot_status"
 #define STATUS_TO_ITF_RATE 1000
 
-#define SERVICE_STATUS_TO_ITF_TOPIC "/ktp/task/rbt_service_status"
-#define SERVICE_STATUS_FROM_TASK_CTRL_TOPIC "/ktp/data/rbt_service_status"
+#define SERVICE_STATUS_TO_ITF_TOPIC "/ktp/data/service_status"
+#define SERVICE_STATUS_FROM_TASK_CTRL_TOPIC "/ktp/task/service_status"
 
 #define ERROR_REPORT_TO_ITF_TOPIC "/ktp/data/error_report"
 
