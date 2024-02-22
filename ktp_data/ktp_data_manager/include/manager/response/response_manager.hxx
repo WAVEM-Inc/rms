@@ -3,6 +3,27 @@
 
 #include "builder/builder.hxx"
 
+#include <ktp_data_msgs/msg/status.hpp>
+#include <ktp_data_msgs/msg/status_service.hpp>
+#include <ktp_data_msgs/msg/status_service_env.hpp>
+
+#include <ktp_data_msgs/msg/service_status.hpp>
+#include <ktp_data_msgs/msg/service_status_task.hpp>
+#include <ktp_data_msgs/msg/service_status_task_data.hpp>
+
+#include <ktp_data_msgs/msg/error_report.hpp>
+
+#include <ktp_data_msgs/msg/control_report.hpp>
+#include <ktp_data_msgs/msg/control_report_data.hpp>
+#include <ktp_data_msgs/msg/control_report_data_graph_list.hpp>
+
+#include <ktp_data_msgs/msg/graph_list.hpp>
+#include <ktp_data_msgs/msg/graph.hpp>
+#include <ktp_data_msgs/msg/graph_node_list.hpp>
+#include <ktp_data_msgs/msg/graph_edge_list.hpp>
+#include <ktp_data_msgs/msg/graph_zone_list.hpp>
+#include <ktp_data_msgs/msg/graph_zone_vertices.hpp>
+
 #define STATUS_TO_ITF_TOPIC "/ktp/data/robot_status"
 #define STATUS_TO_ITF_RATE 1000
 
@@ -38,7 +59,7 @@ namespace ktp
             void service_status_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::ServiceStatus::SharedPtr service_status_cb);
 
             rclcpp::CallbackGroup::SharedPtr service_status_to_itf_publisher_cb_group_;
-            rclcpp::Publisher<ktp_data_msgs::msg::ServiceStatus>::SharedPtr service_status_to_interface_publisher_;
+            rclcpp::Publisher<ktp_data_msgs::msg::ServiceStatus>::SharedPtr service_status_to_itf_publisher_;
 
             rclcpp::CallbackGroup::SharedPtr error_report_to_itf_publisher_cb_group_;
             rclcpp::Publisher<ktp_data_msgs::msg::ErrorReport>::SharedPtr error_report_to_itf_publisher_;

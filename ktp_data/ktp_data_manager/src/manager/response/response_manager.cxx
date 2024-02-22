@@ -31,7 +31,7 @@ ktp::data::ResponseManager::ResponseManager(rclcpp::Node::SharedPtr node)
     this->service_status_to_itf_publisher_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     rclcpp::PublisherOptions service_status_to_interface_publisher_opts;
     service_status_to_interface_publisher_opts.callback_group = this->service_status_to_itf_publisher_cb_group_;
-    this->service_status_to_interface_publisher_ = this->node_->create_publisher<ktp_data_msgs::msg::ServiceStatus>(
+    this->service_status_to_itf_publisher_ = this->node_->create_publisher<ktp_data_msgs::msg::ServiceStatus>(
         SERVICE_STATUS_FROM_TASK_CTRL_TOPIC,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         service_status_to_interface_publisher_opts);
@@ -117,6 +117,6 @@ void ktp::data::ResponseManager::service_status_from_task_ctrl_subscription_cb(c
         }
     }
 
-    this->service_status_to_interface_publisher_->publish(service_status);
+    this->service_status_to_itf_publisher_->publish(service_status);
     printf("-----------------------------------------------------------------------------------------------------\n");
 }

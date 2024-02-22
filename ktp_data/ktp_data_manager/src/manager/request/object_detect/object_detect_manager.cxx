@@ -1,0 +1,1 @@
+#include "manager/request/object_detect/object_detect_manager.hxx"

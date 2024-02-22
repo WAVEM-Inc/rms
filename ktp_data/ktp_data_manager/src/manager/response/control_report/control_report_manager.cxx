@@ -1,0 +1,1 @@
+#include "manager/response/control_report/control_report_manager.hxx"
