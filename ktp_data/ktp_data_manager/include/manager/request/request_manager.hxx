@@ -1,19 +1,16 @@
 #ifndef REQUEST_MANAGER__HXX
 #define REQUEST_MANAGER__HXX
 
-#include "builder/builder.hxx"
+#include <rclcpp/rclcpp.hpp>
 
-#include <ktp_data_msgs/msg/control.hpp>
+#include "manager/request/control/control_manager.hxx"
+#include "manager/request/mission/mission_manager.hxx"
+#include "manager/request/object_detect/object_detect_manager.hxx"
 
-#include <ktp_data_msgs/msg/mission.hpp>
-#include <ktp_data_msgs/msg/mission_task.hpp>
-#include <ktp_data_msgs/msg/mission_task_data.hpp>
+#define DEFAULT_QOS 10
 
-#include <ktp_data_msgs/msg/object_detect.hpp>
-
-#define CONTROL_FROM_ITF_TOPIC "/ktp/data/control"
-#define MISSION_FROM_ITF_TOPIC "/ktp/data/mission"
-#define OBJECT_DETECT_FROM_ITF_TOPIC "/ktp/data/object_detect"
+using std::placeholders::_1;
+using std::placeholders::_2;
 
 namespace ktp
 {
@@ -24,19 +21,9 @@ namespace ktp
         private:
             rclcpp::Node::SharedPtr node_;
 
-            ktp::build::MainBuilder::SharedPtr builder_;
-
-            rclcpp::CallbackGroup::SharedPtr control_from_itf_subscription_cb_group_;
-            rclcpp::Subscription<ktp_data_msgs::msg::Control>::SharedPtr control_from_itf_subscription_;
-            void control_from_itf_subscription_cb(const ktp_data_msgs::msg::Control::SharedPtr control_cb);
-
-            rclcpp::CallbackGroup::SharedPtr mission_from_itf_subscription_cb_group_;
-            rclcpp::Subscription<ktp_data_msgs::msg::Mission>::SharedPtr mission_from_itf_subscription_;
-            void mission_from_itf_subscription_cb(const ktp_data_msgs::msg::Mission::SharedPtr mission_cb);
-
-            rclcpp::CallbackGroup::SharedPtr object_detect_from_itf_subscription_cb_group_;
-            rclcpp::Subscription<ktp_data_msgs::msg::ObjectDetect>::SharedPtr object_detect_from_itf_subscription_;
-            void object_detect_from_itf_subscription_cb(const ktp_data_msgs::msg::ObjectDetect::SharedPtr object_detect_cb);
+            ktp::data::ControlManager::SharedPtr control_manager_;
+            ktp::data::MissionManager::SharedPtr mission_manager_;
+            ktp::data::ObjectDetectManager::SharedPtr object_detect_manager_;
 
         public:
             explicit RequestManager(rclcpp::Node::SharedPtr node);
