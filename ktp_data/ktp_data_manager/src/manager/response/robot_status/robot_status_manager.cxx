@@ -380,7 +380,7 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
         this->node_->get_logger(),
         "RobotStatusManager\n\tbattery : [%f]\n\tcreate_time : [%s]\n\tlongitude : [%f]\n\tlatitude : [%f]\n\theading : [%f]",
         rbt_status->battery,
-        CSTR(create_time),
+        create_time.c_str(),
         longitude,
         latitude,
         heading);
