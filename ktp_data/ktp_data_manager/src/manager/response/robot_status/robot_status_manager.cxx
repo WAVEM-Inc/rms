@@ -1,6 +1,6 @@
 #include "manager/response/robot_status/robot_status_manager.hxx"
 
-ktp::data::RobotStatusManager::RobotStatusManager(rclcpp::Node::SharedPtr node)
+ktp::data::RobotStatusManager::RobotStatusManager(const rclcpp::Node::SharedPtr node)
     : node_(node)
 {
     this->robot_status_to_itf_publisher_timer_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -43,6 +43,24 @@ ktp::data::RobotStatusManager::RobotStatusManager(rclcpp::Node::SharedPtr node)
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         std::bind(&ktp::data::RobotStatusManager::rtt_odom_subscription_cb, this, _1),
         rtt_odom_subscription_opts);
+
+    this->temperature_subscription_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    rclcpp::SubscriptionOptions temperature_subscription_opts;
+    temperature_subscription_opts.callback_group = this->temperature_subscription_cb_group_;
+    this->temperature_subscription_ = this->node_->create_subscription<sensor_msgs::msg::Temperature>(
+        TEMPERATURE_TOPIC,
+        rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
+        std::bind(&ktp::data::RobotStatusManager::temperature_subscription_cb, this, _1),
+        temperature_subscription_opts);
+
+    this->humidity_subscription_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    rclcpp::SubscriptionOptions humidity_subscription_opts;
+    humidity_subscription_opts.callback_group = this->humidity_subscription_cb_group_;
+    this->humidity_subscription_ = this->node_->create_subscription<sensor_msgs::msg::RelativeHumidity>(
+        HUMIDITY_TOPIC,
+        rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
+        std::bind(&ktp::data::RobotStatusManager::humidity_subscription_cb, this, _1),
+        humidity_subscription_opts);
 }
 
 ktp::data::RobotStatusManager::~RobotStatusManager()
@@ -51,6 +69,11 @@ ktp::data::RobotStatusManager::~RobotStatusManager()
 
 void ktp::data::RobotStatusManager::robot_status_publisher_timer_cb()
 {
+    RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
+    RCLCPP_INFO(this->node_->get_logger(), "------------------------ Robot Status Publish --------------------------");
+    const ktp_data_msgs::msg::Status &robot_status = this->build_robot_status();
+    this->robot_status_to_itf_publisher_->publish(robot_status);
+    RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
 }
 
 void ktp::data::RobotStatusManager::battery_state_subscription_cb(const sensor_msgs::msg::BatteryState::SharedPtr battery_state_cb)
@@ -107,8 +130,40 @@ void ktp::data::RobotStatusManager::rtt_odom_subscription_cb(const geometry_msgs
     }
     else
     {
-        RCLCPP_ERROR(this->node_->get_logger(), "Builder RbtStatus rtt_odom_cb is nullptr...");
+        RCLCPP_ERROR(this->node_->get_logger(), "RobotStatusManager rtt_odom_cb is nullptr...");
         this->rtt_odom_cb_flag_ = false;
+        return;
+    }
+}
+
+void ktp::data::RobotStatusManager::temperature_subscription_cb(const sensor_msgs::msg::Temperature::SharedPtr temperature_cb)
+{
+    this->temperature_cb_ = temperature_cb;
+
+    if (this->temperature_cb_ != nullptr)
+    {
+        this->temperature_cb_flag_ = true;
+    }
+    else
+    {
+        RCLCPP_ERROR(this->node_->get_logger(), "RobotStatusManager temperature_cb is nullptr...");
+        this->temperature_cb_flag_ = false;
+        return;
+    }
+}
+
+void ktp::data::RobotStatusManager::humidity_subscription_cb(const sensor_msgs::msg::RelativeHumidity::SharedPtr humidity_cb)
+{
+    this->humidity_cb_ = humidity_cb;
+
+    if (this->humidity_cb_ != nullptr)
+    {
+        this->humidity_cb_flag_ = true;
+    }
+    else
+    {
+        RCLCPP_ERROR(this->node_->get_logger(), "RobotStatusManager humidity_cb is nullptr...");
+        this->humidity_cb_flag_ = false;
         return;
     }
 }
@@ -122,13 +177,33 @@ ktp_data_msgs::msg::StatusService ktp::data::RobotStatusManager::build_service()
     // ############################################
     // temperature
     // 온도 (단위 : 섭씨)
-    rbt_status_service_env->set__temperature(DEFAULT_DOUBLE);
+    // Optional
+    // /sensor/temp/temperature
+    RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager temperature temperature_cb_flag : [%d]", this->temperature_cb_flag_);
+    if (this->temperature_cb_flag_ == true)
+    {
+        rbt_status_service_env->set__temperature(this->temperature_cb_->temperature);
+    }
+    else
+    {
+        rbt_status_service_env->set__temperature(DEFAULT_DOUBLE);
+    }
 
     // ############################################
     // humidity
     // 습도 (단위 : percent)
-    rbt_status_service_env->set__humidity(DEFAULT_DOUBLE);
+    // Optional
+    // /sensor/temp/humidity
     // ############################################
+    RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager humidity humidity_cb_flag : [%d]", this->humidity_cb_flag_);
+    if (this->humidity_cb_flag_ == true)
+    {
+        rbt_status_service_env->set__humidity(this->humidity_cb_->relative_humidity);
+    }
+    else
+    {
+        rbt_status_service_env->set__humidity(DEFAULT_DOUBLE);
+    }
 
     const ktp_data_msgs::msg::StatusServiceEnv &&rbt_status_service_env_moved = std::move(*rbt_status_service_env);
 
@@ -145,14 +220,17 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // ############################################
     // map_id
     // 현재 맵 id
-    const char *map_id = "";
-    rbt_status->set__map_id(map_id);
+    // 필수
+    // 고정 값
+    rbt_status->set__map_id(MAP_ID);
     // ############################################
 
     // ############################################
     // battery
     // 배터리 잔여율(%)
-    RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager battery_cb_flag : [%d]", this->battery_cb_flag_);
+    // 필수
+    // /sensor/battery/state
+    RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager percentage battery_cb_flag : [%d]", this->battery_cb_flag_);
     if (this->battery_cb_flag_ == true)
     {
         rbt_status->set__battery(this->battery_state_cb_->percentage);
@@ -166,12 +244,15 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // ############################################
     // drive_status
     // 로봇의 주행 상태
+    // 필수
+    // /route_to_pose subscription
     rbt_status->set__drive_status(ktp::enums::DriveStatus::DRIVING_NORMALLY);
     // ############################################
 
     // ############################################
     // create_time
     // 생성 일시
+    // 필수
     const std::string &create_time = get_current_time();
     rbt_status->set__create_time(create_time);
     // ############################################
@@ -179,42 +260,54 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // ############################################
     // speed
     // 로봇의 주행 속도
+    // 필수
+    // /sensor/velocity/state
     rbt_status->set__speed(DEFAULT_DOUBLE);
     // ############################################
 
     // ############################################
     // from_node
     // 현재 출발 노드
+    // 필수
+    // /path_graph/path
     rbt_status->set__from_node("qwlbgasugbqwqjkgbsadjkgbadgjsqa");
     // ############################################
 
     // ############################################
     // floor
     // 로봇이 위치한 층
-    rbt_status->set__floor("1F");
+    // Optional
+    rbt_status->set__floor("");
     // ############################################
 
     // ############################################
     // section
+    // Optional
     // 로봇이 위치한 구역
-    rbt_status->set__section("iqwgrjkbajwdsbguqwbg;jaksddsfadgq");
+    rbt_status->set__section(";jaksddsfadgq");
     // ############################################
 
     // ############################################
     // to_node
     // 현재 목적 노드
+    // 필수
+    // /path_graph/path
     rbt_status->set__to_node("aikweqjkbhgsaoujdbguoqwg");
     // ############################################
 
     // ############################################
     // charge
     // 로봇의 충전 상태
+    // 필수
+    // /sensor/battery/state
     rbt_status->set__charge(false);
     // ############################################
 
     // ############################################
     // x, y
     // x(longitude), y(latitude) 좌표
+    // 필수
+    // /sensor/ublox/fix
     RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager gps_cb_flag : [%d]", this->gps_cb_flag_);
 
     double longitude = 0.0;
@@ -232,6 +325,8 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // ############################################
     // heading
     // 로봇의 방향 값(degree 기준)
+    // 필수
+    // /drive/rtt_odom
     RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager rtt_odom_cb_flag : [%d]", this->rtt_odom_cb_flag_);
 
     double heading = 0.0;
@@ -245,13 +340,22 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // ############################################
     // is_indoor
     // 실내/실외 구분값
+    // 필수
+    // ??
     rbt_status->set__is_indoor(true);
     // ############################################
 
     // ############################################
     // coord_code
     // 로봇 주행 좌표계 코드
-    rbt_status->set__coord_code("WGS84");
+    if (rbt_status->is_indoor == true)
+    {
+        rbt_status->set__coord_code(COORD_CORD_SLAM);
+    }
+    else
+    {
+        rbt_status->set__coord_code(COORD_CORD_GPS);
+    }
     // ############################################
 
     // ############################################
