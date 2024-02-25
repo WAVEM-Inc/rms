@@ -6,6 +6,8 @@
 #include <sstream>
 #include <iomanip>
 
+#define CSTR(str) ((str).c_str())
+
 std::string get_current_time();
 
 #endif
