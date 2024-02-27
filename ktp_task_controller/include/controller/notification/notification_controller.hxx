@@ -13,8 +13,8 @@
 
 #define DEFAULT_QOS 10
 
-#define NOTIFICATE_MISSION_TO_MGR_TOPIC "/ktp/task/notificate/mission"
-#define NOTIFICATE_CONTROL_TO_MGR_TOPIC "/ktp/task/notificate/control"
+#define NOTIFICATE_MISSION_TO_MGR_TOPIC "/rms/ktp/task/notificate/mission"
+#define NOTIFICATE_CONTROL_TO_MGR_TOPIC "/rms/ktp/task/notificate/control"
 
 #define NOTIFICATE_PUBLISHING_RATE 850
 
@@ -30,10 +30,6 @@ namespace ktp
         {
         private:
             rclcpp::Node::SharedPtr node_;
-
-            rclcpp::CallbackGroup::SharedPtr notificate_timer_cb_group_;
-            rclcpp::TimerBase::SharedPtr notificate_timer_;
-            void notificate_timer_cb();
 
             ktp::controller::MissionNotificator::SharedPtr mission_notificator_;
             ktp::controller::ControlNotificator::SharedPtr control_notificator_;

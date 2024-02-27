@@ -12,7 +12,11 @@ include_directories(
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(ktp_data_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(path_graph_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 set(SOURCES
   src/controller/assignment/assignment_controller.cxx
@@ -22,6 +26,8 @@ set(SOURCES
   src/controller/notification/control/control_notificator.cxx
   src/controller/notification/mission/mission_notificator.cxx
   src/controller/controller.cxx
+  src/exception/assignment/assignment_exceptions.cxx
+  src/exception/notification/notification_exceptions.cxx
   src/domain/control/control.cxx
   src/domain/mission/mission.cxx
   src/main.cxx
@@ -37,7 +43,11 @@ add_executable(${EXEC_NAME}
 
 set(DEPENDS
   rclcpp
+  rclcpp_action
   ktp_data_msgs
+  sensor_msgs
+  path_graph_msgs
+  nav2_msgs
 )
 
 ament_target_dependencies(${EXEC_NAME}
