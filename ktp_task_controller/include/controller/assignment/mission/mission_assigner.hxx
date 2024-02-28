@@ -1,8 +1,8 @@
 #ifndef MISSION_ASSIGNER__HXX
 #define MISSION_ASSIGNER__HXX
 
-#include <exception>
-#include <stdexcept>
+#include <vector>
+#include <iterator>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
@@ -17,10 +17,13 @@
 #include <path_graph_msgs/msg/node.hpp>
 #include <path_graph_msgs/srv/path.hpp>
 #include <nav2_msgs/action/navigate_to_pose.hpp>
+#include <action_msgs/msg/goal_status_array.hpp>
 
 #include "controller/assignment/mission/mission_assigner.hxx"
 
 #include "domain/mission/mission.hxx"
+
+#include "exception/assignment/assignment_exceptions.hxx"
 
 #define DEFAULT_INT 0
 #define DEFAULT_DOUBLE 0.0
@@ -28,9 +31,12 @@
 
 #define MISSION_ASSIGN_FROM_ITF_TOPIC "/ktp/task/mission/assign"
 #define ASSIGN_MISSION_SERVICE_NAME "/ktp_task_controller/assign/mission"
-#define UBLOX_FIX_TOPIC "/sensor/ublox/fix"
+// #define UBLOX_FIX_TOPIC "/sensor/ublox/fix"
+#define UBLOX_FIX_TOPIC "/ublox/fix"
 #define PATH_GRAPH_PATH_SERVICE_NAME "/path_graph/path"
-#define ROUTE_TO_POSE_ACTION_NAME "/route_to_pose"
+#define ROUTE_TO_POSE_ACTION_NAME "/navigate_to_pose"
+#define ROUTE_TO_POSE_STATUS_TOPIC_NAME "/navigate_to_pose/_action/status"
+// #define ROUTE_TO_POSE_ACTION_NAME "/route_to_pose"
 
 #define CSTR(str) ((str).c_str())
 
@@ -45,11 +51,25 @@ namespace ktp
         class MissionAssigner final
         {
         private:
+            int count = 0;
+
             rclcpp::Node::SharedPtr node_;
+
             ktp::domain::Mission::SharedPtr mission_;
-            std::vector<ktp_data_msgs::msg::MissionTaskData> mission_task_data_vec_;
-            int mission_task_data_current_idx_;
-            int mission_task_data_last_idx_;
+
+            std::vector<ktp_data_msgs::msg::MissionTask> mission_task_vec_;
+            int mission_task_current_idx_;
+            int mission_task_last_idx_;
+
+            std::vector<path_graph_msgs::msg::Path> path_vec_;
+            int path_current_idx_;
+            int path_last_idx_;
+
+            bool ublox_fix_cb_flag_ = false;
+            sensor_msgs::msg::NavSatFix::SharedPtr ublox_fix_cb_;
+            rclcpp::CallbackGroup::SharedPtr ublox_fix_subscription_cb_group_;
+            rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr ublox_fix_subscription_;
+            void ublox_fix_subscription_cb(const sensor_msgs::msg::NavSatFix::SharedPtr ublox_fix_cb);
 
             rclcpp::CallbackGroup::SharedPtr assign_mission_service_cb_group_;
             rclcpp::Service<ktp_data_msgs::srv::AssignMission>::SharedPtr assign_mission_service_;
@@ -57,16 +77,10 @@ namespace ktp
                 const std::shared_ptr<rmw_request_id_t> request_header,
                 const std::shared_ptr<ktp_data_msgs::srv::AssignMission::Request> request,
                 const std::shared_ptr<ktp_data_msgs::srv::AssignMission::Response> response);
-            
-            bool ublox_fix_cb_flag_ = false;
-            sensor_msgs::msg::NavSatFix::SharedPtr ublox_fix_cb_;
-            rclcpp::CallbackGroup::SharedPtr ublox_fix_subscription_cb_group_;
-            rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr ublox_fix_subscription_;
-            void ublox_fix_subscription_cb(const sensor_msgs::msg::NavSatFix::SharedPtr ublox_fix_cb);
 
             rclcpp::CallbackGroup::SharedPtr path_graph_path_service_client_cb_group_;
             rclcpp::Client<path_graph_msgs::srv::Path>::SharedPtr path_graph_path_service_client_;
-            path_graph_msgs::msg::Path path_graph_path_service_req(ktp_data_msgs::msg::MissionTaskData mission_task_data);
+            bool request_converting_goal_to_path();
 
             rclcpp::CallbackGroup::SharedPtr route_to_pose_action_client_cb_group_;
             rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr route_to_pose_action_client_;
@@ -74,6 +88,10 @@ namespace ktp
             void route_to_pose_goal_response_cb(const rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::SharedPtr &goal_handle);
             void route_to_pose_feedback_cb(rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::SharedPtr goal_handle, const std::shared_ptr<const nav2_msgs::action::NavigateToPose::Feedback> feedback);
             void route_to_pose_result_cb(const rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult &result);
+
+            rclcpp::CallbackGroup::SharedPtr route_to_pose_status_subscription_cb_group_;
+            rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr route_to_pose_status_subscription_;
+            void route_to_pose_subscription_cb(const action_msgs::msg::GoalStatusArray::SharedPtr route_to_pose_status_cb);
 
         public:
             explicit MissionAssigner(rclcpp::Node::SharedPtr node);
