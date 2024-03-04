@@ -9,6 +9,8 @@
 
 #define ERROR_REPORT_TO_ITF_TOPIC "/rms/ktp/data/error_report"
 
+#define BATTERY_STATE_ERROR_STATE_TOPIC "/sensor/battery/err/state"
+
 using std::placeholders::_1;
 using std::placeholders::_2;
 

@@ -10,8 +10,24 @@ ktp::data::ControlReportManager::ControlReportManager(rclcpp::Node::SharedPtr no
         CONTROL_REPORT_TO_ITF_TOPIC,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         control_report_publisher_opts);
+
+    this->notify_mission_from_task_ctrl_subscription_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    rclcpp::SubscriptionOptions notify_mission_from_task_ctrl_subscription_opts;
+    notify_mission_from_task_ctrl_subscription_opts.callback_group = this->notify_mission_from_task_ctrl_subscription_cb_group_;
+    this->notify_mission_from_task_ctrl_subscription_ = this->node_->create_subscription<ktp_data_msgs::msg::ControlReport>(
+        NOTIFY_MISSION_FROM_TASK_CTRL_TOPIC,
+        rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
+        std::bind(&ktp::data::ControlReportManager::notify_mission_from_task_ctrl_subscription_cb, this, _1),
+        notify_mission_from_task_ctrl_subscription_opts);
 }
 
 ktp::data::ControlReportManager::~ControlReportManager()
 {
+}
+
+void ktp::data::ControlReportManager::notify_mission_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::ControlReport::SharedPtr notify_mission_cb)
+{
+    const ktp_data_msgs::msg::ControlReport &control_report = *(notify_mission_cb);
+
+    this->control_report_to_itf_publisher_->publish(control_report);
 }
