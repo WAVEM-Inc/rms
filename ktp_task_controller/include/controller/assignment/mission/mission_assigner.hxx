@@ -16,8 +16,10 @@
 #include <path_graph_msgs/msg/position.hpp>
 #include <path_graph_msgs/msg/node.hpp>
 #include <path_graph_msgs/srv/path.hpp>
-#include <nav2_msgs/action/navigate_to_pose.hpp>
 #include <action_msgs/msg/goal_status_array.hpp>
+#include <route_msgs/msg/path.hpp>
+#include <route_msgs/msg/node.hpp>
+#include <route_msgs/action/route_to_pose.hpp>
 
 #include "controller/assignment/mission/mission_assigner.hxx"
 
@@ -34,9 +36,10 @@
 // #define UBLOX_FIX_TOPIC "/sensor/ublox/fix"
 #define UBLOX_FIX_TOPIC "/ublox/fix"
 #define PATH_GRAPH_PATH_SERVICE_NAME "/path_graph/path"
-#define ROUTE_TO_POSE_ACTION_NAME "/navigate_to_pose"
-#define ROUTE_TO_POSE_STATUS_TOPIC_NAME "/navigate_to_pose/_action/status"
-// #define ROUTE_TO_POSE_ACTION_NAME "/route_to_pose"
+// #define ROUTE_TO_POSE_ACTION_NAME "/navigate_to_pose"
+// #define ROUTE_TO_POSE_STATUS_TOPIC_NAME "/navigate_to_pose/_action/status"
+#define ROUTE_TO_POSE_ACTION_NAME "/route_to_pose"
+#define ROUTE_TO_POSE_STATUS_TOPIC_NAME "/route_to_pose/_action/status"
 
 #define CSTR(str) ((str).c_str())
 
@@ -61,9 +64,12 @@ namespace ktp
             int mission_task_current_idx_;
             int mission_task_last_idx_;
 
-            std::vector<path_graph_msgs::msg::Path> path_vec_;
-            int path_current_idx_;
-            int path_last_idx_;
+            std::vector<route_msgs::msg::Path> mission_task_path_vec_;
+            int mission_task_path_current_idx_;
+            int mission_task_path_last_idx_;
+
+            int node_current_idx_;
+            int node_last_idx_;
 
             bool ublox_fix_cb_flag_ = false;
             sensor_msgs::msg::NavSatFix::SharedPtr ublox_fix_cb_;
@@ -83,11 +89,11 @@ namespace ktp
             bool request_converting_goal_to_path();
 
             rclcpp::CallbackGroup::SharedPtr route_to_pose_action_client_cb_group_;
-            rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr route_to_pose_action_client_;
+            rclcpp_action::Client<route_msgs::action::RouteToPose>::SharedPtr route_to_pose_action_client_;
             void route_to_pose_send_goal();
-            void route_to_pose_goal_response_cb(const rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::SharedPtr &goal_handle);
-            void route_to_pose_feedback_cb(rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::SharedPtr goal_handle, const std::shared_ptr<const nav2_msgs::action::NavigateToPose::Feedback> feedback);
-            void route_to_pose_result_cb(const rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult &result);
+            void route_to_pose_goal_response_cb(const rclcpp_action::ClientGoalHandle<route_msgs::action::RouteToPose>::SharedPtr &goal_handle);
+            void route_to_pose_feedback_cb(rclcpp_action::ClientGoalHandle<route_msgs::action::RouteToPose>::SharedPtr goal_handle, const std::shared_ptr<const route_msgs::action::RouteToPose::Feedback> feedback);
+            void route_to_pose_result_cb(const rclcpp_action::ClientGoalHandle<route_msgs::action::RouteToPose>::WrappedResult &result);
 
             rclcpp::CallbackGroup::SharedPtr route_to_pose_status_subscription_cb_group_;
             rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr route_to_pose_status_subscription_;

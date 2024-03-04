@@ -19,6 +19,7 @@ find_package(path_graph_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(action_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(route_msgs REQUIRED)
 
 set(SOURCES
   src/controller/assignment/assignment_controller.cxx
@@ -52,6 +53,7 @@ set(DEPENDS
   nav2_msgs
   action_msgs
   geometry_msgs
+  route_msgs
 )
 
 ament_target_dependencies(${EXEC_NAME}
