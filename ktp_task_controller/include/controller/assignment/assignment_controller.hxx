@@ -46,8 +46,6 @@ namespace ktp
         public:
             explicit AssignmentController(rclcpp::Node::SharedPtr node);
             virtual ~AssignmentController();
-            ktp_data_msgs::msg::Mission transmiss_mission_to_notification();
-            ktp_data_msgs::msg::Control transmiss_control_to_notification();
             
         public:
             using SharedPtr = std::shared_ptr<AssignmentController>;

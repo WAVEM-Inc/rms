@@ -7,14 +7,17 @@
 #include <ktp_data_msgs/msg/mission_task.hpp>
 #include <ktp_data_msgs/msg/mission_task_data.hpp>
 
-#include "controller/assignment/assignment_controller.hxx"
+#include <ktp_data_msgs/msg/control_report.hpp>
+
+#include "domain/mission/mission.hxx"
+#include "utils/utils.hxx"
 
 #define DEFAULT_QOS 10
 
-#define NOTIFICATE_MISSION_TO_MGR_TOPIC "/rms/ktp/task/notificate/mission"
-#define NOTIFICATE_CONTROL_TO_MGR_TOPIC "/rms/ktp/task/notificate/control"
+#define NOTIFY_MISSION_TO_MGR_TOPIC "/rms/ktp/task/notify/mission"
+#define NOTIFY_CONTROL_TO_MGR_TOPIC "/rms/ktp/task/notify/control"
 
-#define NOTIFICATE_PUBLISHING_RATE 850
+#define CONTROL_TYPE_MISSION "mission"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -28,15 +31,13 @@ namespace ktp
         private:
             rclcpp::Node::SharedPtr node_;
 
-            ktp::controller::AssignmentController::SharedPtr assignment_controller_;
-
-            rclcpp::CallbackGroup::SharedPtr notificate_mission_publisher_cb_group_;
-            rclcpp::Publisher<ktp_data_msgs::msg::Mission>::SharedPtr notificate_mission_publihser_;
+            rclcpp::CallbackGroup::SharedPtr notify_mission_publisher_cb_group_;
+            rclcpp::Publisher<ktp_data_msgs::msg::ControlReport>::SharedPtr notify_mission_publisher_;
 
         public:
             explicit MissionNotificator(rclcpp::Node::SharedPtr node);
             virtual ~MissionNotificator();
-            void notificate_mission();
+            void notify_mission_status(ktp::domain::Mission::SharedPtr domain_mission);
 
         public:
             using SharedPtr = std::shared_ptr<MissionNotificator>;

@@ -3,35 +3,39 @@
 ktp::controller::MissionNotificator::MissionNotificator(rclcpp::Node::SharedPtr node)
     : node_(node)
 {
-    this->assignment_controller_ = std::make_shared<ktp::controller::AssignmentController>(this->node_);
-
-    this->notificate_mission_publisher_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-    rclcpp::PublisherOptions notificate_mission_publihser_opts;
-    notificate_mission_publihser_opts.callback_group = this->notificate_mission_publisher_cb_group_;
-    this->notificate_mission_publihser_ = this->node_->create_publisher<ktp_data_msgs::msg::Mission>(
-        NOTIFICATE_MISSION_TO_MGR_TOPIC,
+    this->notify_mission_publisher_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    rclcpp::PublisherOptions notify_mission_publisher_opts;
+    notify_mission_publisher_opts.callback_group = this->notify_mission_publisher_cb_group_;
+    this->notify_mission_publisher_ = this->node_->create_publisher<ktp_data_msgs::msg::ControlReport>(
+            NOTIFY_MISSION_TO_MGR_TOPIC,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
-        notificate_mission_publihser_opts);
+            notify_mission_publisher_opts);
 }
 
 ktp::controller::MissionNotificator::~MissionNotificator()
 {
 }
 
-void ktp::controller::MissionNotificator::notificate_mission()
+void ktp::controller::MissionNotificator::notify_mission_status(ktp::domain::Mission::SharedPtr domain_mission)
 {
-    const ktp_data_msgs::msg::Mission &mission = this->assignment_controller_->transmiss_mission_to_notification();
+    const int16_t &status_code = domain_mission->get__mission_status_code();
+    const ktp_data_msgs::msg::Mission &mission = domain_mission->get__mission();
 
-    RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
-    RCLCPP_INFO(this->node_->get_logger(), "--------------------- Notificate Mission Publish -----------------------");
-    RCLCPP_INFO(
-        this->node_->get_logger(),
-        "\n\trequest_time : [%s]\n\tmission_id : [%s]\n\towner : [%s]\n\tmission_code : [%s]",
-        CSTR(mission.request_time),
-        CSTR(mission.mission_id),
-        CSTR(mission.owner),
-        CSTR(mission.mission_code));
-    RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
+    RCLCPP_INFO(this->node_->get_logger(), "---------------------- Notify Mission Status -----------------------");
+    RCLCPP_INFO(this->node_->get_logger(), "\n\tstatus_code : [%hd]", status_code);
 
-    this->notificate_mission_publihser_->publish(mission);
+    ktp_data_msgs::msg::ControlReport::UniquePtr mission_report = std::make_unique<ktp_data_msgs::msg::ControlReport>();
+
+    const std::string &create_time = get_current_time();
+    mission_report->set__create_time(create_time);
+
+    mission_report->set__control_id(mission.mission_id);
+    mission_report->set__control_code(mission.mission_code);
+
+    mission_report->set__control_type(CONTROL_TYPE_MISSION);
+    mission_report->set__response_code(status_code);
+
+    const ktp_data_msgs::msg::ControlReport &&mission_report_moved = std::move(*(mission_report));
+
+    this->notify_mission_publisher_->publish(mission_report_moved);
 }

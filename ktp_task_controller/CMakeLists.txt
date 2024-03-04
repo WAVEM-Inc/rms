@@ -33,6 +33,7 @@ set(SOURCES
   src/exception/notification/notification_exceptions.cxx
   src/domain/control/control.cxx
   src/domain/mission/mission.cxx
+  src/utils/utils.cxx
   src/main.cxx
 )
 

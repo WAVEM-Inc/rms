@@ -21,7 +21,7 @@
 #include <route_msgs/msg/node.hpp>
 #include <route_msgs/action/route_to_pose.hpp>
 
-#include "controller/assignment/mission/mission_assigner.hxx"
+#include "controller/notification/mission/mission_notificator.hxx"
 
 #include "domain/mission/mission.hxx"
 
@@ -30,6 +30,8 @@
 #define DEFAULT_INT 0
 #define DEFAULT_DOUBLE 0.0
 #define DEFAULT_QOS 10
+
+#define MISSION_RECEPTION_SUCCEEDED_CODE 200
 
 #define MISSION_ASSIGN_FROM_ITF_TOPIC "/ktp/task/mission/assign"
 #define ASSIGN_MISSION_SERVICE_NAME "/ktp_task_controller/assign/mission"
@@ -71,6 +73,8 @@ namespace ktp
             int node_current_idx_;
             int node_last_idx_;
 
+            ktp::controller::MissionNotificator::SharedPtr mission_notificator_;
+
             bool ublox_fix_cb_flag_ = false;
             sensor_msgs::msg::NavSatFix::SharedPtr ublox_fix_cb_;
             rclcpp::CallbackGroup::SharedPtr ublox_fix_subscription_cb_group_;
@@ -102,7 +106,6 @@ namespace ktp
         public:
             explicit MissionAssigner(rclcpp::Node::SharedPtr node);
             virtual ~MissionAssigner();
-            ktp::domain::Mission::SharedPtr transmiss_mission_to_notification();
 
         public:
             using SharedPtr = std::shared_ptr<MissionAssigner>;

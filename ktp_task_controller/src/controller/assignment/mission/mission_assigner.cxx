@@ -10,6 +10,7 @@ ktp::controller::MissionAssigner::MissionAssigner(rclcpp::Node::SharedPtr node)
       node_last_idx_(DEFAULT_INT)
 {
     this->mission_ = std::make_shared<ktp::domain::Mission>();
+    this->mission_notificator_ = std::make_shared<ktp::controller::MissionNotificator>(this->node_);
 
     this->assign_mission_service_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     this->assign_mission_service_ = this->node_->create_service<ktp_data_msgs::srv::AssignMission>(
@@ -53,11 +54,6 @@ ktp::controller::MissionAssigner::MissionAssigner(rclcpp::Node::SharedPtr node)
 
 ktp::controller::MissionAssigner::~MissionAssigner()
 {
-}
-
-ktp::domain::Mission::SharedPtr ktp::controller::MissionAssigner::transmiss_mission_to_notification()
-{
-    return this->mission_;
 }
 
 void ktp::controller::MissionAssigner::ublox_fix_subscription_cb(const sensor_msgs::msg::NavSatFix::SharedPtr ublox_fix_cb)
@@ -108,9 +104,11 @@ void ktp::controller::MissionAssigner::assign_mission_service_cb(
     this->count++;
     RCLCPP_INFO(this->node_->get_logger(), "COUNT : [%d]", this->count);
 
-    printf("\n");
-
+    this->mission_->set__mission_status_code(MISSION_RECEPTION_SUCCEEDED_CODE);
     this->mission_->set__mission(mission);
+
+    this->mission_notificator_->notify_mission_status(this->mission_);
+
     response->set__result(true);
 
     rclcpp::sleep_for(std::chrono::milliseconds(500));

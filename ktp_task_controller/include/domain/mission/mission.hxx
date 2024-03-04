@@ -11,10 +11,13 @@ namespace ktp
         class Mission final
         {
         private:
+            u_int16_t mission_status_code_;
             ktp_data_msgs::msg::Mission mission_;
         public:
             explicit Mission();
             virtual ~Mission();
+            u_int16_t  get__mission_status_code();
+            void set__mission_status_code(u_int16_t mission_status_code);
             ktp_data_msgs::msg::Mission get__mission();
             void set__mission(ktp_data_msgs::msg::Mission mission);
         public:

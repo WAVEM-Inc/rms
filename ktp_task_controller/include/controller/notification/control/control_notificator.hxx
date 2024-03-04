@@ -12,8 +12,7 @@
 
 #define DEFAULT_QOS 10
 
-#define NOTIFICATE_MISSION_TO_MGR_TOPIC "/ktp/task/notificate/mission"
-#define NOTIFICATE_CONTROL_TO_MGR_TOPIC "/ktp/task/notificate/control"
+#define NOTIFICATE_CONTROL_TO_MGR_TOPIC "/ktp/task/notify/control"
 
 #define NOTIFICATE_PUBLISHING_RATE 850
 
@@ -29,15 +28,12 @@ namespace ktp
         private:
             rclcpp::Node::SharedPtr node_;
 
-            ktp::controller::AssignmentController::SharedPtr assignment_controller_;
-
             rclcpp::CallbackGroup::SharedPtr notificate_control_publisher_cb_group_;
             rclcpp::Publisher<ktp_data_msgs::msg::Control>::SharedPtr notificate_control_publihser_;
 
         public:
             explicit ControlNotificator(rclcpp::Node::SharedPtr node);
             virtual ~ControlNotificator();
-            void notificate_control();
 
         public:
             using SharedPtr = std::shared_ptr<ControlNotificator>;
