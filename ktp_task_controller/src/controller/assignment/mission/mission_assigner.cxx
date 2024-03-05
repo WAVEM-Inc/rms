@@ -1,13 +1,12 @@
 #include "controller/assignment/mission/mission_assigner.hxx"
 
 ktp::controller::MissionAssigner::MissionAssigner(rclcpp::Node::SharedPtr node)
-    : node_(node),
-      mission_task_current_idx_(DEFAULT_INT),
-      mission_task_last_idx_(DEFAULT_INT),
-      mission_task_path_current_idx_(DEFAULT_INT),
-      mission_task_path_last_idx_(DEFAULT_INT),
-      node_current_idx_(DEFAULT_INT),
-      node_last_idx_(DEFAULT_INT)
+    : node_(node), task_current_index_(DEFAULT_INT),
+      task_vec_size_(DEFAULT_INT),
+      path_current_index_(DEFAULT_INT),
+      path_vec_size_(DEFAULT_INT),
+      node_current_index_(DEFAULT_INT),
+      node_list_size_(DEFAULT_INT)
 {
     this->mission_ = std::make_shared<ktp::domain::Mission>();
     this->mission_notificator_ = std::make_shared<ktp::controller::MissionNotificator>(this->node_);
@@ -48,7 +47,8 @@ ktp::controller::MissionAssigner::MissionAssigner(rclcpp::Node::SharedPtr node)
     this->route_to_pose_status_subscription_ = this->node_->create_subscription<action_msgs::msg::GoalStatusArray>(
         ROUTE_TO_POSE_STATUS_TOPIC_NAME,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
-        std::bind(&ktp::controller::MissionAssigner::route_to_pose_subscription_cb, this, _1),
+        std::bind(&ktp::controller::MissionAssigner::
+                          route_to_pose_status_subscription_cb, this, _1),
         route_to_pose_status_subscription_opts);
 }
 
@@ -76,7 +76,7 @@ void ktp::controller::MissionAssigner::assign_mission_service_cb(
     const std::shared_ptr<ktp_data_msgs::srv::AssignMission::Request> request,
     const std::shared_ptr<ktp_data_msgs::srv::AssignMission::Response> response)
 {
-    const bool &is_mission_task_vec_empty = this->mission_task_vec_.empty();
+    const bool &is_mission_task_vec_empty = this->task_vec_.empty();
 
     if (!is_mission_task_vec_empty)
     {
@@ -96,36 +96,31 @@ void ktp::controller::MissionAssigner::assign_mission_service_cb(
         CSTR(mission.owner),
         CSTR(mission.mission_code));
 
-    this->mission_task_vec_ = mission.task;
-    this->mission_task_last_idx_ = this->mission_task_vec_.size();
+    this->task_vec_ = mission.task;
+    this->task_vec_size_ = this->task_vec_.size();
 
-    RCLCPP_INFO(this->node_->get_logger(), "MissionTaskVec Size : [%d]", this->mission_task_last_idx_);
-
-    this->count++;
-    RCLCPP_INFO(this->node_->get_logger(), "COUNT : [%d]", this->count);
+    RCLCPP_INFO(this->node_->get_logger(), "MissionTaskVec Size : [%d]", this->task_vec_size_);
 
     this->mission_->set__mission_status_code(MISSION_RECEPTION_SUCCEEDED_CODE);
     this->mission_->set__mission(mission);
 
     this->mission_notificator_->notify_mission_status(this->mission_);
 
-    response->set__result(true);
-
-    rclcpp::sleep_for(std::chrono::milliseconds(500));
+    const bool &path_request_result = this->request_converting_goal_to_path();
 
     const bool &is_mission_assigned = this->mission_ != nullptr;
 
     if (is_mission_assigned)
     {
-        const bool &path_request_result = this->request_converting_goal_to_path();
-
         if (path_request_result)
         {
-            this->mission_task_path_current_idx_ = this->mission_task_current_idx_;
-            this->mission_task_path_last_idx_ = (int)this->mission_task_path_vec_.size();
+            this->path_current_index_ = this->task_current_index_;
+            this->path_vec_size_ = static_cast<int>(this->path_vec_.size());
 
-            RCLCPP_INFO(this->node_->get_logger(), "Converting Goal to Path succeeded. Sending Goal... [%d]", this->mission_task_path_current_idx_);
+            RCLCPP_INFO(this->node_->get_logger(), "Converting Goal to Path succeeded. Sending Goal... [%d]", this->path_current_index_);
             this->route_to_pose_send_goal();
+
+            response->set__result(true);
         }
         else
         {
@@ -152,23 +147,23 @@ bool ktp::controller::MissionAssigner::request_converting_goal_to_path()
         return false;
     }
 
-    for (auto it = this->mission_task_vec_.begin(); it != this->mission_task_vec_.end(); ++it)
+    for (auto task_it = this->task_vec_.begin(); task_it != this->task_vec_.end(); ++task_it)
     {
-        const size_t &index = std::distance(this->mission_task_vec_.begin(), it);
+        const size_t &task_index = std::distance(this->task_vec_.begin(), task_it);
 
-        RCLCPP_INFO(this->node_->get_logger(), "Request Converting Goal to Path index : [%zu]", index);
+        RCLCPP_INFO(this->node_->get_logger(), "Request Converting Goal to Path task_index : [%zu]", task_index);
 
-        const ktp_data_msgs::msg::MissionTaskData &mission_task_data = this->mission_task_vec_[index].task_data;
+        const ktp_data_msgs::msg::MissionTaskData &mission_task_data = this->task_vec_[task_index].task_data;
 
         path_graph_msgs::srv::Path::Request::SharedPtr path_request = std::make_shared<path_graph_msgs::srv::Path::Request>();
         path_request->set__start_node(mission_task_data.source);
 
         const std::vector<std::string> &goal_vec = mission_task_data.goal;
-        const int &goal_vec_size = (int)goal_vec.size();
+        const int &goal_vec_size = static_cast<int>(goal_vec.size());
 
         if (goal_vec_size > 1)
         {
-            RCLCPP_WARN(this->node_->get_logger(), "Goal to Path MissionTask's Goal list's size is over than 1, It will proceed last index goal");
+            RCLCPP_WARN(this->node_->get_logger(), "Goal to Path MissionTask's Goal list's size is over than 1, It will proceed last task_index goal");
             path_request->set__end_node(goal_vec[goal_vec_size - 1]);
         }
         else
@@ -199,11 +194,45 @@ bool ktp::controller::MissionAssigner::request_converting_goal_to_path()
 
                 const path_graph_msgs::srv::Path::Response::SharedPtr response = future_and_request_id.future.get();
                 const route_msgs::msg::Path &path = response->path;
-                this->mission_task_path_vec_.push_back(path);
+                this->path_vec_.push_back(path);
 
-                RCLCPP_INFO(this->node_->get_logger(), "Goal to Path\n\tindex : [%zu]\n\tsize : [%zu]", index, this->mission_task_path_vec_.size());
+                RCLCPP_INFO(this->node_->get_logger(), "Goal to Path\n\ttask_index : [%zu]\n\tsize : [%zu]", task_index, this->task_vec_.size());
 
-                return true;
+                const bool &is_converting_finished = (static_cast<int>(task_index) == static_cast<int>(this->task_vec_.size() - 1));
+
+                if (is_converting_finished)
+                {
+                    for (auto path_it = this->path_vec_.begin(); path_it != this->path_vec_.end(); ++path_it)
+                    {
+                          const size_t &path_index = std::distance(this->path_vec_.begin(), path_it);
+
+                          const route_msgs::msg::Path &task_path = this->path_vec_[path_index];
+
+                          const std::string &path_id = task_path.id;
+                          const std::string &path_name = task_path.name;
+                          RCLCPP_INFO(this->node_->get_logger(), "path[%zu]\n\tid : [%s]\n\tname : [%s]", path_index, path_id.c_str(), path_name.c_str());
+
+                          const std::vector<route_msgs::msg::Node> &node_list = task_path.node_list;
+
+                          for (auto node_it = node_list.begin(); node_it != node_list.end(); ++node_it)
+                          {
+                              const size_t &node_index = std::distance(node_list.begin(), node_it);
+
+                              const route_msgs::msg::Node &task_path_node = node_list[node_index];
+
+                              const float &task_longitude = task_path_node.position.longitude;
+                              const float &task_latitude = task_path_node.position.latitude;
+
+                              RCLCPP_INFO(this->node_->get_logger(), "node position[%zu]\n\tlongitude : [%f]\n\tlatitude : [%f]", node_index, task_longitude, task_latitude);
+                          }
+                          RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------\n\n");
+                    }
+                    return true;
+                }
+                else
+                {
+                    continue;
+                }
             }
             else
             {
@@ -224,7 +253,7 @@ void ktp::controller::MissionAssigner::route_to_pose_send_goal()
     RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
     RCLCPP_INFO(this->node_->get_logger(), "----------------------- Route to Pose Send Goal ------------------------");
 
-    const bool &is_path_vec_empty = this->mission_task_path_vec_.empty();
+    const bool &is_path_vec_empty = this->path_vec_.empty();
 
     if (is_path_vec_empty)
     {
@@ -240,17 +269,17 @@ void ktp::controller::MissionAssigner::route_to_pose_send_goal()
         return;
     }
 
-    this->mission_task_last_idx_ = this->mission_task_vec_.size() - 1;
+    this->task_vec_size_ = this->task_vec_.size() - 1;
 
     route_msgs::action::RouteToPose::Goal::UniquePtr goal = std::make_unique<route_msgs::action::RouteToPose::Goal>();
 
-    const std::vector<route_msgs::msg::Node> &node_list = this->mission_task_path_vec_[this->mission_task_path_current_idx_].node_list;
-    this->node_last_idx_ = (int)node_list.size();
+    const std::vector<route_msgs::msg::Node> &node_list = this->path_vec_[this->path_current_index_].node_list;
+    this->node_list_size_ = static_cast<int>(node_list.size());
 
-    const route_msgs::msg::Node &start_node = node_list[this->node_current_idx_];
+    const route_msgs::msg::Node &start_node = node_list[this->node_current_index_];
     goal->set__start_node(start_node);
 
-    const route_msgs::msg::Node &end_node = node_list[this->node_last_idx_];
+    const route_msgs::msg::Node &end_node = node_list[this->node_list_size_];
     goal->set__end_node(end_node);
 
     rclcpp_action::Client<route_msgs::action::RouteToPose>::SendGoalOptions goal_opts = rclcpp_action::Client<route_msgs::action::RouteToPose>::SendGoalOptions();
@@ -266,8 +295,8 @@ void ktp::controller::MissionAssigner::route_to_pose_send_goal()
     RCLCPP_INFO(
         this->node_->get_logger(),
         "route_to_pose goal sent\n\tpath_current_idx : [%d]\n\tnode_current_idx : [%d]",
-        this->mission_task_path_current_idx_,
-        this->node_current_idx_);
+        this->path_current_index_,
+        this->node_current_index_);
 
     RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
 }
@@ -300,9 +329,9 @@ void ktp::controller::MissionAssigner::route_to_pose_result_cb(const rclcpp_acti
 {
 }
 
-void ktp::controller::MissionAssigner::route_to_pose_subscription_cb(const action_msgs::msg::GoalStatusArray::SharedPtr route_to_pose_status_cb)
+void ktp::controller::MissionAssigner::route_to_pose_status_subscription_cb(const action_msgs::msg::GoalStatusArray::SharedPtr route_to_pose_status_cb)
 {
-    const bool &is_path_vec_empty = this->mission_task_path_vec_.empty();
+    const bool &is_path_vec_empty = this->path_vec_.empty();
 
     if (is_path_vec_empty)
     {
@@ -317,10 +346,10 @@ void ktp::controller::MissionAssigner::route_to_pose_subscription_cb(const actio
         RCLCPP_INFO(
             this->node_->get_logger(),
             "route_to_pose status callback\n\twaypoints index : [%d]\n\twaypoints size : [%d]\n\tgoal_status_code : [%d]",
-            this->mission_task_path_current_idx_,
-            this->mission_task_path_last_idx_,
+            this->path_current_index_,
+            this->path_vec_size_,
             goal_status_code);
 
-        const bool &is_mission_task_path_ended = (this->mission_task_path_current_idx_ == (this->mission_task_path_last_idx_ - 1));
+        const bool &is_mission_task_path_ended = (this->path_current_index_ == (this->path_vec_size_ - 1));
     }
 }

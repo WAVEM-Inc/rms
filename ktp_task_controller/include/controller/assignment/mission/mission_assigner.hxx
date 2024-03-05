@@ -36,7 +36,7 @@
 #define MISSION_ASSIGN_FROM_ITF_TOPIC "/ktp/task/mission/assign"
 #define ASSIGN_MISSION_SERVICE_NAME "/ktp_task_controller/assign/mission"
 // #define UBLOX_FIX_TOPIC "/sensor/ublox/fix"
-#define UBLOX_FIX_TOPIC "/ublox/fix"
+#define UBLOX_FIX_TOPIC "/sensor/ublox/fix"
 #define PATH_GRAPH_PATH_SERVICE_NAME "/path_graph/path"
 // #define ROUTE_TO_POSE_ACTION_NAME "/navigate_to_pose"
 // #define ROUTE_TO_POSE_STATUS_TOPIC_NAME "/navigate_to_pose/_action/status"
@@ -56,22 +56,20 @@ namespace ktp
         class MissionAssigner final
         {
         private:
-            int count = 0;
-
             rclcpp::Node::SharedPtr node_;
 
             ktp::domain::Mission::SharedPtr mission_;
 
-            std::vector<ktp_data_msgs::msg::MissionTask> mission_task_vec_;
-            int mission_task_current_idx_;
-            int mission_task_last_idx_;
+            std::vector<ktp_data_msgs::msg::MissionTask> task_vec_;
+            int task_current_index_;
+            int task_vec_size_;
 
-            std::vector<route_msgs::msg::Path> mission_task_path_vec_;
-            int mission_task_path_current_idx_;
-            int mission_task_path_last_idx_;
+            std::vector<route_msgs::msg::Path> path_vec_;
+            int path_current_index_;
+            int path_vec_size_;
 
-            int node_current_idx_;
-            int node_last_idx_;
+            int node_current_index_;
+            int node_list_size_;
 
             ktp::controller::MissionNotificator::SharedPtr mission_notificator_;
 
@@ -101,7 +99,7 @@ namespace ktp
 
             rclcpp::CallbackGroup::SharedPtr route_to_pose_status_subscription_cb_group_;
             rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr route_to_pose_status_subscription_;
-            void route_to_pose_subscription_cb(const action_msgs::msg::GoalStatusArray::SharedPtr route_to_pose_status_cb);
+            void route_to_pose_status_subscription_cb(const action_msgs::msg::GoalStatusArray::SharedPtr route_to_pose_status_cb);
 
         public:
             explicit MissionAssigner(rclcpp::Node::SharedPtr node);
