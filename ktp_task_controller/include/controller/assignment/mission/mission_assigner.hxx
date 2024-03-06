@@ -41,6 +41,7 @@
 // #define ROUTE_TO_POSE_ACTION_NAME "/navigate_to_pose"
 // #define ROUTE_TO_POSE_STATUS_TOPIC_NAME "/navigate_to_pose/_action/status"
 #define ROUTE_TO_POSE_ACTION_NAME "/route_to_pose"
+#define ROUTE_TO_POSE_FEEDBACK_TOPIC_NAME "/route_to_pose/_action/feedback"
 #define ROUTE_TO_POSE_STATUS_TOPIC_NAME "/route_to_pose/_action/status"
 
 #define CSTR(str) ((str).c_str())
@@ -99,7 +100,7 @@ namespace ktp
 
             rclcpp::CallbackGroup::SharedPtr route_to_pose_status_subscription_cb_group_;
             rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr route_to_pose_status_subscription_;
-            void route_to_pose_status_subscription_cb(const action_msgs::msg::GoalStatusArray::SharedPtr route_to_pose_status_cb);
+//            void route_to_pose_status_subscription_cb(const action_msgs::msg::GoalStatusArray::SharedPtr route_to_pose_status_cb);
 
         public:
             explicit MissionAssigner(rclcpp::Node::SharedPtr node);
