@@ -1,0 +1,5 @@
+string create_time
+string event_type
+string event_reason_code
+string object_id
+bool is_cooperative

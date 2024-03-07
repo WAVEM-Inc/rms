@@ -34,6 +34,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/GraphZoneVertices.msg"
   "msg/ObjectDetect.msg"
   "msg/ObjectDetectSize.msg"
+  "msg/ObstacleDetect.msg"
+  "msg/LiDARSignal.msg"
   "srv/AssignControl.srv"
   "srv/AssignMission.srv"
   DEPENDENCIES std_msgs
