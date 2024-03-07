@@ -29,6 +29,7 @@ set(SOURCES
   src/manager/response/graph_list/graph_list_manager.cxx
   src/manager/response/robot_status/robot_status_manager.cxx
   src/manager/response/service_status/service_status_manager.cxx
+  src/manager/response/obstacle_detect/obstacle_detect_manager.cxx
   src/main.cxx
 )
 

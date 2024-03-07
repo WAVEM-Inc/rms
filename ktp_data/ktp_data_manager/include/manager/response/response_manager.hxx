@@ -8,6 +8,7 @@
 #include "manager/response/error_report/error_report_manager.hxx"
 #include "manager/response/control_report/control_report_manager.hxx"
 #include "manager/response/graph_list/graph_list_manager.hxx"
+#include "manager/response/obstacle_detect/obstacle_detect_manager.hxx"
 
 #define DEFAULT_QOS 10
 
@@ -28,6 +29,7 @@ namespace ktp
             ktp::data::ErrorReportManager::SharedPtr error_report_manager_;
             ktp::data::ControlReportManager::SharedPtr control_report_manager_;
             ktp::data::GraphListManager::SharedPtr graph_list_manager_;
+            ktp::data::ObstacleDetectManager::SharedPtr obstacle_detect_manager_;
 
         public:
             explicit ResponseManager(rclcpp::Node::SharedPtr node);
