@@ -35,23 +35,11 @@ ktp::controller::MissionAssigner::MissionAssigner(rclcpp::Node::SharedPtr node)
 
     this->route_to_pose_action_client_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     const rcl_action_client_options_t &route_to_pose_action_client_opts = rcl_action_client_get_default_options();
-//    this->route_to_pose_action_client_ = rclcpp_action::create_client<route_msgs::action::RouteToPose>(
-//            this->node_,
-//            ROUTE_TO_POSE_ACTION_NAME);
     this->route_to_pose_action_client_ = rclcpp_action::create_client<route_msgs::action::RouteToPose>(
         this->node_,
         ROUTE_TO_POSE_ACTION_NAME,
         this->route_to_pose_action_client_cb_group_,
         route_to_pose_action_client_opts);
-
-//    this->route_to_pose_status_subscription_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-//    rclcpp::SubscriptionOptions route_to_pose_status_subscription_opts;
-//    route_to_pose_status_subscription_opts.callback_group = this->route_to_pose_status_subscription_cb_group_;
-//    this->route_to_pose_status_subscription_ = this->node_->create_subscription<action_msgs::msg::GoalStatusArray>(
-//        ROUTE_TO_POSE_STATUS_TOPIC_NAME,
-//        rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
-//        std::bind(&ktp::controller::MissionAssigner::route_to_pose_status_subscription_cb, this, _1),
-//        route_to_pose_status_subscription_opts);
 }
 
 ktp::controller::MissionAssigner::~MissionAssigner()
@@ -103,10 +91,10 @@ void ktp::controller::MissionAssigner::assign_mission_service_cb(
 
     RCLCPP_INFO(this->node_->get_logger(), "MissionTaskVec Size : [%d]", this->task_vec_size_);
 
-    this->mission_->set__mission_status_code(MISSION_RECEPTION_SUCCEEDED_CODE);
+    this->mission_->set__response_code(MISSION_RECEPTION_SUCCEEDED_CODE);
     this->mission_->set__mission(mission);
 
-    this->mission_notificator_->notify_mission_status(this->mission_);
+    this->mission_notificator_->notify_mission_response(this->mission_);
 
     const bool &path_request_result = this->request_converting_goal_to_path();
 
@@ -206,28 +194,28 @@ bool ktp::controller::MissionAssigner::request_converting_goal_to_path()
                 {
                     for (auto path_it = this->path_vec_.begin(); path_it != this->path_vec_.end(); ++path_it)
                     {
-                          const size_t &path_index = std::distance(this->path_vec_.begin(), path_it);
+                        const size_t &path_index = std::distance(this->path_vec_.begin(), path_it);
 
-                          const route_msgs::msg::Path &task_path = this->path_vec_[path_index];
+                        const route_msgs::msg::Path &task_path = this->path_vec_[path_index];
 
-                          const std::string &path_id = task_path.id;
-                          const std::string &path_name = task_path.name;
-                          RCLCPP_INFO(this->node_->get_logger(), "path[%zu]\n\tid : [%s]\n\tname : [%s]", path_index, path_id.c_str(), path_name.c_str());
+                        const std::string &path_id = task_path.id;
+                        const std::string &path_name = task_path.name;
+                        RCLCPP_INFO(this->node_->get_logger(), "path[%zu]\n\tid : [%s]\n\tname : [%s]", path_index, path_id.c_str(), path_name.c_str());
 
-                          const std::vector<route_msgs::msg::Node> &node_list = task_path.node_list;
+                        const std::vector<route_msgs::msg::Node> &node_list = task_path.node_list;
 
-                          for (auto node_it = node_list.begin(); node_it != node_list.end(); ++node_it)
-                          {
-                              const size_t &node_index = std::distance(node_list.begin(), node_it);
+                        for (auto node_it = node_list.begin(); node_it != node_list.end(); ++node_it)
+                        {
+                            const size_t &node_index = std::distance(node_list.begin(), node_it);
 
-                              const route_msgs::msg::Node &task_path_node = node_list[node_index];
+                            const route_msgs::msg::Node &task_path_node = node_list[node_index];
 
-                              const float &task_longitude = task_path_node.position.longitude;
-                              const float &task_latitude = task_path_node.position.latitude;
+                            const float &task_longitude = task_path_node.position.longitude;
+                            const float &task_latitude = task_path_node.position.latitude;
 
-                              RCLCPP_INFO(this->node_->get_logger(), "node position[%zu]\n\tlongitude : [%f]\n\tlatitude : [%f]", node_index, task_longitude, task_latitude);
-                          }
-                          RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------\n\n");
+                            RCLCPP_INFO(this->node_->get_logger(), "node position[%zu]\n\tlongitude : [%f]\n\tlatitude : [%f]", node_index, task_longitude, task_latitude);
+                        }
+                        RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------\n\n");
                     }
                     return true;
                 }
@@ -322,12 +310,13 @@ void ktp::controller::MissionAssigner::route_to_pose_feedback_cb(rclcpp_action::
 {
     (void)goal_handle;
 
-    const std::string &status_code = feedback->status_code;
+    const uint8_t &status_code = feedback->status_code;
 
     RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
     RCLCPP_INFO(this->node_->get_logger(), "----------------------- Route to Pose Feedback -------------------------");
 
-    RCLCPP_INFO(this->node_->get_logger(), "status_code : [%s]", status_code.c_str());
+    RCLCPP_INFO(this->node_->get_logger(), "status_code : [%d]", status_code);
+
 
     RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
 }
@@ -337,48 +326,24 @@ void ktp::controller::MissionAssigner::route_to_pose_result_cb(const rclcpp_acti
     RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
     RCLCPP_INFO(this->node_->get_logger(), "------------------------ Route to Pose Result --------------------------");
 
-    const std::string &result = wrapped_result.result->result;
-    RCLCPP_INFO(this->node_->get_logger(), "result : [%s]", result.c_str());
+    const uint8_t &result = wrapped_result.result->result;
+    RCLCPP_INFO(this->node_->get_logger(), "result : [%d]", result);
 
-    switch (wrapped_result.code) {
-        case rclcpp_action::ResultCode::SUCCEEDED:
-            RCLCPP_INFO(this->node_->get_logger(), "Goal was succeeded");
-            break;
-        case rclcpp_action::ResultCode::ABORTED:
-            RCLCPP_ERROR(this->node_->get_logger(), "Goal was aborted");
-            return;
-        case rclcpp_action::ResultCode::CANCELED:
-            RCLCPP_ERROR(this->node_->get_logger(), "Goal was canceled");
-            return;
-        default:
-            RCLCPP_ERROR(this->node_->get_logger(), "Unknown result code");
-            return;
+    switch (wrapped_result.code)
+    {
+    case rclcpp_action::ResultCode::SUCCEEDED:
+        RCLCPP_INFO(this->node_->get_logger(), "Goal was succeeded");
+        break;
+    case rclcpp_action::ResultCode::ABORTED:
+        RCLCPP_ERROR(this->node_->get_logger(), "Goal was aborted");
+        return;
+    case rclcpp_action::ResultCode::CANCELED:
+        RCLCPP_ERROR(this->node_->get_logger(), "Goal was canceled");
+        return;
+    default:
+        RCLCPP_ERROR(this->node_->get_logger(), "Unknown result code");
+        return;
     }
 
     RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
 }
-
-//void ktp::controller::MissionAssigner::route_to_pose_status_subscription_cb(const action_msgs::msg::GoalStatusArray::SharedPtr route_to_pose_status_cb)
-//{
-//    const bool &is_path_vec_empty = this->path_vec_.empty();
-//
-//    if (is_path_vec_empty)
-//    {
-//        RCLCPP_ERROR(this->node_->get_logger(), "route_to_pose send goal path_vec is empty...aborting");
-//        return;
-//    }
-//    else
-//    {
-//        const action_msgs::msg::GoalStatus &goal_status = route_to_pose_status_cb->status_list.back();
-//        const uint8_t &goal_status_code = goal_status.status;
-//
-//        RCLCPP_INFO(
-//            this->node_->get_logger(),
-//            "route_to_pose status callback\n\twaypoints index : [%d]\n\twaypoints size : [%d]\n\tgoal_status_code : [%d]",
-//            this->path_current_index_,
-//            this->path_vec_size_,
-//            goal_status_code);
-//
-//        const bool &is_mission_task_path_ended = (this->path_current_index_ == (this->path_vec_size_ - 1));
-//    }
-//}

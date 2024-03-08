@@ -11,15 +11,20 @@ namespace ktp
         class Mission final
         {
         private:
-            u_int16_t mission_status_code_;
+            uint8_t response_code_;
+            uint8_t status_code_;
             ktp_data_msgs::msg::Mission mission_;
+
         public:
             explicit Mission();
             virtual ~Mission();
-            u_int16_t  get__mission_status_code();
-            void set__mission_status_code(u_int16_t mission_status_code);
+            uint8_t get__response_code();
+            void set__response_code(uint8_t response_code);
+            uint8_t get__status_code();
+            void set__status_code(uint8_t mission_status_code);
             ktp_data_msgs::msg::Mission get__mission();
             void set__mission(ktp_data_msgs::msg::Mission mission);
+
         public:
             using SharedPtr = std::shared_ptr<Mission>;
             using UniquePtr = std::unique_ptr<Mission>;

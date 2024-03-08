@@ -19,7 +19,7 @@ namespace ktp
             explicit ObstacleDetectManager(rclcpp::Node::SharedPtr node);
             virtual ~ObstacleDetectManager();
         public:
-            using SharedPtr = std::shared_ptr<ObstacleDetectManager>();
+            using SharedPtr = std::shared_ptr<ObstacleDetectManager>;
         };
     }
 }

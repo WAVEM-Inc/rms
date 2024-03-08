@@ -32,14 +32,26 @@
 #define DEFAULT_QOS 10
 
 #define MISSION_RECEPTION_SUCCEEDED_CODE 200
+#define MISSION_RECEPTION_FAILED_CODE 400
+
+#define ROUTE_TO_POSE_FEEDBACK_NAVIGATION_STARTED_CODE 1001
+#define ROUTE_TO_POSE_FEEDBACK_ON_PROGRESS_CODE 2001
+#define ROUTE_TO_POSE_FEEDBACK_LIDAR_OBJECT_DETECTED_CODE 3001
+#define ROUTE_TO_POSE_FEEDBACK_COOPERATIVE_OBJECT_DETECTED_CODE 3002
+#define ROUTE_TO_POSE_FEEDBACK_NAVIGATION_SUCCEEDED_CODE 4001
+#define ROUTE_TO_POSE_FEEDBACK_NAVIGATION_CANCELED_CODE 5001
+
+#define ROUTE_TO_POSE_RESULT_SUCCEEDED_CODE 1001
+#define ROUTE_TO_POSE_RESULT_NAVIGATION_CANCELED_CODE 2001
+#define ROUTE_TO_POSE_RESULT_NAVIGATION_UNKNOWN_ROUTE_CODE 2002
+#define ROUTE_TO_POSE_RESULT_NAVIGATION_LONG_TERM_WAITING_CODE 2003
+#define ROUTE_TO_POSE_RESULT_SYSTEM_DISABLED_CODE 2004
+#define ROUTE_TO_POSE_RESULT_ABORTED_CODE 3001
 
 #define MISSION_ASSIGN_FROM_ITF_TOPIC "/ktp/task/mission/assign"
 #define ASSIGN_MISSION_SERVICE_NAME "/ktp_task_controller/assign/mission"
-// #define UBLOX_FIX_TOPIC "/sensor/ublox/fix"
 #define UBLOX_FIX_TOPIC "/sensor/ublox/fix"
 #define PATH_GRAPH_PATH_SERVICE_NAME "/path_graph/path"
-// #define ROUTE_TO_POSE_ACTION_NAME "/navigate_to_pose"
-// #define ROUTE_TO_POSE_STATUS_TOPIC_NAME "/navigate_to_pose/_action/status"
 #define ROUTE_TO_POSE_ACTION_NAME "/route_to_pose"
 #define ROUTE_TO_POSE_FEEDBACK_TOPIC_NAME "/route_to_pose/_action/feedback"
 #define ROUTE_TO_POSE_STATUS_TOPIC_NAME "/route_to_pose/_action/status"
@@ -97,10 +109,6 @@ namespace ktp
             void route_to_pose_goal_response_cb(const rclcpp_action::ClientGoalHandle<route_msgs::action::RouteToPose>::SharedPtr &goal_handle);
             void route_to_pose_feedback_cb(rclcpp_action::ClientGoalHandle<route_msgs::action::RouteToPose>::SharedPtr goal_handle, const std::shared_ptr<const route_msgs::action::RouteToPose::Feedback> feedback);
             void route_to_pose_result_cb(const rclcpp_action::ClientGoalHandle<route_msgs::action::RouteToPose>::WrappedResult &result);
-
-            rclcpp::CallbackGroup::SharedPtr route_to_pose_status_subscription_cb_group_;
-            rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr route_to_pose_status_subscription_;
-//            void route_to_pose_status_subscription_cb(const action_msgs::msg::GoalStatusArray::SharedPtr route_to_pose_status_cb);
 
         public:
             explicit MissionAssigner(rclcpp::Node::SharedPtr node);

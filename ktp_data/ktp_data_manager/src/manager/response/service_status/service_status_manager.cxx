@@ -3,14 +3,14 @@
 ktp::data::ServiceStatusManager::ServiceStatusManager(rclcpp::Node::SharedPtr node)
     : node_(node)
 {
-    this->mission_from_task_ctrl_subscription_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-    rclcpp::SubscriptionOptions mission_from_task_ctrl_subscription_opts;
-    mission_from_task_ctrl_subscription_opts.callback_group = this->mission_from_task_ctrl_subscription_cb_group_;
-    this->mission_from_task_ctrl_subscription_ = this->node_->create_subscription<ktp_data_msgs::msg::Mission>(
-        MISSION_FROM_TASK_CTRL_TOPIC,
+    this->mission_status_from_task_ctrl_subscription_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    rclcpp::SubscriptionOptions mission_status_from_task_ctrl_subscription_opts;
+    mission_status_from_task_ctrl_subscription_opts.callback_group = this->mission_status_from_task_ctrl_subscription_cb_group_;
+    this->mission_status_from_task_ctrl_subscription_ = this->node_->create_subscription<ktp_data_msgs::msg::Mission>(
+        MISSION_STATUS_FROM_TASK_CTRL_TOPIC,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
-        std::bind(&ktp::data::ServiceStatusManager::mission_from_task_ctrl_subscription_cb, this, _1),
-        mission_from_task_ctrl_subscription_opts);
+        std::bind(&ktp::data::ServiceStatusManager::mission_status_from_task_ctrl_subscription_cb, this, _1),
+        mission_status_from_task_ctrl_subscription_opts);
 
     this->service_status_to_itf_publisher_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     rclcpp::PublisherOptions service_status_to_itf_publisher_opts;
@@ -25,7 +25,7 @@ ktp::data::ServiceStatusManager::~ServiceStatusManager()
 {
 }
 
-void ktp::data::ServiceStatusManager::mission_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::Mission::SharedPtr mission_cb)
+void ktp::data::ServiceStatusManager::mission_status_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::Mission::SharedPtr mission_cb)
 {
     RCLCPP_INFO(this->node_->get_logger(), "-----------------------------------------------------------------------------------------------------\n");
     RCLCPP_INFO(this->node_->get_logger(), "--------------------------- Nofiticate Mission(ServiceStatus) Callback ------------------------------\n");
