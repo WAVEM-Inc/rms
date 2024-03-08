@@ -4,12 +4,14 @@ from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.exceptions import ROSInterruptException
 from .ros.node import KTPInterface
+from .tcp.presentation.Hello import iot_sample_run
 
 
 def main(args=None) -> None:
     rclpy.init(args=args);
 
     try:
+        iot_sample_run();
         node: Node = KTPInterface();
         node_name: str = node.get_name();
         multi_threaded_executor: MultiThreadedExecutor = MultiThreadedExecutor();
