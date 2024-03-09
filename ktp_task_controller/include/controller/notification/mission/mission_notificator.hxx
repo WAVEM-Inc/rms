@@ -4,6 +4,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include <ktp_data_msgs/msg/service_status.hpp>
+#include <ktp_data_msgs/msg/service_status_task.hpp>
 
 #include <ktp_data_msgs/msg/mission.hpp>
 #include <ktp_data_msgs/msg/mission_task.hpp>
@@ -30,10 +31,22 @@
 #define ROUTE_TO_POSE_RESULT_SYSTEM_DISABLED_CODE 2004
 #define ROUTE_TO_POSE_RESULT_ABORTED_CODE 3001
 
-#define NOTIFY_MISSION_RESPONSE_TO_MGR_TOPIC "/rms/ktp/task/notify/mission/response"
+#define MISSION_TASK_STARTED_STATUS "Started"
+#define MISSION_TASK_SOURCE_ARRIVED_STATUS "SourceArrived"
+#define MISSION_TASK_TAKEN_STATUS "Taken"
+#define MISSION_TASK_ON_PROGRESS_STATUS "OnProgress"
+#define MISSION_TASK_DEST_ARRIVED_STATUS "DestArrived"
+#define MISSION_TASK_END_STATUS "End"
+#define MISSION_TASK_CANCELLED_STATUS "Cancelled"
+#define MISSION_TASK_FAILED_STATUS "Failed"
+
+#define NOTIFY_MISSION_REPORT_TO_MGR_TOPIC "/rms/ktp/task/notify/mission/report"
 #define NOTIFY_MISSION_STATUS_TO_MGR_TOPIC "/rms/ktp/task/notify/mission/status"
 
 #define CONTROL_TYPE_MISSION "mission"
+
+#define MISSION_CODE "ktdelivery"
+#define MISSION_OWNER "padmin"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -47,18 +60,19 @@ namespace ktp
         private:
             rclcpp::Node::SharedPtr node_;
 
-            rclcpp::CallbackGroup::SharedPtr notify_mission_response_publisher_cb_group_;
-            rclcpp::Publisher<ktp_data_msgs::msg::ControlReport>::SharedPtr notify_mission_response_publisher_;
+            rclcpp::CallbackGroup::SharedPtr notify_mission_report_publisher_cb_group_;
+            rclcpp::Publisher<ktp_data_msgs::msg::ControlReport>::SharedPtr notify_mission_report_publisher_;
 
             rclcpp::CallbackGroup::SharedPtr notify_mission_status_publisher_cb_group_;
-            rclcpp::Publisher<ktp_data_msgs::msg::Mission>::SharedPtr notify_mission_status_publisher_;
+            rclcpp::Publisher<ktp_data_msgs::msg::ServiceStatus>::SharedPtr notify_mission_status_publisher_;
+
+            ktp_data_msgs::msg::ServiceStatus build_service_status(uint8_t status_code, ktp_data_msgs::msg::Mission mission);
 
         public:
             explicit MissionNotificator(rclcpp::Node::SharedPtr node);
             virtual ~MissionNotificator();
-            void notify_mission_response(ktp::domain::Mission::SharedPtr domain_mission);
+            void notify_mission_report(ktp::domain::Mission::SharedPtr domain_mission);
             void notify_mission_status(ktp::domain::Mission::SharedPtr domain_mission);
-            ktp_data_msgs::msg::ServiceStatus build_service_status(uint8_t status, ktp_data_msgs::msg::Mission mission);
 
         public:
             using SharedPtr = std::shared_ptr<MissionNotificator>;

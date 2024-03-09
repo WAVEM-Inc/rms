@@ -16,7 +16,7 @@
 #define DEFAULT_QOS 10
 #define DEFAULT_DOUBLE 0.0
 
-#define MISSION_STATUS_FROM_TASK_CTRL_TOPIC "/rms/ktp/task/notificate/mission/status"
+#define MISSION_STATUS_FROM_TASK_CTRL_TOPIC "/rms/ktp/task/notify/mission/status"
 
 #define SERVICE_STATUS_TO_ITF_TOPIC "/rms/ktp/data/service_status"
 
@@ -33,8 +33,8 @@ namespace ktp
             rclcpp::Node::SharedPtr node_;
 
             rclcpp::CallbackGroup::SharedPtr mission_status_from_task_ctrl_subscription_cb_group_;
-            rclcpp::Subscription<ktp_data_msgs::msg::Mission>::SharedPtr mission_status_from_task_ctrl_subscription_;
-            void mission_status_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::Mission::SharedPtr mission_status_cb);
+            rclcpp::Subscription<ktp_data_msgs::msg::ServiceStatus>::SharedPtr mission_status_from_task_ctrl_subscription_;
+            void mission_status_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::ServiceStatus::SharedPtr mission_status_cb);
 
             rclcpp::CallbackGroup::SharedPtr service_status_to_itf_publisher_cb_group_;
             rclcpp::Publisher<ktp_data_msgs::msg::ServiceStatus>::SharedPtr service_status_to_itf_publisher_;

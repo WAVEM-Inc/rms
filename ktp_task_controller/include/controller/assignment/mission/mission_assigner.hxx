@@ -12,11 +12,7 @@
 #include <ktp_data_msgs/msg/mission_task_data.hpp>
 #include <ktp_data_msgs/srv/assign_mission.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
-#include <path_graph_msgs/msg/path.hpp>
-#include <path_graph_msgs/msg/position.hpp>
-#include <path_graph_msgs/msg/node.hpp>
 #include <path_graph_msgs/srv/path.hpp>
-#include <action_msgs/msg/goal_status_array.hpp>
 #include <route_msgs/msg/path.hpp>
 #include <route_msgs/msg/node.hpp>
 #include <route_msgs/action/route_to_pose.hpp>
@@ -71,7 +67,7 @@ namespace ktp
         private:
             rclcpp::Node::SharedPtr node_;
 
-            ktp::domain::Mission::SharedPtr mission_;
+            ktp::domain::Mission::SharedPtr domain_mission_;
 
             std::vector<ktp_data_msgs::msg::MissionTask> task_vec_;
             int task_current_index_;

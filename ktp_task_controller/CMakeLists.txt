@@ -16,7 +16,6 @@ find_package(rclcpp_action REQUIRED)
 find_package(ktp_data_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(path_graph_msgs REQUIRED)
-find_package(nav2_msgs REQUIRED)
 find_package(action_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(route_msgs REQUIRED)
@@ -51,7 +50,6 @@ set(DEPENDS
   ktp_data_msgs
   sensor_msgs
   path_graph_msgs
-  nav2_msgs
   action_msgs
   geometry_msgs
   route_msgs

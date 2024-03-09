@@ -8,7 +8,7 @@ ktp::controller::MissionAssigner::MissionAssigner(rclcpp::Node::SharedPtr node)
       node_current_index_(DEFAULT_INT),
       node_list_size_(DEFAULT_INT)
 {
-    this->mission_ = std::make_shared<ktp::domain::Mission>();
+    this->domain_mission_ = std::make_shared<ktp::domain::Mission>();
     this->mission_notificator_ = std::make_shared<ktp::controller::MissionNotificator>(this->node_);
 
     this->assign_mission_service_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -91,14 +91,15 @@ void ktp::controller::MissionAssigner::assign_mission_service_cb(
 
     RCLCPP_INFO(this->node_->get_logger(), "MissionTaskVec Size : [%d]", this->task_vec_size_);
 
-    this->mission_->set__response_code(MISSION_RECEPTION_SUCCEEDED_CODE);
-    this->mission_->set__mission(mission);
+    // 임무 수신 성공 보고
+    this->domain_mission_->set__response_code(MISSION_RECEPTION_SUCCEEDED_CODE);
+    this->domain_mission_->set__mission(mission);
 
-    this->mission_notificator_->notify_mission_response(this->mission_);
+    this->mission_notificator_->notify_mission_report(this->domain_mission_);
 
     const bool &path_request_result = this->request_converting_goal_to_path();
 
-    const bool &is_mission_assigned = this->mission_ != nullptr;
+    const bool &is_mission_assigned = this->domain_mission_ != nullptr;
 
     if (is_mission_assigned)
     {
@@ -164,11 +165,11 @@ bool ktp::controller::MissionAssigner::request_converting_goal_to_path()
         const double &longitude = this->ublox_fix_cb_->longitude;
         const double &latitude = this->ublox_fix_cb_->latitude;
 
-        path_graph_msgs::msg::Position::UniquePtr position = std::make_unique<path_graph_msgs::msg::Position>();
+        route_msgs::msg::Position::UniquePtr position = std::make_unique<route_msgs::msg::Position>();
         position->set__longitude(longitude);
         position->set__latitude(latitude);
 
-        const path_graph_msgs::msg::Position &&position_moved = std::move(*(position));
+        const route_msgs::msg::Position &&position_moved = std::move(*(position));
         path_request->set__position(position_moved);
 
         const bool &is_service_server_ready = this->path_graph_path_service_client_->wait_for_service(std::chrono::seconds(1));
@@ -317,6 +318,7 @@ void ktp::controller::MissionAssigner::route_to_pose_feedback_cb(rclcpp_action::
 
     RCLCPP_INFO(this->node_->get_logger(), "status_code : [%d]", status_code);
 
+    this->mission_notificator_->notify_mission_status(this->domain_mission_);
 
     RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
 }

@@ -11,8 +11,8 @@
 
 #define CONTROL_REPORT_TO_ITF_TOPIC "/rms/ktp/data/control_report"
 
-#define NOTIFY_MISSION_RESPONSE_FROM_TASK_CTRL_TOPIC "/rms/ktp/task/notify/mission/response"
-#define NOTIFY_CONTROL_RESPONSE_FROM_TASK_CTRL_TOPIC "/rms/ktp/task/notify/control/response"
+#define NOTIFY_MISSION_REPORT_FROM_TASK_CTRL_TOPIC "/rms/ktp/task/notify/mission/report"
+#define NOTIFY_CONTROL_REPORT_FROM_TASK_CTRL_TOPIC "/rms/ktp/task/notify/control/report"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -29,9 +29,9 @@ namespace ktp
             rclcpp::CallbackGroup::SharedPtr control_report_to_itf_publisher_cb_group_;
             rclcpp::Publisher<ktp_data_msgs::msg::ControlReport>::SharedPtr control_report_to_itf_publisher_;
 
-            rclcpp::CallbackGroup::SharedPtr notify_mission_response_from_task_ctrl_subscription_cb_group_;
-            rclcpp::Subscription<ktp_data_msgs::msg::ControlReport>::SharedPtr notify_mission_response_from_task_ctrl_subscription_;
-            void notify_mission_response_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::ControlReport::SharedPtr notify_mission_cb);
+            rclcpp::CallbackGroup::SharedPtr notify_mission_report_from_task_ctrl_subscription_cb_group_;
+            rclcpp::Subscription<ktp_data_msgs::msg::ControlReport>::SharedPtr notify_mission_report_from_task_ctrl_subscription_;
+            void notify_mission_report_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::ControlReport::SharedPtr notify_mission_cb);
 
             rclcpp::CallbackGroup::SharedPtr notify_control_response_from_task_ctrl_subscription_cb_group_;
             rclcpp::Subscription<ktp_data_msgs::msg::ControlReport>::SharedPtr notify_control_response_from_task_ctrl_subscription_;
