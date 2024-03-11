@@ -11,7 +11,6 @@ def main(args=None) -> None:
     rclpy.init(args=args);
 
     try:
-        iot_sample_run();
         node: Node = KTPInterface();
         node_name: str = node.get_name();
         multi_threaded_executor: MultiThreadedExecutor = MultiThreadedExecutor();

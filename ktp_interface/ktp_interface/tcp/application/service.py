@@ -39,7 +39,14 @@ class TCPService():
     # 	리소스 값 전송
     ##########################################
     def send_resource(self, resource_id: str, properties: Any) -> int:
-        self.__node.get_logger().info(json.dumps(properties));
+        properties = { 
+			"ectestString": "hello",
+			"ectestDouble": 99.55,
+			"ectestInteger": 100,
+			"ectestBoolean": True
+		};
+        
+        self.__node.get_logger().info(f"resource_id : {resource_id}, properties : {json.dumps(properties)}");
         
         rc = self.im_client.ImResourceNotificationInit()
         if rc < 0 :
@@ -62,11 +69,11 @@ class TCPService():
     
     
     def initialize(self) -> None:
-        IM_SERVER_ADDR = "192.168.0.54";
-        IM_SERVER_PORT = 23;
-        IM_DEV_ID = "__testbyw111__";
-        IM_DEV_PW = "12312";
-        IM_DEV_GW = "KT_3RD_BYW";
+        IM_SERVER_ADDR = "14.63.249.103";
+        IM_SERVER_PORT = 32139;
+        IM_DEV_ID = "KECDSEMITB001";
+        IM_DEV_PW = "1234";
+        IM_DEV_GW = "M_OPENRM_UNMANNED_SOLUTION";
         IM_LOGLEVEL = 3;    # 1:ERR, 2:INFO, 3:DEBUG
 
         self.__node.get_logger().info("ImInit()...");
