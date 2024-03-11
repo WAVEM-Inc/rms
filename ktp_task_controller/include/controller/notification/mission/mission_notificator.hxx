@@ -45,6 +45,7 @@
 
 #define CONTROL_TYPE_MISSION "mission"
 
+#define DEVICE_ID "KECDSEMITB001"
 #define MISSION_CODE "ktdelivery"
 #define MISSION_OWNER "padmin"
 
@@ -66,13 +67,11 @@ namespace ktp
             rclcpp::CallbackGroup::SharedPtr notify_mission_status_publisher_cb_group_;
             rclcpp::Publisher<ktp_data_msgs::msg::ServiceStatus>::SharedPtr notify_mission_status_publisher_;
 
-            ktp_data_msgs::msg::ServiceStatus build_service_status(uint8_t status_code, ktp_data_msgs::msg::Mission mission);
-
         public:
             explicit MissionNotificator(rclcpp::Node::SharedPtr node);
             virtual ~MissionNotificator();
+            void notify_mission_status(uint8_t status_code, ktp_data_msgs::msg::MissionTask mission_task, int mission_task_index);
             void notify_mission_report(ktp::domain::Mission::SharedPtr domain_mission);
-            void notify_mission_status(ktp::domain::Mission::SharedPtr domain_mission);
 
         public:
             using SharedPtr = std::shared_ptr<MissionNotificator>;

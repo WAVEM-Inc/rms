@@ -265,10 +265,10 @@ void ktp::controller::MissionAssigner::route_to_pose_send_goal()
     const std::vector<route_msgs::msg::Node> &node_list = this->path_vec_[this->path_current_index_].node_list;
     this->node_list_size_ = static_cast<int>(node_list.size());
 
-    const route_msgs::msg::Node &start_node = node_list[DEFAULT_INT];
+    const route_msgs::msg::Node &start_node = node_list[this->node_current_index_];
     goal->set__start_node(start_node);
 
-    const route_msgs::msg::Node &end_node = node_list[DEFAULT_INT + 1];
+    const route_msgs::msg::Node &end_node = node_list[this->node_current_index_ + 1];
     goal->set__end_node(end_node);
 
     rclcpp_action::Client<route_msgs::action::RouteToPose>::SendGoalOptions goal_opts = rclcpp_action::Client<route_msgs::action::RouteToPose>::SendGoalOptions();
@@ -318,7 +318,30 @@ void ktp::controller::MissionAssigner::route_to_pose_feedback_cb(rclcpp_action::
 
     RCLCPP_INFO(this->node_->get_logger(), "status_code : [%d]", status_code);
 
-    this->mission_notificator_->notify_mission_status(this->domain_mission_);
+    const bool &is_essential_to_notify_service_status =
+        (status_code == ROUTE_TO_POSE_FEEDBACK_NAVIGATION_STARTED_CODE) ||
+        (status_code == ROUTE_TO_POSE_FEEDBACK_ON_PROGRESS_CODE) ||
+        (status_code == ROUTE_TO_POSE_FEEDBACK_NAVIGATION_SUCCEEDED_CODE) ||
+        (status_code == ROUTE_TO_POSE_FEEDBACK_NAVIGATION_CANCELED_CODE);
+    
+    if (is_essential_to_notify_service_status)
+    {
+        RCLCPP_INFO(this->node_->get_logger(), "notify mission status, task_current_index : [%d]", this->task_current_index_);
+        this->mission_notificator_->notify_mission_status(status_code, this->task_vec_[this->task_current_index_], this->task_current_index_);
+    }
+    else if (status_code == ROUTE_TO_POSE_FEEDBACK_LIDAR_OBJECT_DETECTED_CODE)
+    {
+
+    }
+    else if (status_code == ROUTE_TO_POSE_FEEDBACK_COOPERATIVE_OBJECT_DETECTED_CODE)
+    {
+
+    }
+    else
+    {
+        RCLCPP_ERROR(this->node_->get_logger(), "unkwon feedback status_code : [%d]", status_code);
+        return;
+    }
 
     RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
 }
@@ -334,7 +357,7 @@ void ktp::controller::MissionAssigner::route_to_pose_result_cb(const rclcpp_acti
     switch (wrapped_result.code)
     {
     case rclcpp_action::ResultCode::SUCCEEDED:
-        RCLCPP_INFO(this->node_->get_logger(), "Goal was succeeded");
+        RCLCPP_INFO(this->node_->get_logger(), "Goal was succeeded\n\tnode_current_index : [%d]", this->node_current_index_);
         break;
     case rclcpp_action::ResultCode::ABORTED:
         RCLCPP_ERROR(this->node_->get_logger(), "Goal was aborted");

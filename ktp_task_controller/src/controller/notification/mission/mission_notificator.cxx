@@ -24,14 +24,11 @@ ktp::controller::MissionNotificator::~MissionNotificator()
 {
 }
 
-void ktp::controller::MissionNotificator::notify_mission_status(ktp::domain::Mission::SharedPtr domain_mission)
+void ktp::controller::MissionNotificator::notify_mission_status(uint8_t status_code, ktp_data_msgs::msg::MissionTask mission_task, int mission_task_index)
 {
     RCLCPP_INFO(this->node_->get_logger(), "---------------------- Notify Mission Status -----------------------");
 
-    const uint8_t &status_code = domain_mission->get__status_code();
-    RCLCPP_INFO(this->node_->get_logger(), "\n\tstatus_code : [%d]", status_code);
-
-    const ktp_data_msgs::msg::Mission &mission = domain_mission->get__mission();
+    RCLCPP_INFO(this->node_->get_logger(), "\n\tSTATUS CODE : [%d]\n\tTASK INDEX : [%d]", status_code, mission_task_index);
 
     ktp_data_msgs::msg::ServiceStatus::UniquePtr service_status = std::make_unique<ktp_data_msgs::msg::ServiceStatus>();
 
@@ -40,69 +37,72 @@ void ktp::controller::MissionNotificator::notify_mission_status(ktp::domain::Mis
 
     service_status->set__mission_code(MISSION_CODE);
 
-    const std::string device_id = "1234123512";
+    const std::string device_id = DEVICE_ID;
     const std::string &mission_id = device_id + create_time;
     service_status->set__mission_id(mission_id);
 
     service_status->set__owner(MISSION_OWNER);
 
-    const std::vector<ktp_data_msgs::msg::MissionTask> &mission_task_vec = mission.task;
-
+    // -------------------------- 미션 상세 태스크 정보(task) --------------------------
     std::vector<ktp_data_msgs::msg::ServiceStatusTask> service_status_task_vec;
     ktp_data_msgs::msg::ServiceStatusTask::UniquePtr service_status_task = std::make_unique<ktp_data_msgs::msg::ServiceStatusTask>();
 
-    for (const ktp_data_msgs::msg::MissionTask &mission_task : mission_task_vec)
+    const std::string &task_id = mission_task.task_id + std::to_string(mission_task_index);
+    service_status_task->set__task_id(task_id);
+
+    const std::string &task_code = mission_task.task_code;
+    service_status_task->set__task_code(task_code);
+
+    std::string status = "";
+
+    switch (status_code)
     {
-        const std::string &task_id = mission_task.task_id;
-        service_status_task->set__task_id(task_id);
-
-        const std::string &task_code = mission_task.task_code;
-        service_status_task->set__task_code(task_code);
-
-        std::string status = "";
-
-        switch (status_code)
-        {
-        // 1001 - 차량 출발
-        case ROUTE_TO_POSE_FEEDBACK_NAVIGATION_STARTED_CODE:
-            status = MISSION_TASK_STARTED_STATUS;
-            break;
-        // 2001 - 작업 중(이동 중)
-        case ROUTE_TO_POSE_FEEDBACK_ON_PROGRESS_CODE:
-            status = MISSION_TASK_STARTED_STATUS;
-            break;
-        // 3001 - 장애물 감지(LiDAR)
-        case ROUTE_TO_POSE_FEEDBACK_LIDAR_OBJECT_DETECTED_CODE:
-            status = MISSION_TASK_STARTED_STATUS;
-            break;
-        // 3002 - 장애물 감지(협력 주행)
-        case ROUTE_TO_POSE_FEEDBACK_COOPERATIVE_OBJECT_DETECTED_CODE:
-            status = MISSION_TASK_STARTED_STATUS;
-            break;
-        // 4001 - 이동 완료
-        case ROUTE_TO_POSE_FEEDBACK_NAVIGATION_SUCCEEDED_CODE:
-            status = MISSION_TASK_STARTED_STATUS;
-            break;
-        // 5001 - 이동 취소
-        case ROUTE_TO_POSE_FEEDBACK_NAVIGATION_CANCELED_CODE:
-            status = MISSION_TASK_STARTED_STATUS;
-            break;
-        default:
-            break;
-        }
-
-        service_status_task->set__status(status);
-
-        const ktp_data_msgs::msg::ServiceStatusTask &&service_status_task_moved = std::move(*(service_status_task));
-        service_status_task_vec.push_back(service_status_task_moved);
+    case ROUTE_TO_POSE_FEEDBACK_NAVIGATION_STARTED_CODE:
+        status = MISSION_TASK_STARTED_STATUS;
+        break;
+    case ROUTE_TO_POSE_FEEDBACK_ON_PROGRESS_CODE:
+        status = MISSION_TASK_ON_PROGRESS_STATUS;
+        break;
+    case ROUTE_TO_POSE_FEEDBACK_NAVIGATION_SUCCEEDED_CODE:
+        status = MISSION_TASK_END_STATUS;
+        break;
+    case ROUTE_TO_POSE_FEEDBACK_NAVIGATION_CANCELED_CODE:
+        status = MISSION_TASK_CANCELLED_STATUS;
+        break;
+    default:
+        break;
     }
+
+    service_status_task->set__status(status);
+    service_status_task->set__seq(mission_task_index);
+
+    // -------------------------- 미션 상세 태스크 정보(task) --------------------------
+
+    // -------------------------- 태스크 상세 데이터(task_data) --------------------------
+    ktp_data_msgs::msg::ServiceStatusTaskData::UniquePtr service_status_task_data = std::make_unique<ktp_data_msgs::msg::ServiceStatusTaskData>();
+    
+    const std::string &map_id = mission_task.task_data.map_id;
+    service_status_task_data->set__map_id(map_id);
+
+    const std::vector<std::string> &goal_vec = mission_task.task_data.goal;
+    service_status_task_data->set__goal(goal_vec);
+
+    const std::string &source = mission_task.task_data.source;
+    service_status_task_data->set__source(source);
+
+    // -------------------------- 태스크 상세 데이터(task_data) --------------------------
+
+    const ktp_data_msgs::msg::ServiceStatusTaskData &&service_status_task_data_moved = std::move(*(service_status_task_data));
+    service_status_task->set__task_data(service_status_task_data_moved);
+    
+    const ktp_data_msgs::msg::ServiceStatusTask &&service_status_task_moved = std::move(*(service_status_task));
+    service_status_task_vec.push_back(service_status_task_moved);
 
     service_status->set__task(service_status_task_vec);
 
     const ktp_data_msgs::msg::ServiceStatus &&service_status_moved = std::move(*(service_status));
     this->notify_mission_status_publisher_->publish(service_status_moved);
 }
-
 
 void ktp::controller::MissionNotificator::notify_mission_report(ktp::domain::Mission::SharedPtr domain_mission)
 {
