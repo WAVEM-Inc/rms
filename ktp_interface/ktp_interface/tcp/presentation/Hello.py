@@ -148,9 +148,9 @@ def iot_sample_run():
     
     IM_SERVER_ADDR = "14.63.249.103";
     IM_SERVER_PORT = 32139;
-    IM_DEV_ID = "__testbyw111__";
-    IM_DEV_PW = "12312";
-    IM_DEV_GW = "KT_3RD_BYW";
+    IM_DEV_ID = "KECDSEMITB001";
+    IM_DEV_PW = "";
+    IM_DEV_GW = "M_OPENRM_UNMANNED_SOLUTION";
     IM_LOGLEVEL = 3;    # 1:ERR, 2:INFO, 3:DEBUG
 
 
