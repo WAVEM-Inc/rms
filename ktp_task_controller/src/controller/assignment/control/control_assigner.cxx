@@ -4,6 +4,7 @@ ktp::controller::ControlAssigner::ControlAssigner(rclcpp::Node::SharedPtr node)
     : node_(node)
 {
     this->control_ = std::make_shared<ktp::domain::Control>();
+    this->mission_assigner_ = std::make_shared<ktp::controller::MissionAssigner>(this->node_);
 
     this->assign_control_service_ = this->node_->create_service<ktp_data_msgs::srv::AssignControl>(
         ASSIGN_CONTROL_SERVICE_NAME,
@@ -30,14 +31,17 @@ void ktp::controller::ControlAssigner::assign_control_service_cb(
         CSTR(control.control_id),
         CSTR(control.owner),
         CSTR(control.control_code));
-    RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
 
     this->control_->set__control(control);
 
-    response->set__result(true);
-}
+    const std::string &control_code = control.control_code;
 
-ktp::domain::Control::SharedPtr ktp::controller::ControlAssigner::transmiss_control_to_notification()
-{
-    return this->control_;
+    if (control_code == CONTROL_MOVE_TO_DEST_CODE || control_code == CONTROL_MS_COMPLETE_CODE)
+    {
+        this->mission_assigner_->route_to_pose_send_goal();
+    }
+
+    RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
+
+    response->set__result(true);
 }

@@ -6,7 +6,8 @@ ktp::controller::MissionAssigner::MissionAssigner(rclcpp::Node::SharedPtr node)
       path_current_index_(DEFAULT_INT),
       path_vec_size_(DEFAULT_INT),
       node_current_index_(DEFAULT_INT),
-      node_list_size_(DEFAULT_INT)
+      node_list_size_(DEFAULT_INT),
+      schedule_index_(DEFAULT_INT)
 {
     this->domain_mission_ = std::make_shared<ktp::domain::Mission>();
     this->mission_notificator_ = std::make_shared<ktp::controller::MissionNotificator>(this->node_);
@@ -48,6 +49,9 @@ ktp::controller::MissionAssigner::~MissionAssigner()
 
 void ktp::controller::MissionAssigner::ublox_fix_subscription_cb(const sensor_msgs::msg::NavSatFix::SharedPtr ublox_fix_cb)
 {
+    // ###########################################################################
+    // ublox 콜백 전역화 및 NULL 포인터 유효성 검사
+    // ###########################################################################
     this->ublox_fix_cb_ = ublox_fix_cb;
 
     if (this->ublox_fix_cb_ != nullptr)
@@ -59,6 +63,7 @@ void ktp::controller::MissionAssigner::ublox_fix_subscription_cb(const sensor_ms
         this->ublox_fix_cb_flag_ = false;
         return;
     }
+    // ###########################################################################
 }
 
 void ktp::controller::MissionAssigner::assign_mission_service_cb(
@@ -66,15 +71,35 @@ void ktp::controller::MissionAssigner::assign_mission_service_cb(
     const std::shared_ptr<ktp_data_msgs::srv::AssignMission::Request> request,
     const std::shared_ptr<ktp_data_msgs::srv::AssignMission::Response> response)
 {
-    const bool &is_mission_task_vec_empty = this->task_vec_.empty();
+    // ###########################################################################
+    // 미션 태스크 중복 할당 검사
+    // ###########################################################################
+    const bool &is_mission_task_vec_not_empty = !(this->task_vec_.empty());
 
-    if (!is_mission_task_vec_empty)
+    if (is_mission_task_vec_not_empty)
     {
         RCLCPP_ERROR(this->node_->get_logger(), "Mission has already assigned...aborting");
         response->set__result(false);
         return;
     }
+    // ###########################################################################
 
+    // ###########################################################################
+    // ublox 콜백 포인터 유효성 검사
+    // ###########################################################################
+    if (!(this->ublox_fix_cb_flag_))
+    {
+        const char *err_msg = "Goal to Path ublox_fix is nullptr...aborting";
+        RCLCPP_ERROR(this->node_->get_logger(), "%s", err_msg);
+        throw ktp::exceptions::DataOmissionException(err_msg);
+
+        return;
+    }
+    // ###########################################################################
+
+    // ###########################################################################
+    // 미션 태스크 할당
+    // ###########################################################################
     const ktp_data_msgs::msg::Mission &mission = request->mission;
 
     RCLCPP_INFO(this->node_->get_logger(), "---------------------- Assign Mission Service CB -----------------------");
@@ -90,32 +115,48 @@ void ktp::controller::MissionAssigner::assign_mission_service_cb(
     this->task_vec_size_ = this->task_vec_.size();
 
     RCLCPP_INFO(this->node_->get_logger(), "MissionTaskVec Size : [%d]", this->task_vec_size_);
+    // ###########################################################################
 
+    // ###########################################################################
     // 임무 수신 성공 보고
+    // ###########################################################################
     this->domain_mission_->set__response_code(MISSION_RECEPTION_SUCCEEDED_CODE);
     this->domain_mission_->set__mission(mission);
 
     this->mission_notificator_->notify_mission_report(this->domain_mission_);
 
-    const bool &path_request_result = this->request_converting_goal_to_path();
-
     const bool &is_mission_assigned = this->domain_mission_ != nullptr;
+    // ###########################################################################
 
+    // ###########################################################################
+    // [ 대기 장소 -> 출발지(상차지) ] 경로 조회
+    // ###########################################################################
+    const path_graph_msgs::srv::Path::Request::SharedPtr &waiting_area_to_top_chart_path_request = this->build_waiting_area_to_top_chart_path_request();
+    const bool &is_waiting_area_to_top_chart_path_request = this->request_converting_goal_to_path(waiting_area_to_top_chart_path_request);
+    // ###########################################################################
+
+    // ###########################################################################
+    // [ 대기 장소 -> 출발지(상차지) ] 경로 전송
+    // ###########################################################################
     if (is_mission_assigned)
     {
-        if (path_request_result)
+        if (is_waiting_area_to_top_chart_path_request)
         {
             this->path_current_index_ = this->task_current_index_;
             this->path_vec_size_ = static_cast<int>(this->path_vec_.size());
 
             RCLCPP_INFO(this->node_->get_logger(), "Converting Goal to Path succeeded. Sending Goal... [%d]", this->path_current_index_);
             this->route_to_pose_send_goal();
+            this->is_waiting_area_to_top_chart_proceeding = true;
 
             response->set__result(true);
         }
         else
         {
             RCLCPP_ERROR(this->node_->get_logger(), "Converting Goal to Path failed...aborting");
+            RCLCPP_INFO(this->node_->get_logger(), "Aborting Mission\n\ttask_current_index : [%d]", this->task_current_index_);
+            this->mission_notificator_->notify_mission_status(MISSION_ASSIGN_FAILED_CODE, this->task_vec_[this->task_current_index_], this->task_current_index_);
+
             return;
         }
     }
@@ -123,72 +164,90 @@ void ktp::controller::MissionAssigner::assign_mission_service_cb(
     {
         return;
     }
+    // ###########################################################################
 }
 
-bool ktp::controller::MissionAssigner::request_converting_goal_to_path()
+bool ktp::controller::MissionAssigner::request_converting_goal_to_path(path_graph_msgs::srv::Path::Request::SharedPtr path_request)
 {
     RCLCPP_INFO(this->node_->get_logger(), "----------------------- Path Graph Path Request ------------------------");
-
+    
+    // ###########################################################################
+    // ublox 콜백 포인터 유효성 검사
+    // ###########################################################################
     if (!(this->ublox_fix_cb_flag_))
     {
         const char *err_msg = "Goal to Path ublox_fix is nullptr...aborting";
         RCLCPP_ERROR(this->node_->get_logger(), "%s", err_msg);
-        // throw ktp::exceptions::DataOmissionException(err_msg);
+        throw ktp::exceptions::DataOmissionException(err_msg);
 
         return false;
     }
+    // ###########################################################################
 
+    // ###########################################################################
+    // 태스크 개수 만큼 경로 변환 요청
+    // ###########################################################################
     for (auto task_it = this->task_vec_.begin(); task_it != this->task_vec_.end(); ++task_it)
     {
+        // 태스크 벡터 인덱스
         const size_t &task_index = std::distance(this->task_vec_.begin(), task_it);
 
         RCLCPP_INFO(this->node_->get_logger(), "Request Converting Goal to Path task_index : [%zu]", task_index);
 
-        const ktp_data_msgs::msg::MissionTaskData &mission_task_data = this->task_vec_[task_index].task_data;
-
-        path_graph_msgs::srv::Path::Request::SharedPtr path_request = std::make_shared<path_graph_msgs::srv::Path::Request>();
-        path_request->set__start_node(mission_task_data.source);
-
-        const std::vector<std::string> &goal_vec = mission_task_data.goal;
-        const int &goal_vec_size = static_cast<int>(goal_vec.size());
-
-        if (goal_vec_size > 1)
-        {
-            RCLCPP_WARN(this->node_->get_logger(), "Goal to Path MissionTask's Goal list's size is over than 1, It will proceed last task_index goal");
-            path_request->set__end_node(goal_vec[goal_vec_size - 1]);
-        }
-        else
-        {
-            path_request->set__end_node(goal_vec[DEFAULT_INT]);
-        }
-
-        const double &longitude = this->ublox_fix_cb_->longitude;
-        const double &latitude = this->ublox_fix_cb_->latitude;
-
-        route_msgs::msg::Position::UniquePtr position = std::make_unique<route_msgs::msg::Position>();
-        position->set__longitude(longitude);
-        position->set__latitude(latitude);
-
-        const route_msgs::msg::Position &&position_moved = std::move(*(position));
-        path_request->set__position(position_moved);
-
+        // path_storage 서비스 서버 동작 체크
         const bool &is_service_server_ready = this->path_graph_path_service_client_->wait_for_service(std::chrono::seconds(1));
 
         if (is_service_server_ready)
         {
+            // 서비스 요청
             rclcpp::Client<path_graph_msgs::srv::Path>::FutureAndRequestId future_and_request_id = this->path_graph_path_service_client_->async_send_request(path_request);
+
+            // 서비스 요청 퓨쳐 콜백
             const std::future_status &future_status = future_and_request_id.wait_for(std::chrono::milliseconds(750));
 
+            // 서비스 퓨처 성공 시
             if (future_status == std::future_status::ready)
             {
                 RCLCPP_INFO(this->node_->get_logger(), "------------------------------------ Path Graph Path Response ---------------------------------------\n");
 
+                // 변환된 경로 할당
                 const path_graph_msgs::srv::Path::Response::SharedPtr response = future_and_request_id.future.get();
                 const route_msgs::msg::Path &path = response->path;
+
+                const std::string &start_node_type = path.node_list[DEFAULT_INT].type;
+
+                this->node_list_size_ = static_cast<int>(path.node_list.size());
+                const std::string &end_node_type = path.node_list[this->node_list_size_ - 1].type;
+
+                RCLCPP_INFO(this->node_->get_logger(), "Converting Goal to Path\n\tstart_node_type : [%s]\n\tend_node_type : [%s]", start_node_type, end_node_type);
+
+                if (start_node_type == NODE_WORKPLACE_NODE_TYPE)
+                {
+                    RCLCPP_INFO(this->node_->get_logger(), "Current Path is Waiting Area -> Top Chart");
+                    this->is_waiting_area_to_top_chart_proceeding = true;
+                    this->is_top_chart_to_drop_off_proceeding = false;
+                    this->is_drop_off_to_waiting_area_proceeding = false;
+                }
+                else if(end_node_type == NODE_WORKPLACE_NODE_TYPE)
+                {
+                    RCLCPP_INFO(this->node_->get_logger(), "Current Path is Drop Off -> Waiting Area");
+                    this->is_drop_off_to_waiting_area_proceeding = true;
+                    this->is_waiting_area_to_top_chart_proceeding = false;
+                    this->is_top_chart_to_drop_off_proceeding = false;
+                }
+                else
+                {
+                    RCLCPP_INFO(this->node_->get_logger(), "Current Path is Drop Off -> Waiting Area");
+                    this->is_top_chart_to_drop_off_proceeding = true;
+                    this->is_waiting_area_to_top_chart_proceeding = false;
+                    this->is_drop_off_to_waiting_area_proceeding = false;
+                }
+
                 this->path_vec_.push_back(path);
 
                 RCLCPP_INFO(this->node_->get_logger(), "Goal to Path\n\ttask_index : [%zu]\n\tsize : [%zu]", task_index, this->task_vec_.size());
 
+                // 미션 태스크 벡터 요소 개수 만큼 경로 변환 조건
                 const bool &is_converting_finished = (static_cast<int>(task_index) == static_cast<int>(this->task_vec_.size() - 1));
 
                 if (is_converting_finished)
@@ -237,6 +296,114 @@ bool ktp::controller::MissionAssigner::request_converting_goal_to_path()
             return false;
         }
     }
+    // ###########################################################################
+}
+
+path_graph_msgs::srv::Path::Request::SharedPtr ktp::controller::MissionAssigner::build_waiting_area_to_top_chart_path_request()
+{
+    // ###########################################################################
+    // [ 대기 장소 -> 출발지(상차지) ] 경로 조회
+    // ###########################################################################
+    RCLCPP_INFO(this->node_->get_logger(), "------------------------------------ Waiting Area to Top Chart ---------------------------------------\n");
+
+    path_graph_msgs::srv::Path::Request::SharedPtr waiting_area_to_top_chart_path_request = std::make_shared<path_graph_msgs::srv::Path::Request>();
+
+    // 로봇의 현재 GPS 위치(대기 장소에 있다는 가정)
+    const double &waiting_area_longitude = this->ublox_fix_cb_->longitude;
+    const double &waiting_area_latitude = this->ublox_fix_cb_->latitude;
+
+    RCLCPP_INFO(this->node_->get_logger(), "Waiting Area Position\n\tlongitude : [%f]\n\tlatitude : [%f]", waiting_area_longitude, waiting_area_latitude);
+
+    route_msgs::msg::Position::UniquePtr waiting_area_position = std::make_unique<route_msgs::msg::Position>();
+    waiting_area_position->set__longitude(waiting_area_longitude);
+    waiting_area_position->set__latitude(waiting_area_latitude);
+    
+    const route_msgs::msg::Position &&waiting_area_position_moved = std::move(*(waiting_area_position));
+    waiting_area_to_top_chart_path_request->set__position(waiting_area_position_moved);
+
+    // 출발지(상차지) : 미션 태스크의 source 값
+    const std::string &top_chart_node = this->task_vec_[DEFAULT_INT].task_data.source;
+    RCLCPP_INFO(this->node_->get_logger(), "Waiting Area([%f], [%f]) -> Top Chart([%s])", waiting_area_longitude, waiting_area_latitude, top_chart_node.c_str());
+    waiting_area_to_top_chart_path_request->set__start_node("");
+    waiting_area_to_top_chart_path_request->set__end_node(top_chart_node);
+
+    RCLCPP_INFO(this->node_->get_logger(), "-----------------------------------------------------------------------------------------------------\n");
+
+    return waiting_area_to_top_chart_path_request;
+    // ###########################################################################
+}
+
+path_graph_msgs::srv::Path::Request::SharedPtr ktp::controller::MissionAssigner::build_top_chart_to_drop_off_path_request()
+{
+    // ###########################################################################
+    // ###########################################################################
+    // [ 출발지(상차지) -> 하차지 ] 경로 조회
+    // ###########################################################################
+    RCLCPP_INFO(this->node_->get_logger(), "------------------------------------ Top Chart to Drop Off ---------------------------------------\n");
+
+    path_graph_msgs::srv::Path::Request::SharedPtr top_chart_to_drop_off_path_request = std::make_shared<path_graph_msgs::srv::Path::Request>();
+
+    // 로봇의 현재 GPS 위치(출발지(상차지)에 있다는 가정)
+    const double &top_chart_longitude = this->ublox_fix_cb_->longitude;
+    const double &top_chart_latitude = this->ublox_fix_cb_->latitude;
+
+    RCLCPP_INFO(this->node_->get_logger(), "Top Chart Position\n\tlongitude : [%f]\n\tlatitude : [%f]", top_chart_longitude, top_chart_latitude);
+
+    route_msgs::msg::Position::UniquePtr top_chart_position = std::make_unique<route_msgs::msg::Position>();
+    top_chart_position->set__longitude(top_chart_longitude);
+    top_chart_position->set__latitude(top_chart_latitude);
+
+    const route_msgs::msg::Position &&top_chart_to_drop_off_position_moved = std::move(*(top_chart_position));
+    top_chart_to_drop_off_path_request->set__position(top_chart_to_drop_off_position_moved);
+
+    // 출발지(상차지) 노드 정보 : 미션 태스크의 source 값
+    const std::string &top_chart_node = this->task_vec_[DEFAULT_INT].task_data.source;
+    top_chart_to_drop_off_path_request->set__start_node(top_chart_node);
+
+    // 하차지 노드 정보 : 미션 태스크의 goal 값
+    const std::string &drop_off_node = this->task_vec_[DEFAULT_INT].task_data.goal[DEFAULT_INT];
+    top_chart_to_drop_off_path_request->set__end_node(drop_off_node);
+
+    RCLCPP_INFO(this->node_->get_logger(), "Top Chart([%s]) -> Drop Off([%s]) Path Request", top_chart_node.c_str(), drop_off_node.c_str());
+
+    RCLCPP_INFO(this->node_->get_logger(), "--------------------------------------------------------------------------------------------------\n");
+
+    return top_chart_to_drop_off_path_request;
+    // ###########################################################################
+}
+
+path_graph_msgs::srv::Path::Request::SharedPtr ktp::controller::MissionAssigner::build_drop_off_to_waiting_area_path_request()
+{
+    // ###########################################################################
+    // ###########################################################################
+    // [ 출발지(상차지) -> 하차지 ] 경로 조회
+    // ###########################################################################
+    RCLCPP_INFO(this->node_->get_logger(), "------------------------------------ Drop Off to Waiting Area ---------------------------------------\n");
+
+    path_graph_msgs::srv::Path::Request::SharedPtr drop_off_to_waiting_area_path_request = std::make_shared<path_graph_msgs::srv::Path::Request>();
+
+    // 로봇의 현재 GPS 위치(하차지에 있다는 가정)
+    const double &drop_off_longitude = this->ublox_fix_cb_->longitude;
+    const double &drop_off_latitude = this->ublox_fix_cb_->latitude;
+
+    RCLCPP_INFO(this->node_->get_logger(), "Drop Off Position\n\tlongitude : [%f]\n\tlatitude : [%f]", drop_off_longitude, drop_off_latitude);
+
+    route_msgs::msg::Position::UniquePtr drop_off_position = std::make_unique<route_msgs::msg::Position>();
+    drop_off_position->set__longitude(drop_off_longitude);
+    drop_off_position->set__latitude(drop_off_latitude);
+
+    const route_msgs::msg::Position &&drop_off_position_moved = std::move(*(drop_off_position));
+    drop_off_to_waiting_area_path_request->set__position(drop_off_position_moved);
+
+    // 하차지 노드 정보 : 미션 태스크의 goal 값
+    const std::string &top_chart_node = this->task_vec_[DEFAULT_INT].task_data.goal[DEFAULT_INT];
+    drop_off_to_waiting_area_path_request->set__start_node(top_chart_node);
+    drop_off_to_waiting_area_path_request->set__end_node("");
+
+    RCLCPP_INFO(this->node_->get_logger(), "-----------------------------------------------------------------------------------------------------\n");
+
+    return drop_off_to_waiting_area_path_request;
+    // ###########################################################################
 }
 
 void ktp::controller::MissionAssigner::route_to_pose_send_goal()
@@ -246,12 +413,20 @@ void ktp::controller::MissionAssigner::route_to_pose_send_goal()
 
     const bool &is_path_vec_empty = this->path_vec_.empty();
 
+    // ###########################################################################
+    // ###########################################################################
+    // 경로 벡터 유효성 검사
+    // ###########################################################################
     if (is_path_vec_empty)
     {
         RCLCPP_ERROR(this->node_->get_logger(), "route_to_pose send goal path_vec is empty...aborting");
         return;
     }
+    // ###########################################################################
 
+    // ###########################################################################
+    // route_to_pose 액션 서버 구동 조회
+    // ###########################################################################
     const bool &is_route_to_pose_action_server_ready = this->route_to_pose_action_client_->wait_for_action_server(std::chrono::seconds(1));
 
     if (!is_route_to_pose_action_server_ready)
@@ -259,17 +434,41 @@ void ktp::controller::MissionAssigner::route_to_pose_send_goal()
         RCLCPP_ERROR(this->node_->get_logger(), "route_to_pose action server is not ready yet...aborting");
         return;
     }
+    // ###########################################################################
 
     route_msgs::action::RouteToPose::Goal::UniquePtr goal = std::make_unique<route_msgs::action::RouteToPose::Goal>();
 
+    // 경로 노드 리스트
     const std::vector<route_msgs::msg::Node> &node_list = this->path_vec_[this->path_current_index_].node_list;
-    this->node_list_size_ = static_cast<int>(node_list.size());
 
-    const route_msgs::msg::Node &start_node = node_list[this->node_current_index_];
+    // ###########################################################################
+    // 경로 셋업
+    // ###########################################################################
+    const int &start_node_index = this->node_current_index_;
+    const int &end_node_index = this->node_current_index_ + 1;
+
+    const bool &is_last_node = (start_node_index == (this->node_list_size_ - 1));
+
+    RCLCPP_INFO(
+        this->node_->get_logger(),
+        "Goal Node List Info\n\tnode_list_size : [%d]\n\tstart_node_index : [%d]\n\tend_node_index : [%d]\n\tis_last_node? : [%d]",
+        this->node_list_size_,
+        start_node_index,
+        end_node_index,
+        is_last_node);
+
+    if (is_last_node)
+    {
+        RCLCPP_WARN(this->node_->get_logger(), "This Goal is Last Index Node : [%d]", this->node_current_index_);
+        return;
+    }
+
+    const route_msgs::msg::Node &start_node = node_list[start_node_index];
     goal->set__start_node(start_node);
 
-    const route_msgs::msg::Node &end_node = node_list[this->node_current_index_ + 1];
+    const route_msgs::msg::Node &end_node = node_list[end_node_index];
     goal->set__end_node(end_node);
+    // ###########################################################################
 
     rclcpp_action::Client<route_msgs::action::RouteToPose>::SendGoalOptions goal_opts = rclcpp_action::Client<route_msgs::action::RouteToPose>::SendGoalOptions();
     goal_opts.goal_response_callback = std::bind(&ktp::controller::MissionAssigner::route_to_pose_goal_response_cb, this, _1);
@@ -311,36 +510,32 @@ void ktp::controller::MissionAssigner::route_to_pose_feedback_cb(rclcpp_action::
 {
     (void)goal_handle;
 
-    const uint8_t &status_code = feedback->status_code;
+    const int32_t &status_code = feedback->status_code;
 
     RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
     RCLCPP_INFO(this->node_->get_logger(), "----------------------- Route to Pose Feedback -------------------------");
 
     RCLCPP_INFO(this->node_->get_logger(), "status_code : [%d]", status_code);
 
-    const bool &is_essential_to_notify_service_status =
-        (status_code == ROUTE_TO_POSE_FEEDBACK_NAVIGATION_STARTED_CODE) ||
-        (status_code == ROUTE_TO_POSE_FEEDBACK_ON_PROGRESS_CODE) ||
-        (status_code == ROUTE_TO_POSE_FEEDBACK_NAVIGATION_SUCCEEDED_CODE) ||
-        (status_code == ROUTE_TO_POSE_FEEDBACK_NAVIGATION_CANCELED_CODE);
-    
-    if (is_essential_to_notify_service_status)
+    switch (status_code)
     {
-        RCLCPP_INFO(this->node_->get_logger(), "notify mission status, task_current_index : [%d]", this->task_current_index_);
-        this->mission_notificator_->notify_mission_status(status_code, this->task_vec_[this->task_current_index_], this->task_current_index_);
+    case ROUTE_TO_POSE_FEEDBACK_NAVIGATION_STARTED_CODE:
+    {
+        if (this->is_waiting_area_to_top_chart_proceeding)
+        {
+            RCLCPP_INFO(this->node_->get_logger(), "Waiting Area -> Top Chart Started, task_current_index : [%d]", this->task_current_index_);
+            this->mission_notificator_->notify_mission_status(MISSION_TASK_STARTED_CODE, this->task_vec_[this->task_current_index_], this->task_current_index_);
+        }
+        else if (this->is_top_chart_to_drop_off_proceeding)
+        {
+            RCLCPP_INFO(this->node_->get_logger(), "Top Chart -> Drop Off Started, task_current_index : [%d]", this->task_current_index_);
+            this->mission_notificator_->notify_mission_status(MISSION_TASK_ON_PROGRESS_CODE, this->task_vec_[this->task_current_index_], this->task_current_index_);
+        }
+        break;
     }
-    else if (status_code == ROUTE_TO_POSE_FEEDBACK_LIDAR_OBJECT_DETECTED_CODE)
-    {
-
-    }
-    else if (status_code == ROUTE_TO_POSE_FEEDBACK_COOPERATIVE_OBJECT_DETECTED_CODE)
-    {
-
-    }
-    else
-    {
+    default:
         RCLCPP_ERROR(this->node_->get_logger(), "unkwon feedback status_code : [%d]", status_code);
-        return;
+        break;
     }
 
     RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
@@ -351,23 +546,97 @@ void ktp::controller::MissionAssigner::route_to_pose_result_cb(const rclcpp_acti
     RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");
     RCLCPP_INFO(this->node_->get_logger(), "------------------------ Route to Pose Result --------------------------");
 
-    const uint8_t &result = wrapped_result.result->result;
-    RCLCPP_INFO(this->node_->get_logger(), "result : [%d]", result);
-
     switch (wrapped_result.code)
     {
-    case rclcpp_action::ResultCode::SUCCEEDED:
-        RCLCPP_INFO(this->node_->get_logger(), "Goal was succeeded\n\tnode_current_index : [%d]", this->node_current_index_);
-        break;
+        case rclcpp_action::ResultCode::SUCCEEDED:
+        {
+            this->node_current_index_++;
+            const bool is_last_node_index = (this->node_current_index_ == (this->node_list_size_ - 1));
+
+            RCLCPP_INFO(
+                    this->node_->get_logger(),
+                    "Goal was succeeded\n\tnode_current_index : [%d]\n\tis_last_node_index : [%d]",
+                    this->node_current_index_,
+                    is_last_node_index);
+
+            if (is_last_node_index)
+            {
+                if (this->is_waiting_area_to_top_chart_proceeding)
+                {
+                    RCLCPP_INFO(this->node_->get_logger(), "Source Arrived, task_current_index : [%d]", this->task_current_index_);
+                    this->mission_notificator_->notify_mission_status(MISSION_TASK_SOURCE_ARRIVED_CODE,
+                                                                      this->task_vec_[this->task_current_index_],
+                                                                      this->task_current_index_);
+
+                    this->node_current_index_ = DEFAULT_INT;
+                    this->node_list_size_ = DEFAULT_INT;
+
+                    this->path_vec_.clear();
+                    this->path_current_index_ = DEFAULT_INT;
+                    this->path_vec_size_ = DEFAULT_INT;
+                    this->is_waiting_area_to_top_chart_proceeding = false;
+
+                    // ###########################################################################
+                    // ###########################################################################
+                    // [ 출발지(상차지) -> 하차지 ] 경로 조회
+                    // ###########################################################################
+                    const path_graph_msgs::srv::Path::Request::SharedPtr &top_chart_to_drop_off_path_request = this->build_top_chart_to_drop_off_path_request();
+                    const bool &is_path_request_succeeded = this->request_converting_goal_to_path(top_chart_to_drop_off_path_request);
+
+                    if (is_path_request_succeeded)
+                    {
+                        RCLCPP_INFO(this->node_->get_logger(), "Due to Source Arrived, Ready to Send Goal Top Chart -> Drop Off");
+                    }
+                    // ###########################################################################
+                }
+                else if (this->is_top_chart_to_drop_off_proceeding)
+                {
+                    RCLCPP_INFO(this->node_->get_logger(), "Source Arrived, task_current_index : [%d]", this->task_current_index_);
+                    this->mission_notificator_->notify_mission_status(MISSION_TASK_DEST_ARRIVED_CODE,
+                                                                      this->task_vec_[this->task_current_index_],
+                                                                      this->task_current_index_);
+
+                    this->node_current_index_ = DEFAULT_INT;
+                    this->node_list_size_ = DEFAULT_INT;
+
+                    this->path_vec_.clear();
+                    this->path_current_index_ = DEFAULT_INT;
+                    this->path_vec_size_ = DEFAULT_INT;
+                    this->is_waiting_area_to_top_chart_proceeding = false;
+
+                    // ###########################################################################
+                    // ###########################################################################
+                    // [ 하차지 -> 대기 장소 ] 경로 조회
+                    // ###########################################################################
+                    const path_graph_msgs::srv::Path::Request::SharedPtr &drop_off_to_waiting_area_path_request = this->build_drop_off_to_waiting_area_path_request();
+                    const bool &is_path_request_succeeded = this->request_converting_goal_to_path(drop_off_to_waiting_area_path_request);
+
+                    if (is_path_request_succeeded)
+                    {
+                        RCLCPP_INFO(this->node_->get_logger(), "Due to Dest Arrived, Ready to Send Goal Drop Off -> Waiting Area");
+                    }
+                    // ###########################################################################
+                }
+                else if (this->is_drop_off_to_waiting_area_proceeding)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                this->route_to_pose_send_goal();
+            }
+            break;
+        }
     case rclcpp_action::ResultCode::ABORTED:
         RCLCPP_ERROR(this->node_->get_logger(), "Goal was aborted");
-        return;
+        break;
     case rclcpp_action::ResultCode::CANCELED:
         RCLCPP_ERROR(this->node_->get_logger(), "Goal was canceled");
-        return;
+        break;
     default:
         RCLCPP_ERROR(this->node_->get_logger(), "Unknown result code");
-        return;
+        break;
     }
 
     RCLCPP_INFO(this->node_->get_logger(), "------------------------------------------------------------------------");

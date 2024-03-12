@@ -17,6 +17,8 @@
 
 #define DEFAULT_QOS 10
 
+#define MISSION_ASSIGN_FAILED_CODE 5000
+
 #define ROUTE_TO_POSE_FEEDBACK_NAVIGATION_STARTED_CODE 1001
 #define ROUTE_TO_POSE_FEEDBACK_ON_PROGRESS_CODE 2001
 #define ROUTE_TO_POSE_FEEDBACK_LIDAR_OBJECT_DETECTED_CODE 3001
@@ -32,13 +34,28 @@
 #define ROUTE_TO_POSE_RESULT_ABORTED_CODE 3001
 
 #define MISSION_TASK_STARTED_STATUS "Started"
+#define MISSION_TASK_STARTED_CODE 0
+
 #define MISSION_TASK_SOURCE_ARRIVED_STATUS "SourceArrived"
+#define MISSION_TASK_SOURCE_ARRIVED_CODE 1
+
 #define MISSION_TASK_TAKEN_STATUS "Taken"
+#define MISSION_TASK_TAKEN_CODE 2
+
 #define MISSION_TASK_ON_PROGRESS_STATUS "OnProgress"
+#define MISSION_TASK_ON_PROGRESS_CODE 3
+
 #define MISSION_TASK_DEST_ARRIVED_STATUS "DestArrived"
+#define MISSION_TASK_DEST_ARRIVED_CODE 4
+
 #define MISSION_TASK_END_STATUS "End"
+#define MISSION_TASK_ENDED_CODE 5
+
 #define MISSION_TASK_CANCELLED_STATUS "Cancelled"
+#define MISSION_TASK_CANCELLED_CODE 6
+
 #define MISSION_TASK_FAILED_STATUS "Failed"
+#define MISSION_TASK_FAILED_CODE 7
 
 #define NOTIFY_MISSION_REPORT_TO_MGR_TOPIC "/rms/ktp/task/notify/mission/report"
 #define NOTIFY_MISSION_STATUS_TO_MGR_TOPIC "/rms/ktp/task/notify/mission/status"
@@ -70,7 +87,7 @@ namespace ktp
         public:
             explicit MissionNotificator(rclcpp::Node::SharedPtr node);
             virtual ~MissionNotificator();
-            void notify_mission_status(uint8_t status_code, ktp_data_msgs::msg::MissionTask mission_task, int mission_task_index);
+            void notify_mission_status(int32_t status_code, ktp_data_msgs::msg::MissionTask mission_task, int mission_task_index);
             void notify_mission_report(ktp::domain::Mission::SharedPtr domain_mission);
 
         public:

@@ -24,7 +24,7 @@ ktp::controller::MissionNotificator::~MissionNotificator()
 {
 }
 
-void ktp::controller::MissionNotificator::notify_mission_status(uint8_t status_code, ktp_data_msgs::msg::MissionTask mission_task, int mission_task_index)
+void ktp::controller::MissionNotificator::notify_mission_status(int32_t status_code, ktp_data_msgs::msg::MissionTask mission_task, int mission_task_index)
 {
     RCLCPP_INFO(this->node_->get_logger(), "---------------------- Notify Mission Status -----------------------");
 
@@ -57,17 +57,29 @@ void ktp::controller::MissionNotificator::notify_mission_status(uint8_t status_c
 
     switch (status_code)
     {
-    case ROUTE_TO_POSE_FEEDBACK_NAVIGATION_STARTED_CODE:
+    case MISSION_TASK_STARTED_CODE:
         status = MISSION_TASK_STARTED_STATUS;
         break;
-    case ROUTE_TO_POSE_FEEDBACK_ON_PROGRESS_CODE:
+    case MISSION_TASK_SOURCE_ARRIVED_CODE:
+        status = MISSION_TASK_SOURCE_ARRIVED_STATUS;
+        break;
+    case MISSION_TASK_TAKEN_CODE:
+        status = MISSION_TASK_TAKEN_STATUS;
+        break;
+    case MISSION_TASK_ON_PROGRESS_CODE:
         status = MISSION_TASK_ON_PROGRESS_STATUS;
         break;
-    case ROUTE_TO_POSE_FEEDBACK_NAVIGATION_SUCCEEDED_CODE:
+    case MISSION_TASK_DEST_ARRIVED_CODE:
+        status = MISSION_TASK_DEST_ARRIVED_STATUS;
+        break;
+    case MISSION_TASK_ENDED_CODE:
         status = MISSION_TASK_END_STATUS;
         break;
-    case ROUTE_TO_POSE_FEEDBACK_NAVIGATION_CANCELED_CODE:
+    case MISSION_TASK_CANCELLED_CODE:
         status = MISSION_TASK_CANCELLED_STATUS;
+        break;
+    case MISSION_TASK_FAILED_CODE:
+        status = MISSION_TASK_FAILED_STATUS;
         break;
     default:
         break;
@@ -119,10 +131,10 @@ void ktp::controller::MissionNotificator::notify_mission_report(ktp::domain::Mis
     mission_report->set__control_type(CONTROL_TYPE_MISSION);
     mission_report->set__control_code(mission.mission_code);
 
-    const uint8_t &repsonse_code = domain_mission->get__response_code();
-    RCLCPP_INFO(this->node_->get_logger(), "\n\trepsonse_code : [%d]", repsonse_code);
+    const int32_t &response_code = domain_mission->get__response_code();
+    RCLCPP_INFO(this->node_->get_logger(), "\n\tresponse_code : [%d]", response_code);
 
-    mission_report->set__response_code(repsonse_code);
+    mission_report->set__response_code(response_code);
 
     const ktp_data_msgs::msg::ControlReport &&mission_report_moved = std::move(*(mission_report));
 

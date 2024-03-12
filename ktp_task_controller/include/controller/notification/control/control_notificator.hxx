@@ -28,8 +28,8 @@ namespace ktp
         private:
             rclcpp::Node::SharedPtr node_;
 
-            rclcpp::CallbackGroup::SharedPtr notificate_control_publisher_cb_group_;
-            rclcpp::Publisher<ktp_data_msgs::msg::Control>::SharedPtr notificate_control_publihser_;
+            rclcpp::CallbackGroup::SharedPtr notificate_control_report_publisher_cb_group_;
+            rclcpp::Publisher<ktp_data_msgs::msg::Control>::SharedPtr notificate_control_report_publihser_;
 
         public:
             explicit ControlNotificator(rclcpp::Node::SharedPtr node);
