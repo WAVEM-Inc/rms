@@ -27,4 +27,4 @@ if __name__ == '__main__':
     main();
     
 
-__all__ = ['ktp_interface.main']
+__all__ = ['main']
