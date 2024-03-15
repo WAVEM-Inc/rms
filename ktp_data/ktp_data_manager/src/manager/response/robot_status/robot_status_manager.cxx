@@ -61,6 +61,8 @@ ktp::data::RobotStatusManager::RobotStatusManager(const rclcpp::Node::SharedPtr 
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         std::bind(&ktp::data::RobotStatusManager::humidity_subscription_cb, this, _1),
         humidity_subscription_opts);
+
+    
 }
 
 ktp::data::RobotStatusManager::~RobotStatusManager()
@@ -180,7 +182,7 @@ ktp_data_msgs::msg::StatusService ktp::data::RobotStatusManager::build_service()
     // Optional
     // /sensor/temp/temperature
     // RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager temperature temperature_cb_flag : [%d]", this->temperature_cb_flag_);
-    if (this->temperature_cb_flag_ == true)
+    if (this->temperature_cb_flag_)
     {
         rbt_status_service_env->set__temperature(this->temperature_cb_->temperature);
     }
@@ -196,7 +198,7 @@ ktp_data_msgs::msg::StatusService ktp::data::RobotStatusManager::build_service()
     // /sensor/temp/humidity
     // ############################################
     // RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager humidity humidity_cb_flag : [%d]", this->humidity_cb_flag_);
-    if (this->humidity_cb_flag_ == true)
+    if (this->humidity_cb_flag_)
     {
         rbt_status_service_env->set__humidity(this->humidity_cb_->relative_humidity);
     }
@@ -231,7 +233,7 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // 필수
     // /sensor/battery/state
     // RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager percentage battery_cb_flag : [%d]", this->battery_cb_flag_);
-    if (this->battery_cb_flag_ == true)
+    if (this->battery_cb_flag_)
     {
         rbt_status->set__battery(this->battery_state_cb_->percentage);
     }
@@ -313,7 +315,7 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     double longitude = 0.0;
     double latitude = 0.0;
 
-    if (this->gps_cb_flag_ == true)
+    if (this->gps_cb_flag_)
     {
         longitude = this->gps_cb_->longitude;
         latitude = this->gps_cb_->latitude;
@@ -330,7 +332,7 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager rtt_odom_cb_flag : [%d]", this->rtt_odom_cb_flag_);
 
     double heading = 0.0;
-    if (this->rtt_odom_cb_flag_ == true)
+    if (this->rtt_odom_cb_flag_)
     {
         heading = this->rtt_odom_cb_->pose.orientation.y;
     }
@@ -348,7 +350,7 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // ############################################
     // coord_code
     // 로봇 주행 좌표계 코드
-    if (rbt_status->is_indoor == true)
+    if (rbt_status->is_indoor)
     {
         rbt_status->set__coord_code(COORD_CORD_SLAM);
     }

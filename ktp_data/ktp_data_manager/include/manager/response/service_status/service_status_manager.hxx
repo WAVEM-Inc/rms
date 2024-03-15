@@ -49,4 +49,4 @@ namespace ktp
     }
 }
 
-#endif // SERVIC_STATUS_MANAGER__HXX
+#endif // SERVICE_STATUS_MANAGER_HXX
