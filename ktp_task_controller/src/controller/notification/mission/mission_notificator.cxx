@@ -3,14 +3,6 @@
 ktp::controller::MissionNotificator::MissionNotificator(rclcpp::Node::SharedPtr node)
     : node_(node)
 {
-    this->notify_mission_report_publisher_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-    rclcpp::PublisherOptions notify_mission_report_publisher_opts;
-    notify_mission_report_publisher_opts.callback_group = this->notify_mission_report_publisher_cb_group_;
-    this->notify_mission_report_publisher_ = this->node_->create_publisher<ktp_data_msgs::msg::ControlReport>(
-        NOTIFY_MISSION_REPORT_TO_MGR_TOPIC,
-        rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
-        notify_mission_report_publisher_opts);
-
     this->notify_mission_status_publisher_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     rclcpp::PublisherOptions notify_mission_status_publisher_opts;
     notify_mission_status_publisher_opts.callback_group = this->notify_mission_status_publisher_cb_group_;
@@ -18,17 +10,25 @@ ktp::controller::MissionNotificator::MissionNotificator(rclcpp::Node::SharedPtr 
         NOTIFY_MISSION_STATUS_TO_MGR_TOPIC,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         notify_mission_status_publisher_opts);
+
+    this->notify_robot_navigation_status_publisher_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    rclcpp::PublisherOptions notify_robot_navigation_status_publisher_opts;
+    notify_robot_navigation_status_publisher_opts.callback_group = this->notify_robot_navigation_status_publisher_cb_group_;
+    this->notify_robot_navigation_status_publisher_ = this->node_->create_publisher<ktp_data_msgs::msg::Status>(
+            NOTIFY_ROBOT_NAVIGATION_STATUS_TO_MGR_TOPIC,
+            rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
+            notify_robot_navigation_status_publisher_opts);
 }
 
 ktp::controller::MissionNotificator::~MissionNotificator()
 {
 }
 
-void ktp::controller::MissionNotificator::notify_mission_status(int32_t status_code, ktp_data_msgs::msg::MissionTask mission_task, int mission_task_index)
+void ktp::controller::MissionNotificator::notify_mission_status(int32_t status_code, ktp_data_msgs::msg::MissionTask mission_task)
 {
     RCLCPP_INFO(this->node_->get_logger(), "---------------------- Notify Mission Status -----------------------");
 
-    RCLCPP_INFO(this->node_->get_logger(), "\n\tSTATUS CODE : [%d]\n\tTASK INDEX : [%d]", status_code, mission_task_index);
+    RCLCPP_INFO(this->node_->get_logger(), "\n\tSTATUS CODE : [%d]", status_code);
 
     ktp_data_msgs::msg::ServiceStatus::UniquePtr service_status = std::make_unique<ktp_data_msgs::msg::ServiceStatus>();
 
@@ -47,7 +47,7 @@ void ktp::controller::MissionNotificator::notify_mission_status(int32_t status_c
     std::vector<ktp_data_msgs::msg::ServiceStatusTask> service_status_task_vec;
     ktp_data_msgs::msg::ServiceStatusTask::UniquePtr service_status_task = std::make_unique<ktp_data_msgs::msg::ServiceStatusTask>();
 
-    const std::string &task_id = mission_task.task_id + std::to_string(mission_task_index);
+    const std::string &task_id = mission_task.task_id + std::to_string(DEFAULT_INT);
     service_status_task->set__task_id(task_id);
 
     const std::string &task_code = mission_task.task_code;
@@ -86,7 +86,7 @@ void ktp::controller::MissionNotificator::notify_mission_status(int32_t status_c
     }
 
     service_status_task->set__status(status);
-    service_status_task->set__seq(mission_task_index);
+    service_status_task->set__seq(DEFAULT_INT);
 
     // -------------------------- 미션 상세 태스크 정보(task) --------------------------
 
@@ -116,27 +116,25 @@ void ktp::controller::MissionNotificator::notify_mission_status(int32_t status_c
     this->notify_mission_status_publisher_->publish(service_status_moved);
 }
 
-void ktp::controller::MissionNotificator::notify_mission_report(ktp::domain::Mission::SharedPtr domain_mission)
+void ktp::controller::MissionNotificator::notify_robot_navigation_status(ktp::domain::NavigationStatus navigation_status)
 {
-    const ktp_data_msgs::msg::Mission &mission = domain_mission->get__mission();
+    ktp_data_msgs::msg::Status::UniquePtr robot_navigation_status = std::make_unique<ktp_data_msgs::msg::Status>();
 
-    RCLCPP_INFO(this->node_->get_logger(), "---------------------- Notify Mission Response -----------------------");
+    const ktp_data_msgs::msg::MissionTask &mission_task = navigation_status.get__mission_task();
 
-    ktp_data_msgs::msg::ControlReport::UniquePtr mission_report = std::make_unique<ktp_data_msgs::msg::ControlReport>();
+    const std::string &map_id = mission_task.task_data.map_id;
+    robot_navigation_status->set__map_id(map_id);
 
-    const std::string &create_time = get_current_time();
-    mission_report->set__create_time(create_time);
+    const int &drive_status = navigation_status.get__drive_status();
+    robot_navigation_status->set__drive_status(static_cast<int16_t>(drive_status));
 
-    mission_report->set__control_id(mission.mission_id);
-    mission_report->set__control_type(CONTROL_TYPE_MISSION);
-    mission_report->set__control_code(mission.mission_code);
+    const route_msgs::msg::Node &start_node = navigation_status.get__start_node();
+    robot_navigation_status->set__from_node(start_node.node_id);
 
-    const int32_t &response_code = domain_mission->get__response_code();
-    RCLCPP_INFO(this->node_->get_logger(), "\n\tresponse_code : [%d]", response_code);
+    const route_msgs::msg::Node &end_node = navigation_status.get__end_node();
+    robot_navigation_status->set__to_node(end_node.node_id);
 
-    mission_report->set__response_code(response_code);
+    const ktp_data_msgs::msg::Status &&robot_navigation_status_moved = std::move(*(robot_navigation_status));
 
-    const ktp_data_msgs::msg::ControlReport &&mission_report_moved = std::move(*(mission_report));
-
-    this->notify_mission_report_publisher_->publish(mission_report_moved);
+    this->notify_robot_navigation_status_publisher_->publish(robot_navigation_status_moved);
 }

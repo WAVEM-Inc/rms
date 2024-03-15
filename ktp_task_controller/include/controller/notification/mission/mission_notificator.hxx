@@ -3,6 +3,8 @@
 
 #include <rclcpp/rclcpp.hpp>
 
+#include <ktp_data_msgs/msg/status.hpp>
+
 #include <ktp_data_msgs/msg/service_status.hpp>
 #include <ktp_data_msgs/msg/service_status_task.hpp>
 
@@ -12,10 +14,14 @@
 
 #include <ktp_data_msgs/msg/control_report.hpp>
 
+#include <route_msgs/msg/path.hpp>
+
 #include "domain/mission/mission.hxx"
 #include "utils/utils.hxx"
 
 #define DEFAULT_QOS 10
+
+#define DEFAULT_INT 0
 
 #define MISSION_ASSIGN_FAILED_CODE 5000
 
@@ -59,6 +65,7 @@
 
 #define NOTIFY_MISSION_REPORT_TO_MGR_TOPIC "/rms/ktp/task/notify/mission/report"
 #define NOTIFY_MISSION_STATUS_TO_MGR_TOPIC "/rms/ktp/task/notify/mission/status"
+#define NOTIFY_ROBOT_NAVIGATION_STATUS_TO_MGR_TOPIC "/rms/ktp/task/notify/robot_navigation/status"
 
 #define CONTROL_TYPE_MISSION "mission"
 
@@ -78,17 +85,17 @@ namespace ktp
         private:
             rclcpp::Node::SharedPtr node_;
 
-            rclcpp::CallbackGroup::SharedPtr notify_mission_report_publisher_cb_group_;
-            rclcpp::Publisher<ktp_data_msgs::msg::ControlReport>::SharedPtr notify_mission_report_publisher_;
-
             rclcpp::CallbackGroup::SharedPtr notify_mission_status_publisher_cb_group_;
             rclcpp::Publisher<ktp_data_msgs::msg::ServiceStatus>::SharedPtr notify_mission_status_publisher_;
+
+            rclcpp::CallbackGroup::SharedPtr notify_robot_navigation_status_publisher_cb_group_;
+            rclcpp::Publisher<ktp_data_msgs::msg::Status>::SharedPtr notify_robot_navigation_status_publisher_;
 
         public:
             explicit MissionNotificator(rclcpp::Node::SharedPtr node);
             virtual ~MissionNotificator();
-            void notify_mission_status(int32_t status_code, ktp_data_msgs::msg::MissionTask mission_task, int mission_task_index);
-            void notify_mission_report(ktp::domain::Mission::SharedPtr domain_mission);
+            void notify_mission_status(int32_t status_code, ktp_data_msgs::msg::MissionTask mission_task);
+            void notify_robot_navigation_status(ktp::domain::NavigationStatus navigation_status);
 
         public:
             using SharedPtr = std::shared_ptr<MissionNotificator>;

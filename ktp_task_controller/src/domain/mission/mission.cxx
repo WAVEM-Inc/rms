@@ -37,3 +37,52 @@ void ktp::domain::Mission::set__mission(ktp_data_msgs::msg::Mission mission)
 {
     this->mission_ = mission;
 }
+
+ktp::domain::NavigationStatus::NavigationStatus()
+    : drive_status_(NAVIGATION_STATUS_WAITING_CODE)
+{
+}
+
+ktp::domain::NavigationStatus::~NavigationStatus()
+{
+}
+
+int ktp::domain::NavigationStatus::get__drive_status()
+{
+    return this->drive_status_;
+}
+
+void ktp::domain::NavigationStatus::set__drive_status(int drive_status)
+{
+    this->drive_status_ = drive_status;
+}
+
+route_msgs::msg::Node ktp::domain::NavigationStatus::get__start_node()
+{
+    return this->start_node_;
+}
+
+void ktp::domain::NavigationStatus::set__start_node(route_msgs::msg::Node start_node)
+{
+    this->start_node_ = start_node;
+}
+
+route_msgs::msg::Node ktp::domain::NavigationStatus::get__end_node()
+{
+    return this->end_node_;
+}
+
+void ktp::domain::NavigationStatus::set__end_node(route_msgs::msg::Node end_node)
+{
+    this->end_node_ = end_node;
+}
+
+ktp_data_msgs::msg::MissionTask ktp::domain::NavigationStatus::get__mission_task()
+{
+    return this->mission_task_;
+}
+
+void ktp::domain::NavigationStatus::set__mission_task(ktp_data_msgs::msg::MissionTask mission_task)
+{
+    this->mission_task_ = mission_task;
+}

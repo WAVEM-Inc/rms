@@ -7,12 +7,14 @@
 #include <ktp_data_msgs/msg/mission_task.hpp>
 #include <ktp_data_msgs/msg/mission_task_data.hpp>
 
-#include "controller/assignment/assignment_controller.hxx"
-#include "controller/assignment/control/control_assigner.hxx"
+#include <ktp_data_msgs/msg/control.hpp>
+#include <ktp_data_msgs/msg/control_report.hpp>
+
+#include "utils/utils.hxx"
 
 #define DEFAULT_QOS 10
 
-#define NOTIFICATE_CONTROL_TO_MGR_TOPIC "/ktp/task/notify/control"
+#define NOTIFY_CONTROL_REPORT_TO_MGR_TOPIC "/rms/ktp/task/notify/control/report"
 
 #define NOTIFICATE_PUBLISHING_RATE 850
 
@@ -28,12 +30,13 @@ namespace ktp
         private:
             rclcpp::Node::SharedPtr node_;
 
-            rclcpp::CallbackGroup::SharedPtr notificate_control_report_publisher_cb_group_;
-            rclcpp::Publisher<ktp_data_msgs::msg::Control>::SharedPtr notificate_control_report_publihser_;
+            rclcpp::CallbackGroup::SharedPtr notify_control_report_publisher_cb_group_;
+            rclcpp::Publisher<ktp_data_msgs::msg::ControlReport>::SharedPtr notify_control_report_publisher_;
 
         public:
             explicit ControlNotificator(rclcpp::Node::SharedPtr node);
             virtual ~ControlNotificator();
+            void notify_control_report(ktp_data_msgs::msg::Control control, int response_code);
 
         public:
             using SharedPtr = std::shared_ptr<ControlNotificator>;

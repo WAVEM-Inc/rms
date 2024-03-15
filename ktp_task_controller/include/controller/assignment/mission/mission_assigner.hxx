@@ -34,6 +34,18 @@
 
 #define MISSION_ASSIGN_FAILED_CODE 5000
 
+#define NAVIGATION_STATUS_WAITING_CODE 0
+#define NAVIGATION_STATUS_ON_NAVIGATING_CODE 1
+#define NAVIGATION_STATUS_NAVIGATION_SUCCEEDED 2
+#define NAVIGATION_STATUS_NAVIGATION_CANCELED 3
+#define NAVIGATION_STATUS_OBSTACLE_DETECTED 4
+#define NAVIGATION_STATUS_NAVIGATION_FAILED 5
+#define NAVIGATION_STATUS_EMERGENCY_STOPPED_BY_KTP 6
+#define NAVIGATION_STATUS_PAUSE_BY_KTP 7
+#define NAVIGATION_STATUS_NAVIGATION_IMPOSSIBLE_BY_ERROR 12
+#define NAVIGATION_STATUS_PAUSE_RELEASE 13
+#define NAVIGATION_STATUS_MISSION_IMPOSSIBLE 14
+
 #define ROUTE_TO_POSE_FEEDBACK_NAVIGATION_STARTED_CODE 1001
 #define ROUTE_TO_POSE_FEEDBACK_ON_PROGRESS_CODE 2001
 #define ROUTE_TO_POSE_FEEDBACK_LIDAR_OBJECT_DETECTED_CODE 3001
@@ -74,7 +86,7 @@
 
 #define ASSIGN_MISSION_SERVICE_NAME "/ktp_task_controller/assign/mission"
 #define UBLOX_FIX_TOPIC "/sensor/ublox/fix"
-#define PATH_GRAPH_PATH_SERVICE_NAME "/path_graph/path"
+#define PATH_GRAPH_PATH_SERVICE_NAME "/path_graph_msgs/path"
 #define ROUTE_TO_POSE_ACTION_NAME "/route_to_pose"
 
 #define CSTR(str) ((str).c_str())
@@ -90,9 +102,11 @@ namespace ktp
         class MissionAssigner final
         {
         private:
+            int index_ = 0;
             rclcpp::Node::SharedPtr node_;
 
             ktp::domain::Mission::SharedPtr domain_mission_;
+            ktp::domain::NavigationStatus::SharedPtr navigation_status_;
 
             std::vector<ktp_data_msgs::msg::MissionTask> task_vec_;
             int task_current_index_;
@@ -105,6 +119,8 @@ namespace ktp
             int node_current_index_;
             int node_list_size_;
 
+            void clear_path_and_nodes();
+
             ktp::controller::MissionNotificator::SharedPtr mission_notificator_;
 
             // 0
@@ -115,6 +131,10 @@ namespace ktp
 
             // 2
             bool is_drop_off_to_waiting_area_proceeding = false;
+
+            rclcpp::CallbackGroup::SharedPtr robot_navigation_status_timer_cb_group_;
+            rclcpp::TimerBase::SharedPtr robot_navigation_status_timer_;
+            void robot_navigation_status_timer_cb();
 
             bool ublox_fix_cb_flag_ = false;
             sensor_msgs::msg::NavSatFix::SharedPtr ublox_fix_cb_;
@@ -147,6 +167,7 @@ namespace ktp
             explicit MissionAssigner(rclcpp::Node::SharedPtr node);
             virtual ~MissionAssigner();
             void route_to_pose_send_goal();
+            ktp_data_msgs::msg::MissionTask return_current_mission_task();
 
         public:
             using SharedPtr = std::shared_ptr<MissionAssigner>;
