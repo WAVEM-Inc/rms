@@ -1,35 +1,40 @@
-import rclpy
+import threading;
 
-from rclpy.node import Node
-from rclpy.qos import qos_profile_system_default
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-from rosbridge_library.internal import message_conversion
+from rclpy.node import Node;
 
-from std_msgs.msg import String
+from ktp_interface.tcp.application.service import TCP;
+from ktp_interface.tcp.application.service import TCPService;
+from ktp_interface.tcp.application.service import TCPTestService;
 
-from ..tcp.application.service import TCPService
+from ktp_interface.ros.manager.request.manager import RequestManager;
+from ktp_interface.ros.manager.response.manager import ResponseManager;
 
 NODE_NAME: str = "ktp_interface"
 
+
 class KTPInterface(Node):
-    
+
     def __init__(self) -> None:
         super().__init__(NODE_NAME);
-        
+
         self.get_logger().info(f"{NODE_NAME} created");
-        
+
         self.tcp_service: TCPService = TCPService(node=self);
         self.tcp_service.initialize();
-        
-        self.create_subscription(
-            msg_type=String,
-            topic="/chatter",
-            qos_profile=qos_profile_system_default,
-            callback_group=MutuallyExclusiveCallbackGroup(),
-            callback=self.test_cb
-        );
-        
-    def test_cb(self, cb: String) -> None:
-        self.tcp_service.send_resource(resource_id="rbt_service_status", properties="hhhiqwer");
 
-__all__ = ["ktp_interface.ros.node"];
+        self.tcp_test_service: TCPTestService = TCPTestService(node=self);
+
+        def run_tcp_test_server() -> None:
+            self.tcp_test_service.initialize();
+
+        tcp_thread: threading.Thread = threading.Thread(target=run_tcp_test_server);
+        tcp_thread.start();
+
+        self.__request_manager: RequestManager = RequestManager(node=self, tcp_service=self.tcp_service);
+        self.__response_manager: ResponseManager = ResponseManager(node=self, tcp_service=self.tcp_service);
+
+    def stop_tcp_server(self) -> None:
+        self.tcp_test_service.release();
+
+
+__all__ = ["KTPInterface"];
