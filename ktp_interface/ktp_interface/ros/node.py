@@ -24,11 +24,16 @@ class KTPInterface(Node):
 
         self.tcp_test_service: TCPTestService = TCPTestService(node=self);
 
-        def run_tcp_test_server() -> None:
-            self.tcp_test_service.initialize();
+        def run_tcp_thread() -> None:
+            self.tcp_service.poll(1);
+            print("_thread_notification_sample()...");
 
-        tcp_thread: threading.Thread = threading.Thread(target=run_tcp_test_server);
+            while self.tcp_service.thread_run_flag:
+                self.tcp_service.im_client.ImMSleep(1000);
+
+        tcp_thread: threading.Thread = threading.Thread(target=run_tcp_thread);
         tcp_thread.start();
+        # self.tcp_test_service.client_initialize();
 
         self.__request_manager: RequestManager = RequestManager(node=self, tcp_service=self.tcp_service);
         self.__response_manager: ResponseManager = ResponseManager(node=self, tcp_service=self.tcp_service);

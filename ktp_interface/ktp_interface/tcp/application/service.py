@@ -13,26 +13,49 @@ class TCP:
     pass;
 
 
+def OnResourceSetRequestHandler(pktBody, dev_id, resource_id, properties_in_jstr):
+    print("OnResourceSetRequestHandler()-->", dev_id, resource_id, properties_in_jstr)
+
+    # YOUR CONTROL CODE HERE
+    properties = json.loads(properties_in_jstr);
+
+    print(json.dumps(properties, indent=4));
+
+    #IM_RESP_CODE_2004_Changed
+    return 2004;
+
+
+def OnResourceRetrieveOneRequestHandler(pktBody, dev_id, resource_id):
+    # IM_RESP_CODE_2000_OK
+    return 2000;
+
+
+##########################################
+#   본 디바이스(dev_id)의 모든 리소스 조회 요청 처리 핸들러
+##########################################
+def OnResourceRetrieveAllRequestHandler(pktBody, dev_id):
+    return 2000;
+
+
 class TCPService(TCP):
 
     def __init__(self, node: Node) -> None:
         super().__init__();
         self.im_client: IoTMakersDeviceClient = IoTMakersDeviceClient();
         self.__node: Node = node;
-        pass;
+        self.thread_run_flag = False;
 
     ##########################################
     # 	리소스 설정(제어) 요청 처리 핸들러
     ##########################################
     def on_request_cb_handler(self, pktBody, dev_id, resource_id, properties_in_jstr) -> int:
-        self.__node.get_logger().info(
-            f"OnResourceSetRequestHandler()--> {dev_id}, {resource_id}, {properties_in_jstr}");
+        print(f"OnResourceSetRequestHandler()--> {dev_id}, {resource_id}, {properties_in_jstr}");
 
         properties: Any = json.loads(properties_in_jstr);
 
-        self.__node.get_logger().info("####################################################################");
-        self.__node.get_logger().info(f"OnResourceSetRequestHandler()--> {json.dumps(properties, indent=4)}");
-        self.__node.get_logger().info("####################################################################");
+        print("####################################################################");
+        print(f"OnResourceSetRequestHandler()--> {json.dumps(properties, indent=4)}");
+        print("####################################################################");
 
         return 2004;
 
@@ -42,20 +65,30 @@ class TCPService(TCP):
     def on_retrieve_all_request_cb_handler(self, pktBody, dev_id):
         pass;
 
+    def poll(self, n) -> None:
+        print("Poll");
+        rc = 0;
+
+        self.thread_run_flag = True;
+        while self.thread_run_flag:
+            rc = self.im_client.ImPoll();
+            if rc < 0:
+                print("FAIL ImPoll()...");
+                self.thread_run_flag = False;
+                break;
+            else:
+                print(f"SUCCESS ImPoll() : {rc}");
+
+            self.im_client.ImMSleep(100);
+
     ##########################################
     # 	리소스 값 전송
     ##########################################
     def send_resource(self, resource_id: str, properties: Any) -> int:
-        properties = {
-            "ectestString": "hello",
-            "ectestDouble": 99.55,
-            "ectestInteger": 100,
-            "ectestBoolean": True
-        };
+        self.__node.get_logger().info(
+            f"Send Resource resource_id : {resource_id}, properties : {json.dumps(properties)}");
 
-        self.__node.get_logger().info(f"resource_id : {resource_id}, properties : {json.dumps(properties)}");
-
-        rc = self.im_client.ImResourceNotificationInit()
+        rc = self.im_client.ImResourceNotificationInit();
         if rc < 0:
             self.__node.get_logger().info("fail ImResourceNotificationInit()");
             return -1;
@@ -88,8 +121,8 @@ class TCPService(TCP):
             return;
 
         self.__node.get_logger().info("ImSetControlCallBackHandler()...");
-        self.im_client.ImSetControlCallBackHandler(self.on_request_cb_handler, self.on_retrieve_request_cb_handler,
-                                                   self.on_retrieve_all_request_cb_handler);
+        self.im_client.ImSetControlCallBackHandler(OnResourceSetRequestHandler, OnResourceRetrieveOneRequestHandler,
+                                                   OnResourceRetrieveAllRequestHandler);
 
         self.__node.get_logger().info(f"ImConnectTo()... {IM_SERVER_ADDR}, {IM_SERVER_PORT}");
         rc = self.im_client.ImConnectTo(IM_SERVER_ADDR, IM_SERVER_PORT);
@@ -113,13 +146,14 @@ class TCPService(TCP):
             self.__node.get_logger().info(f"ImAuthDevice() succeeded... {IM_DEV_ID}, {IM_DEV_PW}, {IM_DEV_GW}");
             print("######################################################################################");
 
-        # self.__node.get_logger().info("ImDisconnect()...");
-        # rc = self.im_client.ImDisconnect();
-        # self.im_client.ImMSleep(1000);
+        self.im_client.ImTurnCircuitBreakerOff();
 
 
 TEST_TCP_SOCKET_HOST: str = "192.168.0.187";
 TEST_TCP_SOCKET_PORT: int = 12345;
+
+TEST_TCP_SOCKET_CLIENT_HOST: str = "192.168.0.54";
+TEST_TCP_SOCKET_CLIENT_PORT: int = 12345;
 
 
 class TCPTestService(TCP):
@@ -128,20 +162,20 @@ class TCPTestService(TCP):
         super().__init__();
         self.__node: Node = node;
         self.__server_socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
-        self.client_socket: socket.socket = None;
-        self.client_address: Any = None;
+        self.__client_socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
+        self.__client_address: Any = None;
 
-    def initialize(self) -> None:
+    def server_initialize(self) -> None:
         self.__server_socket.bind((TEST_TCP_SOCKET_HOST, TEST_TCP_SOCKET_PORT));
         self.__server_socket.listen();
         self.__node.get_logger().info(f"TCP Test Server is waiting on [{TEST_TCP_SOCKET_HOST}:{TEST_TCP_SOCKET_PORT}]");
 
-        self.client_socket, self.client_address = self.__server_socket.accept();
-        self.__node.get_logger().info(f"TCP Client [{self.client_address}] is connected");
+        self.__client_socket, self.__client_address = self.__server_socket.accept();
+        self.__node.get_logger().info(f"TCP Client [{self.__client_address}] is connected");
 
         while True:
             try:
-                data: str = self.client_socket.recv(1024).decode("utf-8");
+                data: str = self.__client_socket.recv(1024).decode("utf-8");
                 self.__node.get_logger().info(f"TCP Request data : {data}");
                 if not data:
                     break;
@@ -151,9 +185,19 @@ class TCPTestService(TCP):
             except Exception as e:
                 self.__node.get_logger().error(f"TCP Test Server error occurred : {e}");
 
+    def client_initialize(self) -> None:
+        self.__node.get_logger().info(
+            f"TCP Connecting to {(TEST_TCP_SOCKET_CLIENT_HOST, TEST_TCP_SOCKET_CLIENT_PORT)} server");
+        self.__client_socket.connect((TEST_TCP_SOCKET_CLIENT_HOST, TEST_TCP_SOCKET_CLIENT_PORT));
+
+    def send_resource(self, resource_id: str, resource: Any) -> None:
+        self.__node.get_logger().info(f"TCP send_resource resource_id : {resource_id}, resource: {resource}");
+        self.__client_socket.send(json.dumps(resource).encode());
+
     def release(self) -> None:
+        self.__client_socket.close();
         self.__server_socket.close();
-        self.__node.get_logger().info("TCP Server closed");
+        self.__node.get_logger().info("TCP closed");
 
 
 __all__ = ["TCPService"];
