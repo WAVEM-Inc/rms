@@ -39,7 +39,7 @@ class ErrorReportManager:
         deserialized_error_report: Any = message_conversion.extract_values(error_report_cb);
         self.__node.get_logger().info(f"error_report_cb : {deserialized_error_report}");
 
-        rc: int = tcp_send_resource(KTP_TCP_RESOURCE_ID, message_conversion.extract_values(deserialized_error_report));
+        rc: int = tcp_send_resource(resource_id=KTP_TCP_RESOURCE_ID, properties=deserialized_error_report);
         if rc < 0:
             self.__node.get_logger().error(f"Failed to Sending Resource to id : {KTP_TCP_RESOURCE_ID}");
         else:

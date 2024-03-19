@@ -19,8 +19,8 @@ def main(args=None) -> None:
         multi_threaded_executor.spin();
     except ROSInterruptException as rie:
         node.get_logger().warn(f"===== {node_name} terminated with Ctrl-C {rie} =====");
+        tcp_release();
 
-    tcp_release();
     node.destroy_node();
     rclpy.shutdown();
 
