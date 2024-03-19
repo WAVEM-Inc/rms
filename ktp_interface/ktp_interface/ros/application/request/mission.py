@@ -15,7 +15,6 @@ from typing import Any;
 from std_msgs.msg import String;
 from ktp_data_msgs.srv import AssignMission;
 
-from ktp_interface.tcp.application.service import TCPService;
 
 DATA_MANAGER_NODE_NAME: str = "ktp_data_manager";
 ASSIGN_MISSION_TO_DATA_MGR_SERVICE_NAME: str = f"/{DATA_MANAGER_NODE_NAME}/assign/mission";
@@ -23,9 +22,8 @@ ASSIGN_MISSION_TO_DATA_MGR_SERVICE_NAME: str = f"/{DATA_MANAGER_NODE_NAME}/assig
 
 class MissionManager:
 
-    def __init__(self, node: Node, tcp_service: TCPService) -> None:
+    def __init__(self, node: Node) -> None:
         self.__node: Node = node;
-        self.__tcp_service: TCPService = tcp_service;
 
         __assign_mission_service_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__assign_mission_service_client: Client = self.__node.create_client(

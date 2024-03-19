@@ -4,7 +4,7 @@ import json
 
 from .IoTMakersDeviceClient import IoTMakersDeviceClient
 
-imClient = IoTMakersDeviceClient();
+im_client = IoTMakersDeviceClient();
 
 ##########################################
 # 	리소스 설정(제어) 요청 처리 핸들러
@@ -35,7 +35,7 @@ def OnResourceRetrieveOneRequestHandler(pktBody, dev_id, resource_id):
 			"ectestBoolean": True
 		};
 
-	rc = imClient.ImResourceRetrieveSetResource(pktBody, resource_id, json.dumps(properties))
+	rc = im_client.ImResourceRetrieveSetResource(pktBody, resource_id, json.dumps(properties))
 	if rc < 0 :
 		print("fail ImResourceRetrieveSetResource()");
 		## Internal Error
@@ -61,7 +61,7 @@ def OnResourceRetrieveAllRequestHandler(pktBody, dev_id):
 			"ectestDouble": 99.55
 		};
 
-	rc = imClient.ImResourceRetrieveAppendResource(pktBody, resource_id, json.dumps(properties))
+	rc = im_client.ImResourceRetrieveAppendResource(pktBody, resource_id, json.dumps(properties))
 	if rc < 0 :
 		print("fail ImResourceRetrieveAppendResource()");
 		## Internal Error
@@ -76,7 +76,7 @@ def OnResourceRetrieveAllRequestHandler(pktBody, dev_id):
 			"ectestBoolean": True
 		};
 
-	rc = imClient.ImResourceRetrieveAppendResource(pktBody, resource_id, json.dumps(properties))
+	rc = im_client.ImResourceRetrieveAppendResource(pktBody, resource_id, json.dumps(properties))
 	if rc < 0 :
 		print("fail ImResourceRetrieveAppendResource()");
 		## Internal Error
@@ -104,21 +104,21 @@ def example_resource_send_notification():
 	print(json.dumps(properties));
 	
 	# 1. 전송 패킷 준비
-	rc = imClient.ImResourceNotificationInit()
+	rc = im_client.ImResourceNotificationInit()
 	if rc < 0 :
 		print("fail ImResourceNotificationInit()");
 		return -1;
 
 
 	# 2. 패킷에 리소스 추가; append FIRST RESOURCE
-	rc = imClient.ImResourceNotificationAppendResource(resource_id, json.dumps(properties));
+	rc = im_client.ImResourceNotificationAppendResource(resource_id, json.dumps(properties));
 	if rc < 0 :
 		print("fail ImResourceNotificationAppendResource()");
 		return -1;
 
 
 	# 3. 패킷 전송
-	rc = imClient.ImResourceNotificationSend();
+	rc = im_client.ImResourceNotificationSend();
 	if rc < 0 :
 		print("fail ImResourceNotificationSend()");
 		return -1;
@@ -155,31 +155,31 @@ def iot_sample_run():
 
 
     print("ImInit()...");
-    rc = imClient.ImInit(IM_LOGLEVEL);
+    rc = im_client.ImInit(IM_LOGLEVEL);
     if rc < 0 :
         return;
 
     print("ImSetControlCallBackHandler()...");
-    imClient.ImSetControlCallBackHandler(OnResourceSetRequestHandler, OnResourceRetrieveOneRequestHandler, OnResourceRetrieveAllRequestHandler);
+    im_client.ImSetControlCallBackHandler(OnResourceSetRequestHandler, OnResourceRetrieveOneRequestHandler, OnResourceRetrieveAllRequestHandler);
 
     while True:
 
         print("ImConnectTo()...", IM_SERVER_ADDR, IM_SERVER_PORT);
-        rc = imClient.ImConnectTo(IM_SERVER_ADDR, IM_SERVER_PORT);
+        rc = im_client.ImConnectTo(IM_SERVER_ADDR, IM_SERVER_PORT);
         if rc < 0 :
-            imClient.ImRelease();
+            im_client.ImRelease();
             return;
 
 
         print("ImAuthDevice()...", IM_DEV_ID, IM_DEV_PW, IM_DEV_GW);
-        rc = imClient.ImAuthDevice(IM_DEV_ID, IM_DEV_PW, IM_DEV_GW);
+        rc = im_client.ImAuthDevice(IM_DEV_ID, IM_DEV_PW, IM_DEV_GW);
         if rc < 0 :
-            imClient.ImDisconnect();
-            imClient.ImRelease();
+            im_client.ImDisconnect();
+            im_client.ImRelease();
             return;
 
         while True:
-            rc = imClient.ImPoll();
+            rc = im_client.ImPoll();
             if rc < 0 :
                 break;
 
@@ -188,19 +188,19 @@ def iot_sample_run():
             if rc < 0 :
                 break;
 
-            imClient.ImMSleep(1000);
+            im_client.ImMSleep(1000);
 
 
         print("ImDisconnect()...");
-        rc = imClient.ImDisconnect();
-        imClient.ImMSleep(1000);
+        rc = im_client.ImDisconnect();
+        im_client.ImMSleep(1000);
 
 
     print("ImRelease()...");
-    rc = imClient.ImRelease();
+    rc = im_client.ImRelease();
 
 
 # if __name__ == '__main__':
 #     while True:
 #         iot_sample_run()
-#         imClient.ImMSleep(1000);
+#         im_client.ImMSleep(1000);

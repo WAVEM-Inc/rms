@@ -1,19 +1,41 @@
 #-*- coding:utf-8 -*-
 
-import socket
-import json
-from rclpy.node import Node
-
-from typing import Any
+import json;
+import socket;
+import importlib;
+import threading;
 
 from ..presentation.IoTMakersDeviceClient import IoTMakersDeviceClient
 
+from rclpy.node import Node
 
-class TCP:
-    pass;
+from typing import Any
+from datetime import datetime;
+
+from rosbridge_library.internal import message_conversion;
+
+from ktp_data_msgs.msg import ServiceStatus;
+from ktp_data_msgs.msg import ServiceStatusTask;
+from ktp_data_msgs.msg import Control;
+from ktp_data_msgs.msg import ControlReport;
+from ktp_data_msgs.msg import DetectedObject;
+
+im_client: IoTMakersDeviceClient = IoTMakersDeviceClient();
+
+thread_run_flag: bool = False;
+
+IM_SERVER_ADDR: str = "14.63.249.103";
+IM_SERVER_PORT: int = 32139;
+IM_DEV_ID: str = "KECDSEMITB001";
+IM_DEV_PW: str = "1234";
+IM_DEV_GW: str = "M_OPENRM_UNMANNED_SOLUTION";
+IM_LOGLEVEL: int = 3;  # 1:ERR, 2:INFO, 3:DEBUG
 
 
-def OnResourceSetRequestHandler(pktBody, dev_id, resource_id, properties_in_jstr):
+##########################################
+#   리소스 설정(제어) 요청 처리 핸들러
+##########################################
+def OnResourceSetRequestHandler(pktBody, dev_id, resource_id, properties_in_jstr) -> int:
     print("OnResourceSetRequestHandler()-->", dev_id, resource_id, properties_in_jstr)
 
     # YOUR CONTROL CODE HERE
@@ -25,179 +47,161 @@ def OnResourceSetRequestHandler(pktBody, dev_id, resource_id, properties_in_jstr
     return 2004;
 
 
-def OnResourceRetrieveOneRequestHandler(pktBody, dev_id, resource_id):
-    # IM_RESP_CODE_2000_OK
+##########################################
+#   특정 리소스(resource_id) 조회 요청 처리 핸들러
+##########################################
+def OnResourceRetrieveOneRequestHandler(pktBody, dev_id, resource_id) -> int:
+    print("OnResourceSetRequestHandler()-->", dev_id, resource_id)
+
+    # YOUR CONTROL CODE HERE
+    properties = {
+        "ectestString": "hello",
+        "ectestDouble": 99.55,
+        "ectestInteger": 100,
+        "ectestBoolean": True
+    };
+
+    rc = im_client.ImResourceRetrieveSetResource(pktBody, resource_id, json.dumps(properties))
+    if rc < 0:
+        print("fail ImResourceRetrieveSetResource()");
+        ## Internal Error
+        return 5000;
+
+    #IM_RESP_CODE_2000_OK
     return 2000;
 
 
 ##########################################
 #   본 디바이스(dev_id)의 모든 리소스 조회 요청 처리 핸들러
 ##########################################
-def OnResourceRetrieveAllRequestHandler(pktBody, dev_id):
+def OnResourceRetrieveAllRequestHandler(pktBody, dev_id) -> int:
+    print("OnResourceSetRequestHandler()-->", dev_id)
+
+    # YOUR CONTROL CODE HERE
+
+    # 1. append FIRST RESOURCE
+    resource_id = "testAllTypeUri";
+
+    properties = {
+        "ectestString": "hello",
+        "ectestDouble": 99.55
+    };
+
+    rc = im_client.ImResourceRetrieveAppendResource(pktBody, resource_id, json.dumps(properties))
+    if rc < 0:
+        print("fail ImResourceRetrieveAppendResource()");
+        ## Internal Error
+        return 5000;
+
+    # 2. append SECOND RESOURCE
+    resource_id = "testAllTypeUri";
+
+    properties = {
+        "ectestInteger": 100,
+        "ectestBoolean": True
+    };
+
+    rc = im_client.ImResourceRetrieveAppendResource(pktBody, resource_id, json.dumps(properties))
+    if rc < 0:
+        print("fail ImResourceRetrieveAppendResource()");
+        ## Internal Error
+        return 5000;
+
+    #IM_RESP_CODE_2000_OK
     return 2000;
 
 
-class TCPService(TCP):
+def tcp_send_resource(resource_id: str, properties: Any) -> int:
+    properties_dumped: str = json.dumps(properties);
+    print(f"Send Resource of id [{resource_id}], with property : [{properties_dumped}]");
 
-    def __init__(self, node: Node) -> None:
-        super().__init__();
-        self.im_client: IoTMakersDeviceClient = IoTMakersDeviceClient();
-        self.__node: Node = node;
-        self.thread_run_flag = False;
+    rc: int = 0;
 
-    ##########################################
-    # 	리소스 설정(제어) 요청 처리 핸들러
-    ##########################################
-    def on_request_cb_handler(self, pktBody, dev_id, resource_id, properties_in_jstr) -> int:
-        print(f"OnResourceSetRequestHandler()--> {dev_id}, {resource_id}, {properties_in_jstr}");
+    rc = im_client.ImResourceNotificationInit();
+    if rc < 0:
+        print("Failed ImResourceNotificationInit()");
+        return -1;
 
-        properties: Any = json.loads(properties_in_jstr);
+    rc = im_client.ImResourceNotificationAppendResource(resource_id, properties_dumped);
+    if rc < 0:
+        print("Failed ImResourceNotificationAppendResource()");
+        return -1;
 
-        print("####################################################################");
-        print(f"OnResourceSetRequestHandler()--> {json.dumps(properties, indent=4)}");
-        print("####################################################################");
+    rc = im_client.ImResourceNotificationSend();
+    if rc < 0:
+        print("Failed ImResourceNotificationSend()");
+        return -1;
 
-        return 2004;
+    print(f"Succeeded Send Resource to id : [{resource_id}] with : [{properties_dumped}]");
 
-    def on_retrieve_request_cb_handler(self, pktBody, dev_id, resource_id):
-        pass;
+    return 0;
 
-    def on_retrieve_all_request_cb_handler(self, pktBody, dev_id):
-        pass;
 
-    def poll(self, n) -> None:
-        print("Poll");
-        rc = 0;
+##########################################
+# 수신 처리용 쓰레드
+##########################################
+def polling_thread_cb(n) -> None:
+    rc: int = 0;
 
-        self.thread_run_flag = True;
-        while self.thread_run_flag:
-            rc = self.im_client.ImPoll();
-            if rc < 0:
-                print("FAIL ImPoll()...");
-                self.thread_run_flag = False;
-                break;
-            else:
-                print(f"SUCCESS ImPoll() : {rc}");
+    global thread_run_flag;
 
-            self.im_client.ImMSleep(100);
-
-    ##########################################
-    # 	리소스 값 전송
-    ##########################################
-    def send_resource(self, resource_id: str, properties: Any) -> int:
-        self.__node.get_logger().info(
-            f"Send Resource resource_id : {resource_id}, properties : {json.dumps(properties)}");
-
-        rc = self.im_client.ImResourceNotificationInit();
+    while thread_run_flag == True:
+        rc = im_client.ImPoll();
         if rc < 0:
-            self.__node.get_logger().info("fail ImResourceNotificationInit()");
-            return -1;
+            print("FAIL ImPoll()...");
+            thread_run_flag = False;
+            break;
 
-        rc = self.im_client.ImResourceNotificationAppendResource(resource_id, json.dumps(properties));
-        if rc < 0:
-            self.__node.get_logger().info("fail ImResourceNotificationAppendResource()");
-            return -1;
+        im_client.ImMSleep(100);
 
-        rc = self.im_client.ImResourceNotificationSend();
-        if rc < 0:
-            self.__node.get_logger().info("fail ImResourceNotificationSend()");
-            return -1;
-
-        self.__node.get_logger().info(f"OK, SENT: {json.dumps(properties)}");
-
-        return 0;
-
-    def initialize(self) -> None:
-        IM_SERVER_ADDR = "14.63.249.103";
-        IM_SERVER_PORT = 32139;
-        IM_DEV_ID = "KECDSEMITB001";
-        IM_DEV_PW = "1234";
-        IM_DEV_GW = "M_OPENRM_UNMANNED_SOLUTION";
-        IM_LOGLEVEL = 3;  # 1:ERR, 2:INFO, 3:DEBUG
-
-        self.__node.get_logger().info("ImInit()...");
-        rc = self.im_client.ImInit(IM_LOGLEVEL);
-        if rc < 0:
-            return;
-
-        self.__node.get_logger().info("ImSetControlCallBackHandler()...");
-        self.im_client.ImSetControlCallBackHandler(OnResourceSetRequestHandler, OnResourceRetrieveOneRequestHandler,
-                                                   OnResourceRetrieveAllRequestHandler);
-
-        self.__node.get_logger().info(f"ImConnectTo()... {IM_SERVER_ADDR}, {IM_SERVER_PORT}");
-        rc = self.im_client.ImConnectTo(IM_SERVER_ADDR, IM_SERVER_PORT);
-        if rc < 0:
-            self.im_client.ImRelease();
-            return;
-        else:
-            print("######################################################################################");
-            self.__node.get_logger().info(f"ImConnectTo() connected... {IM_SERVER_ADDR}, {IM_SERVER_PORT}");
-            print("######################################################################################");
-
-        self.__node.get_logger().info(f"ImAuthDevice()... {IM_DEV_ID}, {IM_DEV_PW}, {IM_DEV_GW}");
-        rc = self.im_client.ImAuthDevice(IM_DEV_ID, IM_DEV_PW, IM_DEV_GW);
-        if rc < 0:
-            self.__node.get_logger().error("ImAuthDevice() failed...");
-            self.im_client.ImDisconnect();
-            self.im_client.ImRelease();
-            return;
-        else:
-            print("######################################################################################");
-            self.__node.get_logger().info(f"ImAuthDevice() succeeded... {IM_DEV_ID}, {IM_DEV_PW}, {IM_DEV_GW}");
-            print("######################################################################################");
-
-        self.im_client.ImTurnCircuitBreakerOff();
+    print("_thread_poll_sample()..., DONE.");
 
 
-TEST_TCP_SOCKET_HOST: str = "192.168.0.187";
-TEST_TCP_SOCKET_PORT: int = 12345;
+def tcp_initialize() -> int:
+    rc: int = 0;
 
-TEST_TCP_SOCKET_CLIENT_HOST: str = "192.168.0.54";
-TEST_TCP_SOCKET_CLIENT_PORT: int = 12345;
+    print("ImInit()....");
+    rc = im_client.ImInit(IM_LOGLEVEL);
+    if rc < 0:
+        return -1;
 
+    print("ImSetControlCallBackHandler()...");
+    im_client.ImSetControlCallBackHandler(
+        OnResourceSetRequestHandler=OnResourceSetRequestHandler,
+        OnResourceRetrieveOneRequestHandler=OnResourceRetrieveOneRequestHandler,
+        OnResourceRetrieveAllRequestHandler=OnResourceRetrieveAllRequestHandler
+    );
 
-class TCPTestService(TCP):
+    print(f"ImConnectTo()...[{IM_SERVER_ADDR}:{IM_SERVER_PORT}]");
+    rc = im_client.ImConnectTo(IM_SERVER_ADDR, IM_SERVER_PORT);
+    if rc < 0:
+        im_client.ImRelease();
+        return -1;
 
-    def __init__(self, node: Node) -> None:
-        super().__init__();
-        self.__node: Node = node;
-        self.__server_socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
-        self.__client_socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
-        self.__client_address: Any = None;
+    print(f"ImAuthDevice()... {IM_DEV_ID}, {IM_DEV_PW}, {IM_DEV_GW}");
+    rc = im_client.ImAuthDevice(IM_DEV_ID, IM_DEV_PW, IM_DEV_GW);
+    if rc < 0:
+        im_client.ImDisconnect();
+        im_client.ImRelease();
+        return -1;
 
-    def server_initialize(self) -> None:
-        self.__server_socket.bind((TEST_TCP_SOCKET_HOST, TEST_TCP_SOCKET_PORT));
-        self.__server_socket.listen();
-        self.__node.get_logger().info(f"TCP Test Server is waiting on [{TEST_TCP_SOCKET_HOST}:{TEST_TCP_SOCKET_PORT}]");
+    im_client.ImTurnCircuitBreakerOff();
 
-        self.__client_socket, self.__client_address = self.__server_socket.accept();
-        self.__node.get_logger().info(f"TCP Client [{self.__client_address}] is connected");
+    global thread_run_flag;
+    thread_run_flag = True;
 
-        while True:
-            try:
-                data: str = self.__client_socket.recv(1024).decode("utf-8");
-                self.__node.get_logger().info(f"TCP Request data : {data}");
-                if not data:
-                    break;
-
-                parts: list[str] = data.split("&&");
-                self.__node.get_logger().info(f"TCP Request parts : {parts}");
-            except Exception as e:
-                self.__node.get_logger().error(f"TCP Test Server error occurred : {e}");
-
-    def client_initialize(self) -> None:
-        self.__node.get_logger().info(
-            f"TCP Connecting to {(TEST_TCP_SOCKET_CLIENT_HOST, TEST_TCP_SOCKET_CLIENT_PORT)} server");
-        self.__client_socket.connect((TEST_TCP_SOCKET_CLIENT_HOST, TEST_TCP_SOCKET_CLIENT_PORT));
-
-    def send_resource(self, resource_id: str, resource: Any) -> None:
-        self.__node.get_logger().info(f"TCP send_resource resource_id : {resource_id}, resource: {resource}");
-        self.__client_socket.send(json.dumps(resource).encode());
-
-    def release(self) -> None:
-        self.__client_socket.close();
-        self.__server_socket.close();
-        self.__node.get_logger().info("TCP closed");
+    return 0;
 
 
-__all__ = ["TCPService"];
+def tcp_release() -> None:
+    rc: int = 0;
+
+    rc = im_client.ImDisconnect();
+    if rc < 0:
+        print("Failed ImDisconnect()...");
+        return;
+
+    rc = im_client.ImRelease();
+    if rc < 0:
+        print("Failed ImRelease()...");
+        return;

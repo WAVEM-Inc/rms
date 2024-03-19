@@ -1,19 +1,24 @@
 import rclpy;
 
 from rclpy.node import Node;
-from rclpy.qos import qos_profile_system_default;
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
-from rosbridge_library.internal import message_conversion;
 
-from ktp_interface.tcp.application.service import TCP;
-from ktp_interface.tcp.application.service import TCPService;
+from ktp_interface.ros.application.response.rbt_status import RbtStatusManager;
+from ktp_interface.ros.application.response.service_status import ServiceStatusManager;
+from ktp_interface.ros.application.response.error_report import ErrorReportManager;
+from ktp_interface.ros.application.response.control_report import ControlReportManager;
+from ktp_interface.ros.application.response.graph_list import GraphListManager;
 
 
 class ResponseManager:
 
-    def __init__(self, node: Node, tcp_service: TCP) -> None:
+    def __init__(self, node: Node) -> None:
         self.__node: Node = node;
-        self.__tcp_service: TCPService = tcp_service;
+
+        self.__rbt_status_manager: RbtStatusManager = RbtStatusManager(node=self.__node);
+        self.__service_status_manager: ServiceStatusManager = ServiceStatusManager(node=self.__node);
+        self.__error_report_manager: ErrorReportManager = ErrorReportManager(node=self.__node);
+        self.__control_report_manager: ControlReportManager = ControlReportManager(node=self.__node);
+        self.__graph_list_manager: GraphListManager = GraphListManager(node=self.__node);
 
 
 __all__ = ["ResponseManager"];

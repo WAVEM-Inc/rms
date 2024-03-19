@@ -1,10 +1,11 @@
-import rclpy
+import rclpy;
 
-from rclpy.node import Node
-from rclpy.executors import MultiThreadedExecutor
-from rclpy.exceptions import ROSInterruptException
-from .ros.node import KTPInterface
-from .tcp.presentation.Hello import iot_sample_run
+from rclpy.node import Node;
+from rclpy.executors import MultiThreadedExecutor;
+from rclpy.exceptions import ROSInterruptException;
+
+from ktp_interface.ros.node import KTPInterface;
+from ktp_interface.tcp.application.service import tcp_release;
 
 
 def main(args=None) -> None:
@@ -19,12 +20,12 @@ def main(args=None) -> None:
     except ROSInterruptException as rie:
         node.get_logger().warn(f"===== {node_name} terminated with Ctrl-C {rie} =====");
 
+    tcp_release();
     node.destroy_node();
     rclpy.shutdown();
 
 
 if __name__ == '__main__':
     main();
-    
 
-__all__ = ['main']
+__all__ = ["main"];
