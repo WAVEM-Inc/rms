@@ -1,0 +1,19 @@
+{
+  "create_time": "",
+  "mission_code": "ktdelivery",
+  "mission_id": "",
+  "owner": "padmin",
+  "task": [
+    {
+      "task_id": "KECDSEMITB0012403111233455430",
+      "task_code": "delivering",
+      "status": "Started",
+      "seq": 0,
+      "task_data": {
+        "map_id": "966",
+        "goal": ["NO-966-0001"],
+        "source": "NO-966-0003"
+      }
+    }
+  ]
+}

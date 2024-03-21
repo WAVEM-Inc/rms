@@ -1,0 +1,19 @@
+{
+    "create_time": "",
+    "objects": [
+      {
+        "detected_time": "",
+        "object_id": "K23OC934",
+        "object_type": 1,
+        "x": 127.123456,
+        "y": 37.123456,
+        "size": {
+          "x": 1.2,
+          "y": 1.1,
+          "z": 1.5
+        },
+        "heading": 45.0,
+        "speed": 40.0
+      }
+    ]
+}

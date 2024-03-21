@@ -1,0 +1,14 @@
+{
+    "create_time": "",
+    "control_id": "",
+    "control_type": "graph",
+    "response_code": 201,
+    "data": {
+      "graph_list": [
+        {
+            "map_id": "966",
+			"version": "1.0"
+        }
+      ]
+    }
+}

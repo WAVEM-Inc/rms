@@ -1,0 +1,26 @@
+{
+  "rbt_status": {
+    "topic": "/rms/ktp/data/rbt_status",
+    "type": "ktp_data_msgs/msg/Status"
+  },
+  "service_status": {
+    "topic": "/rms/ktp/data/service_status",
+    "type": "ktp_data_msgs/msg/ServiceStatus"
+  },
+  "error_report": {
+    "topic": "/rms/ktp/data/error_report",
+    "type": "ktp_data_msgs/msg/ErrorReport"
+  },
+  "control_report": {
+    "topic": "/rms/ktp/data/control_report",
+    "type": "ktp_data_msgs/msg/ControlReport"
+  },
+  "graph_list": {
+    "topic": "/rms/ktp/data/graph_list",
+    "type": "ktp_data_msgs/msg/GraphList"
+  },
+  "obstacle_detect": {
+    "topic": "/rms/ktp/data/obstacle_detect",
+    "type": "ktp_data_msgs/msg/ObstacleDetect"
+  }
+}
