@@ -22,7 +22,7 @@ set(SOURCES
   src/manager/request/request_manager.cxx
   src/manager/request/control/control_manager.cxx
   src/manager/request/mission/mission_manager.cxx
-  src/manager/request/object_detect/object_detect_manager.cxx
+  src/manager/request/detected_object/detected_object_manager.cxx
   src/manager/response/response_manager.cxx
   src/manager/response/control_report/control_report_manager.cxx
   src/manager/response/error_report/error_report_manager.cxx
