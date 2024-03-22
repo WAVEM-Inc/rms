@@ -17,7 +17,7 @@ const ResponseComponents: React.FC<ResponseComponentsProps> = ({ mqttService }: 
     const publishButtonOnClick = async (topic: string, rawJSON: string): Promise<void> => {
         const payloadJSON: any = JSON.parse(rawJSON);
 
-        if (payloadJSON.create_time != null && payloadJSON.create_time != undefined)
+        if (payloadJSON.create_time != null)
         {
             payloadJSON.create_time = getCurrentTime();
 

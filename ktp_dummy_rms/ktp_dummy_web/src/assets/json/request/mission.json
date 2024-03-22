@@ -1,18 +1,19 @@
 {
-    "request_time": "240311123345543",
-    "mission_id": "KECDSEMITB001240311123345543",
     "owner": "padmin",
-    "mission_code": "ktdelivery",
+    "request_time": "240322101055168",
     "task": [
         {
-            "task_id": "KECDSEMITB0012403111233455430",
+            "task_id": "KECDSEMITB0012403221010551681",
             "task_code": "delivering",
-            "seq": 0,
+            "seq": 1,
             "task_data": {
-                "map_id": "966",
-                "goal": ["NO-966-0001"],
-                "source": "NO-966-0003"
+                "goal": [
+                    "NO-966-1001"
+                ],
+                "map_id": "966"
             }
         }
-    ]
+    ],
+    "mission_id": "KECDSEMITB001240322101055168",
+    "mission_code": "ktdelivery"
 }

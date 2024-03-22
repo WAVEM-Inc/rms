@@ -1,4 +1,4 @@
-import mqtt, { OnMessageCallback } from 'mqtt';
+import mqtt, { OnMessageCallback } from "mqtt";
 import {convertRawJSON} from "../utils/Utils";
 import * as mqttConfigJSON from "../assets/params/mqttConfig.json";
 
@@ -28,7 +28,7 @@ export default class MqttService
         this.client!.on("connect", () => {
             if(!this.client!.connected)
             {
-                console.error('[MQTT] connection discarded');
+                console.error("[MQTT] connection discarded");
             }
             else
             {
