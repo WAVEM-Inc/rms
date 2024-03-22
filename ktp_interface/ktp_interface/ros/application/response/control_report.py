@@ -46,14 +46,4 @@ class ControlReportManager:
             self.__node.get_logger().info(f"Succeeded to Sending Resource to id : {KTP_TCP_RESOURCE_ID}");
 
 
-
-    def test(self, control: Control) -> None:
-        control_report: ControlReport = ControlReport();
-        control_report.control_id = control.control_id;
-        control_report.control_code = control.control_code;
-        control_report.create_time = datetime.now().strftime("%y%m%d%H%M%S%f")[:-3];
-        control_report.response_code = 200;
-        self.__tcp_service.tcp_send_resource(KTP_TCP_RESOURCE_ID, message_conversion.extract_values(control_report));
-
-
 __all__ = ["ControlReportManager"];

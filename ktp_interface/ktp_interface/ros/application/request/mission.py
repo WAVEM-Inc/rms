@@ -12,7 +12,6 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
 from rosbridge_library.internal import message_conversion;
 from typing import Any;
 
-from std_msgs.msg import String;
 from ktp_data_msgs.srv import AssignMission;
 
 
@@ -32,18 +31,6 @@ class MissionManager:
             qos_profile=qos_profile_services_default,
             callback_group=__assign_mission_service_client_cb_group
         );
-
-        self.__test_sub = self.__node.create_subscription(
-            topic="/chatter",
-            msg_type=String,
-            qos_profile=qos_profile_system_default,
-            callback_group=MutuallyExclusiveCallbackGroup(),
-            callback=self.test_cb
-        );
-
-    def test_cb(self, string: String) -> None:
-        self.__node.get_logger().info(f"chatter cb : {string}");
-        pass;
 
     def request_assign_mission(self, mission_json: Any) -> None:
         self.__node.get_logger().info(

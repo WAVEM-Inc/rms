@@ -14,10 +14,8 @@ from datetime import datetime;
 
 from rosbridge_library.internal import message_conversion;
 
-from ktp_data_msgs.msg import ServiceStatus;
-from ktp_data_msgs.msg import ServiceStatusTask;
 from ktp_data_msgs.msg import Control;
-from ktp_data_msgs.msg import ControlReport;
+from ktp_data_msgs.msg import Mission;
 from ktp_data_msgs.msg import DetectedObject;
 
 im_client: IoTMakersDeviceClient = IoTMakersDeviceClient();
@@ -32,6 +30,70 @@ IM_DEV_GW: str = "M_OPENRM_UNMANNED_SOLUTION";
 IM_LOGLEVEL: int = 3;  # 1:ERR, 2:INFO, 3:DEBUG
 
 
+control: Any = {};
+control_callback_flag: bool = False;
+
+mission: Any = {};
+mission_callback_flag: bool = False;
+
+detected_object: Any = {};
+detected_object_callback_flag: bool = False;
+
+
+def get_control() -> Any:
+    return control;
+
+
+def set_control(_control: Any) -> None:
+    global control;
+    control = _control;
+
+
+def get_control_callback_flag() -> bool:
+    return control_callback_flag;
+
+
+def set_control_callback_flag(_control_callback_flag: bool) -> None:
+    global control_callback_flag;
+    control_callback_flag = _control_callback_flag;
+
+
+def get_mission() -> Any:
+    return mission;
+
+
+def set_mission(_mission: Any) -> None:
+    global mission;
+    mission = _mission;
+
+
+def get_mission_callback_flag() -> bool:
+    return mission_callback_flag;
+
+
+def set_mission_callback_flag(_mission_callback_flag: bool) -> None:
+    global mission_callback_flag;
+    mission_callback_flag = _mission_callback_flag;
+
+
+def get_detected_object() -> Any:
+    return detected_object;
+
+
+def set_detected_object(_detected_object: Any) -> None:
+    global detected_object;
+    detected_object = _detected_object;
+
+
+def get_detected_object_flag() -> bool:
+    return detected_object_callback_flag;
+
+
+def set_detected_object_flag(_detected_object_flag: bool) -> None:
+    global detected_object_callback_flag;
+    detected_object_callback_flag = _detected_object_flag;
+
+
 ##########################################
 #   리소스 설정(제어) 요청 처리 핸들러
 ##########################################
@@ -40,8 +102,34 @@ def OnResourceSetRequestHandler(pktBody, dev_id, resource_id, properties_in_jstr
 
     # YOUR CONTROL CODE HERE
     properties = json.loads(properties_in_jstr);
-
     print(json.dumps(properties, indent=4));
+
+    global control;
+    global control_callback_flag;
+
+    global mission;
+    global mission_callback_flag;
+
+    global detected_object;
+    global detected_object_callback_flag;
+
+    if resource_id == "rbt_control":
+        set_control_callback_flag(True);
+        set_control(properties);
+
+        print(f"{resource_id} Callback : {json.dumps(get_control(), indent=4)}");
+    elif resource_id == "rbt_mission":
+        set_mission_callback_flag(True);
+        set_mission(properties);
+
+        print(f"{resource_id} Callback : {json.dumps(get_mission(), indent=4)}");
+    elif resource_id == "rbt_detected_object":
+        set_detected_object_flag(True);
+        set_detected_object(properties);
+
+        print(f"{resource_id} Callback : {json.dumps(get_detected_object(), indent=4)}");
+    else:
+        print(f"Unknown resource_id : {resource_id}");
 
     #IM_RESP_CODE_2004_Changed
     return 2004;
