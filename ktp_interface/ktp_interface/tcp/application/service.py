@@ -101,7 +101,7 @@ def OnResourceSetRequestHandler(pktBody, dev_id, resource_id, properties_in_jstr
     print("OnResourceSetRequestHandler()-->", dev_id, resource_id, properties_in_jstr)
 
     # YOUR CONTROL CODE HERE
-    properties = json.loads(properties_in_jstr);
+    properties: Any = json.loads(properties_in_jstr);
     print(json.dumps(properties, indent=4));
 
     global control;

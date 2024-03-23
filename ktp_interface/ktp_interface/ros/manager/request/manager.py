@@ -32,14 +32,14 @@ class RequestManager:
         self.__mission_manager: MissionManager = MissionManager(node=self.__node);
 
     def __polling_timer_cb(self) -> None:
-        print("\n");
-        self.__node.get_logger().info(f"control_callback_flag : {get_control_callback_flag()}, control : {get_control()}");
-        self.__node.get_logger().info(f"mission_callback_flag : {get_mission_callback_flag()}, mission : {get_mission()}");
-        self.__node.get_logger().info(f"detected_object_callback_flag : {get_detected_object_flag()}, detected_object : {get_detected_object()}");
-        print("\n");
+        if get_control_callback_flag():
+            self.__control_manager.deliver_control_callback_json(control_callback_json=get_control());
 
-    def manage_assign_mission(self, mission_json: Any) -> None:
-        self.__mission_manager.request_assign_mission(mission_json=mission_json);
+        if get_mission_callback_flag():
+            self.__mission_manager.deliver_mission_callback_json(mission_callback_json=get_mission());
+
+        if get_detected_object_flag():
+            self.__detected_object_manager.deliver_detected_object_callback_json(detected_object_callback_json=get_detected_object());
 
 
 __all__ = ["RequestManager"];
