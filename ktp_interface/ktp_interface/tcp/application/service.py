@@ -1,22 +1,42 @@
 #-*- coding:utf-8 -*-
 
+import os;
+import yaml;
 import json;
 from typing import Any;
-
+from ament_index_python.packages import get_package_share_directory;
 from ktp_interface.tcp.libs.IoTMakersDeviceClient import IoTMakersDeviceClient;
-
 
 im_client: IoTMakersDeviceClient = IoTMakersDeviceClient();
 
 thread_run_flag: bool = False;
 
-IM_SERVER_ADDR: str = "14.63.249.103";
-IM_SERVER_PORT: int = 32139;
-IM_DEV_ID: str = "KECDSEMITB001";
-IM_DEV_PW: str = "1234";
-IM_DEV_GW: str = "M_OPENRM_UNMANNED_SOLUTION";
-IM_LOGLEVEL: int = 3;  # 1:ERR, 2:INFO, 3:DEBUG
+tcp_configuration_data: Any = {};
 
+def set_tcp_connection_info() -> None:
+    package_shared_directory: str = get_package_share_directory("ktp_interface");
+    print(f"package_shared_directory : {package_shared_directory}");
+
+    config_file_path: str = os.path.join(package_shared_directory, "config", "tcp_configuration.yaml");
+    print(f"config_file_path : {config_file_path}");
+
+    if not os.path.exists(config_file_path):
+        raise FileNotFoundError(f"Configuration file '{config_file_path}' not found.");
+
+    with open(config_file_path, "r") as f:
+        global tcp_configuration_data;
+        tcp_configuration_data = yaml.safe_load(f);
+
+    print(f"tcp_configuration_data : {tcp_configuration_data}");
+
+
+set_tcp_connection_info();
+IM_SERVER_ADDR: str = tcp_configuration_data["server_address"];
+IM_SERVER_PORT: int = tcp_configuration_data["server_port"];
+IM_DEV_ID: str = tcp_configuration_data["dev_id"];
+IM_DEV_PW: str = tcp_configuration_data["dev_pw"];
+IM_DEV_GW: str = tcp_configuration_data["dev_gw"];
+IM_LOGLEVEL: int = tcp_configuration_data["log_level"];  # 1:ERR, 2:INFO, 3:DEBUG
 
 control: Any = {};
 control_callback_flag: bool = False;

@@ -1,9 +1,5 @@
 #-*- coding:utf-8 -*-
 
-import json
-import rclpy;
-from datetime import datetime;
-
 from rclpy.node import Node;
 from rclpy.subscription import Subscription;
 from rclpy.qos import qos_profile_system_default;
@@ -12,7 +8,6 @@ from rosbridge_library.internal import message_conversion;
 
 from ktp_interface.tcp.application.service import tcp_send_resource;
 
-from ktp_data_msgs.msg import Control;
 from ktp_data_msgs.msg import ControlReport;
 
 from typing import Any;
