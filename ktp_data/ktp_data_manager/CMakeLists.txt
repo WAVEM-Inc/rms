@@ -12,6 +12,7 @@ include_directories(
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(ktp_data_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -43,6 +44,7 @@ add_executable(${EXEC_NAME}
 
 set(DEPENDS
   rclcpp
+  std_msgs
   ktp_data_msgs
   sensor_msgs
   geometry_msgs
