@@ -21,9 +21,10 @@ class RequestManager:
     def __init__(self, node: Node) -> None:
         self.__node: Node = node;
 
+        polling_timer_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__polling_timer: Timer = self.__node.create_timer(
             timer_period_sec=0.5,
-            callback_group=MutuallyExclusiveCallbackGroup(),
+            callback_group=polling_timer_cb_group,
             callback=self.__polling_timer_cb
         );
 
@@ -32,6 +33,10 @@ class RequestManager:
         self.__mission_manager: MissionManager = MissionManager(node=self.__node);
 
     def __polling_timer_cb(self) -> None:
+        print("/n");
+
+        self.__node.get_logger().info("Waiting for Polling from KTP");
+
         if get_control_callback_flag():
             self.__control_manager.deliver_control_callback_json(control_callback_json=get_control());
 

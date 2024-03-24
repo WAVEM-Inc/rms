@@ -14,9 +14,9 @@ import sys
 import time
 
 if sys.version_info >= (3, 0) :
-	from ..libs import IotmakersStdDevicePy3 as client
+	from ktp_interface.tcp.libs import IotmakersStdDevicePy3 as client
 else :
-    from ..libs import IotmakersStdDevicePy2 as client
+    from ktp_interface.tcp.libs import IotmakersStdDevicePy2 as client
 
 class IoTMakersDeviceClient:
 

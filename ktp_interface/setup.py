@@ -7,9 +7,9 @@ package_name: str = "ktp_interface";
 tcp_libs_dir: str = f"{package_name}.tcp.libs";
 tcp_lib_name: str = "";
 
-if sys.version_info >= (3, 0) :
-	tcp_lib_name = "IotmakersStdDevicePy3.so";
-else :
+if sys.version_info >= (3, 0):
+    tcp_lib_name = "IotmakersStdDevicePy3.so";
+else:
     tcp_lib_name = "IotmakersStdDevicePy2.so";
 
 setup(

@@ -42,6 +42,8 @@ class MissionManager:
         assign_mission_request: AssignMission.Request = AssignMission.Request();
         assign_mission_request.mission = mission;
 
+        self.__node.get_logger().info(f"Assign Mission Request Message : {assign_mission_request}");
+
         is_assign_mission_service_server_ready: bool = self.__assign_mission_service_client.wait_for_service(timeout_sec=0.75);
 
         if is_assign_mission_service_server_ready:

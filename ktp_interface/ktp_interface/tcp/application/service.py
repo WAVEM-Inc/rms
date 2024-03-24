@@ -1,22 +1,10 @@
 #-*- coding:utf-8 -*-
 
 import json;
-import socket;
-import importlib;
-import threading;
+from typing import Any;
 
-from ..presentation.IoTMakersDeviceClient import IoTMakersDeviceClient
+from ktp_interface.tcp.libs.IoTMakersDeviceClient import IoTMakersDeviceClient;
 
-from rclpy.node import Node
-
-from typing import Any
-from datetime import datetime;
-
-from rosbridge_library.internal import message_conversion;
-
-from ktp_data_msgs.msg import Control;
-from ktp_data_msgs.msg import Mission;
-from ktp_data_msgs.msg import DetectedObject;
 
 im_client: IoTMakersDeviceClient = IoTMakersDeviceClient();
 
@@ -97,7 +85,7 @@ def set_detected_object_flag(_detected_object_flag: bool) -> None:
 ##########################################
 #   리소스 설정(제어) 요청 처리 핸들러
 ##########################################
-def OnResourceSetRequestHandler(pktBody, dev_id, resource_id, properties_in_jstr) -> int:
+def on_resource_set_request_handler(pktBody, dev_id, resource_id, properties_in_jstr) -> int:
     print("OnResourceSetRequestHandler()-->", dev_id, resource_id, properties_in_jstr)
 
     # YOUR CONTROL CODE HERE
@@ -138,7 +126,7 @@ def OnResourceSetRequestHandler(pktBody, dev_id, resource_id, properties_in_jstr
 ##########################################
 #   특정 리소스(resource_id) 조회 요청 처리 핸들러
 ##########################################
-def OnResourceRetrieveOneRequestHandler(pktBody, dev_id, resource_id) -> int:
+def on_resource_retrieve_one_request_handler(pktBody, dev_id, resource_id) -> int:
     print("OnResourceSetRequestHandler()-->", dev_id, resource_id)
 
     # YOUR CONTROL CODE HERE
@@ -162,7 +150,7 @@ def OnResourceRetrieveOneRequestHandler(pktBody, dev_id, resource_id) -> int:
 ##########################################
 #   본 디바이스(dev_id)의 모든 리소스 조회 요청 처리 핸들러
 ##########################################
-def OnResourceRetrieveAllRequestHandler(pktBody, dev_id) -> int:
+def on_resource_retrieve_all_request_handler(pktBody, dev_id) -> int:
     print("OnResourceSetRequestHandler()-->", dev_id)
 
     # YOUR CONTROL CODE HERE
@@ -233,7 +221,7 @@ def polling_thread_cb(n) -> None:
 
     global thread_run_flag;
 
-    while thread_run_flag == True:
+    while thread_run_flag:
         rc = im_client.ImPoll();
         if rc < 0:
             print("FAIL ImPoll()...");
@@ -255,9 +243,9 @@ def tcp_initialize() -> int:
 
     print("ImSetControlCallBackHandler()...");
     im_client.ImSetControlCallBackHandler(
-        OnResourceSetRequestHandler=OnResourceSetRequestHandler,
-        OnResourceRetrieveOneRequestHandler=OnResourceRetrieveOneRequestHandler,
-        OnResourceRetrieveAllRequestHandler=OnResourceRetrieveAllRequestHandler
+        OnResourceSetRequestHandler=on_resource_set_request_handler,
+        OnResourceRetrieveOneRequestHandler=on_resource_retrieve_one_request_handler,
+        OnResourceRetrieveAllRequestHandler=on_resource_retrieve_all_request_handler
     );
 
     print(f"ImConnectTo()...[{IM_SERVER_ADDR}:{IM_SERVER_PORT}]");

@@ -31,6 +31,7 @@ class DetectedObjectManager:
         self.__detected_object_publish(detected_object=detected_object);
 
     def __detected_object_publish(self, detected_object: Any) -> None:
+        self.__node.get_logger().info(f"Detected Object Publish Message : {detected_object}");
         self.__detected_object_publisher.publish(detected_object);
 
 

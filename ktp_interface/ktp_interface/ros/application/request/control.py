@@ -36,13 +36,15 @@ class ControlManager:
         self.__assign_control_request(control=control);
 
     def __assign_control_request(self, control: Any) -> None:
-        assign_control_req: AssignControl.Request = AssignControl.Request();
-        assign_control_req.control = control;
+        assign_control_request: AssignControl.Request = AssignControl.Request();
+        assign_control_request.control = control;
+
+        self.__node.get_logger().info(f"Assign Control Request Message : {assign_control_request}");
 
         is_assign_control_service_server_ready: bool = self.__assign_control_service_client.wait_for_service(timeout_sec=0.75);
 
         if is_assign_control_service_server_ready:
-            call_future: Future = self.__assign_control_service_client.call_async(request=assign_control_req);
+            call_future: Future = self.__assign_control_service_client.call_async(request=assign_control_request);
             result: Any = call_future.result();
             self.__node.get_logger().info(f"{ASSIGN_CONTROL_SERVICE_NAME} request result : {result}");
         else:
