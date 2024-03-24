@@ -33,8 +33,7 @@ class RequestManager:
         self.__mission_manager: MissionManager = MissionManager(node=self.__node);
 
     def __polling_timer_cb(self) -> None:
-        print("/n");
-
+        print("\n");
         self.__node.get_logger().info("Waiting for Polling from KTP");
 
         if get_control_callback_flag():
@@ -45,6 +44,8 @@ class RequestManager:
 
         if get_detected_object_flag():
             self.__detected_object_manager.deliver_detected_object_callback_json(detected_object_callback_json=get_detected_object());
+
+        print("\n");
 
 
 __all__ = ["RequestManager"];

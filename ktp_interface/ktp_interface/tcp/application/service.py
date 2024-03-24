@@ -13,6 +13,7 @@ thread_run_flag: bool = False;
 
 tcp_configuration_data: Any = {};
 
+
 def set_tcp_connection_info() -> None:
     package_shared_directory: str = get_package_share_directory("ktp_interface");
     print(f"package_shared_directory : {package_shared_directory}");
@@ -207,9 +208,29 @@ def on_resource_retrieve_all_request_handler(pktBody, dev_id) -> int:
     return 2000;
 
 
+def filter_empty_values(data: Any) -> Any:
+    if isinstance(data, dict):
+        return {
+            key: filter_empty_values(value)
+            for key, value in data.items()
+            if value is not None and filter_empty_values(value) is not None
+        }
+    elif isinstance(data, list):
+        return [
+            filter_empty_values(item)
+            for item in data
+            if item is not None and filter_empty_values(item) is not None
+        ]
+    elif isinstance(data, str):
+        return data if data.strip() != "" else None
+    else:
+        return data
+
+
 def tcp_send_resource(resource_id: str, properties: Any) -> int:
-    properties_dumped: str = json.dumps(properties);
-    print(f"Send Resource of id [{resource_id}], with property : [{properties_dumped}]");
+    properties_filtered: Any = filter_empty_values(properties);
+    properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
+    print(f"Send Resource of id [{resource_id}], with property : [{properties_filtered}]");
 
     rc: int = 0;
 
@@ -218,7 +239,7 @@ def tcp_send_resource(resource_id: str, properties: Any) -> int:
         print("Failed ImResourceNotificationInit()");
         return -1;
 
-    rc = im_client.ImResourceNotificationAppendResource(resource_id, properties_dumped);
+    rc = im_client.ImResourceNotificationAppendResource(resource_id, properties_filtered);
     if rc < 0:
         print("Failed ImResourceNotificationAppendResource()");
         return -1;
@@ -228,7 +249,7 @@ def tcp_send_resource(resource_id: str, properties: Any) -> int:
         print("Failed ImResourceNotificationSend()");
         return -1;
 
-    print(f"Succeeded Send Resource to id : [{resource_id}] with : [{properties_dumped}]");
+    print(f"Succeeded Send Resource to id : [{resource_id}] with : [{properties_filtered}]");
 
     return 0;
 
