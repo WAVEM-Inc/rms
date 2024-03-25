@@ -17,6 +17,7 @@ find_package(ktp_data_msgs REQUIRED)
 find_package(robot_status_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(path_graph_msgs REQUIRED)
 
 set(SOURCES
   src/utils/utils.cxx
@@ -50,6 +51,7 @@ set(DEPENDS
   robot_status_msgs
   sensor_msgs
   geometry_msgs
+  path_graph_msgs
 )
 
 ament_target_dependencies(${EXEC_NAME}

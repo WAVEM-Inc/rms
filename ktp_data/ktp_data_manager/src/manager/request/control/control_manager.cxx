@@ -3,6 +3,8 @@
 ktp::data::ControlManager::ControlManager(rclcpp::Node::SharedPtr node)
     : node_(node)
 {
+    this->graph_list_manager_ = std::make_shared<ktp::data::GraphListManager>(this->node_);
+
     this->assign_control_from_itf_service_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     this->assign_control_from_itf_service_ = this->node_->create_service<ktp_data_msgs::srv::AssignControl>(
         ASSIGN_CONTROL_FROM_ITF_SERVICE_NAME,
@@ -28,15 +30,30 @@ void ktp::data::ControlManager::assign_control_from_itf_service_cb(
     const std::shared_ptr<ktp_data_msgs::srv::AssignControl::Request> request,
     const std::shared_ptr<ktp_data_msgs::srv::AssignControl::Response> response)
 {
-    const bool &is_request_assign_control_to_task_ctrl_success = this->request_assign_control_to_task_ctrl(request);
+    const std::string &control_code = request->control.control_code;
 
-    if (is_request_assign_control_to_task_ctrl_success)
+    if (control_code == "")
     {
-        response->set__result(true);
+        RCLCPP_ERROR(this->node_->get_logger(), "Assign Control From ITF control_code is empty");
+        return;
+    }
+    else if (control_code == CONTROL_CODE_GRAPH_SYNC)
+    {
+        RCLCPP_INFO(this->node_->get_logger(), "Assign Control From ITF control_code is [%s]", control_code.c_str());
+        this->graph_list_manager_->path_graph_graph_request();
     }
     else
     {
-        response->set__result(false);
+        const bool &is_request_assign_control_to_task_ctrl_success = this->request_assign_control_to_task_ctrl(request);
+
+        if (is_request_assign_control_to_task_ctrl_success)
+        {
+            response->set__result(true);
+        }
+        else
+        {
+            response->set__result(false);
+        }
     }
 }
 
