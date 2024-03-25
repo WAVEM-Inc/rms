@@ -1,8 +1,5 @@
 #-*- coding:utf-8 -*-
 
-import json
-
-import rclpy;
 
 from rclpy.node import Node;
 from rclpy.client import Client;
