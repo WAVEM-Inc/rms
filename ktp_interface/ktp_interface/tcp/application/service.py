@@ -224,7 +224,7 @@ def filter_empty_values(data: Any) -> Any:
     elif isinstance(data, str):
         return data if data.strip() != "" else None
     else:
-        return data
+        return data;
 
 
 def tcp_send_resource(resource_id: str, properties: Any) -> int:
