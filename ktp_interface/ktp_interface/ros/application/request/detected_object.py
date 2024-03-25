@@ -9,7 +9,7 @@ from typing import Any;
 
 from ktp_data_msgs.msg import DetectedObject;
 
-DETECTED_OBJECT_PUBLISHER_NAME: str = "/rms/ktp/inf/detected_object";
+DETECTED_OBJECT_PUBLISHER_NAME: str = "/rms/ktp/itf/detected_object";
 
 
 class DetectedObjectManager:
