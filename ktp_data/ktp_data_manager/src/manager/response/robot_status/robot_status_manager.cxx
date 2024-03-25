@@ -26,6 +26,15 @@ ktp::data::RobotStatusManager::RobotStatusManager(const rclcpp::Node::SharedPtr 
         std::bind(&ktp::data::RobotStatusManager::battery_state_subscription_cb, this, _1),
         battery_state_subscription_opts);
 
+    this->velocity_state_subscription_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    rclcpp::SubscriptionOptions velocity_state_subscription_opts;
+    velocity_state_subscription_opts.callback_group = this->velocity_state_subscription_cb_group_;
+    this->velocity_state_subscription_ = this->node_->create_subscription<robot_status_msgs::msg::VelocityStatus>(
+        VELOCITY_STATE_TOPIC,
+        rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
+        std::bind(&ktp::data::RobotStatusManager::velocity_state_subscription_cb, this, _1),
+        velocity_state_subscription_opts);
+
     this->gps_subscription_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     rclcpp::SubscriptionOptions gps_subscription_opts;
     gps_subscription_opts.callback_group = this->gps_subscription_cb_group_;
@@ -62,7 +71,14 @@ ktp::data::RobotStatusManager::RobotStatusManager(const rclcpp::Node::SharedPtr 
         std::bind(&ktp::data::RobotStatusManager::humidity_subscription_cb, this, _1),
         humidity_subscription_opts);
 
-    
+    this->robot_navigation_status_from_task_ctrl_subscription_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    rclcpp::SubscriptionOptions robot_navigation_status_from_task_ctrl_subscription_opts;
+    robot_navigation_status_from_task_ctrl_subscription_opts.callback_group = this->robot_navigation_status_from_task_ctrl_subscription_cb_group_;
+    this->robot_navigation_status_from_task_ctrl_subscription_ = this->node_->create_subscription<ktp_data_msgs::msg::Status>(
+        ROBOT_NAVIGATION_STATUS_FROM_TASK_CTRL_TOPIC,
+        rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
+        std::bind(&ktp::data::RobotStatusManager::robot_navigation_status_from_task_ctrl_cb, this, _1),
+        robot_navigation_status_from_task_ctrl_subscription_opts);
 }
 
 ktp::data::RobotStatusManager::~RobotStatusManager()
@@ -102,6 +118,22 @@ void ktp::data::RobotStatusManager::battery_state_subscription_cb(const sensor_m
     {
         RCLCPP_ERROR(this->node_->get_logger(), "RobotStatusManager battery_cb is nullptr...");
         this->battery_cb_flag_ = false;
+        return;
+    }
+}
+
+void ktp::data::RobotStatusManager::velocity_state_subscription_cb(const robot_status_msgs::msg::VelocityStatus::SharedPtr velocity_state_cb)
+{
+    this->velocity_state_cb_ = velocity_state_cb;
+
+    if (this->velocity_state_cb_ != nullptr)
+    {
+        this->velocity_state_cb_flag_ = true;
+    }
+    else
+    {
+        RCLCPP_ERROR(this->node_->get_logger(), "RobotStatusManager velocity_state_cb is nullptr...");
+        this->velocity_state_cb_flag_ = false;
         return;
     }
 }
@@ -170,6 +202,22 @@ void ktp::data::RobotStatusManager::humidity_subscription_cb(const sensor_msgs::
     }
 }
 
+void ktp::data::RobotStatusManager::robot_navigation_status_from_task_ctrl_cb(const ktp_data_msgs::msg::Status::SharedPtr robot_navigation_cb)
+{
+    this->robot_navigation_status_cb_ = robot_navigation_cb;
+
+    if (this->robot_navigation_status_cb_ != nullptr)
+    {
+        this->robot_navigation_status_cb_ = true;
+    }
+    else
+    {
+        RCLCPP_ERROR(this->node_->get_logger(), "RobotStatusManager robot_navigation_status_cb is nullptr...");
+        this->robot_navigation_status_cb_flag_ = false;
+        return;
+    }
+}
+
 ktp_data_msgs::msg::StatusService ktp::data::RobotStatusManager::build_service()
 {
     ktp_data_msgs::msg::StatusService::UniquePtr rbt_status_service = std::make_unique<ktp_data_msgs::msg::StatusService>();
@@ -224,7 +272,14 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // 현재 맵 id
     // 필수
     // 고정 값
-    rbt_status->set__map_id(MAP_ID);
+    if (this->robot_navigation_status_cb_flag_)
+    {
+        const std::string &map_id = this->robot_navigation_status_cb_->map_id;
+        rbt_status->set__map_id(map_id);
+    } else
+    {
+        rbt_status->set__map_id("");
+    }
     // ############################################
 
     // ############################################
@@ -236,8 +291,7 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     if (this->battery_cb_flag_)
     {
         rbt_status->set__battery(this->battery_state_cb_->percentage);
-    }
-    else
+    } else
     {
         rbt_status->set__battery(DEFAULT_DOUBLE);
     }
@@ -248,7 +302,14 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // 로봇의 주행 상태
     // 필수
     // /route_to_pose subscription
-    rbt_status->set__drive_status(ktp::enums::DriveStatus::DRIVING_NORMALLY);
+    if (this->robot_navigation_status_cb_flag_)
+    {
+        const int32_t &drive_status = this->robot_navigation_status_cb_->drive_status;
+        rbt_status->set__drive_status(drive_status);
+    } else
+    {
+        rbt_status->set__drive_status(ktp::enums::DriveStatus::WAIT);
+    }
     // ############################################
 
     // ############################################
@@ -264,7 +325,14 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // 로봇의 주행 속도
     // 필수
     // /sensor/velocity/state
-    rbt_status->set__speed(DEFAULT_DOUBLE);
+    if (this->velocity_state_cb_flag_)
+    {
+        const double &speed = this->velocity_state_cb_->current_velocity;
+        rbt_status->set__speed(speed);
+    } else
+    {
+        rbt_status->set__speed(DEFAULT_DOUBLE);
+    }
     // ############################################
 
     // ############################################
@@ -272,7 +340,14 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // 현재 출발 노드
     // 필수
     // /path_graph/path
-    rbt_status->set__from_node("qwlbgasugbqwqjkgbsadjkgbadgjsqa");
+    if (this->robot_navigation_status_cb_flag_)
+    {
+        const std::string &from_node = this->robot_navigation_status_cb_->from_node;
+        rbt_status->set__from_node(from_node);
+    } else
+    {
+        rbt_status->set__from_node("");
+    }
     // ############################################
 
     // ############################################
@@ -286,7 +361,7 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // section
     // Optional
     // 로봇이 위치한 구역
-    rbt_status->set__section(";jaksddsfadgq");
+    rbt_status->set__section("");
     // ############################################
 
     // ############################################
@@ -294,7 +369,14 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // 현재 목적 노드
     // 필수
     // /path_graph/path
-    rbt_status->set__to_node("aikweqjkbhgsaoujdbguoqwg");
+    if (this->robot_navigation_status_cb_flag_)
+    {
+        const std::string &to_node = this->robot_navigation_status_cb_->to_node;
+        rbt_status->set__to_node(to_node);
+    } else
+    {
+        rbt_status->set__to_node("");
+    }
     // ############################################
 
     // ############################################
@@ -302,7 +384,16 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // 로봇의 충전 상태
     // 필수
     // /sensor/battery/state
-    rbt_status->set__charge(false);
+    if (this->battery_cb_flag_)
+    {
+        const bool &is_charging = this->battery_state_cb_->present;
+        rbt_status->set__charge(is_charging);
+    }
+    else
+    {
+        rbt_status->set__charge(false);
+    }
+
     // ############################################
 
     // ############################################
@@ -311,17 +402,18 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // 필수
     // /sensor/ublox/fix
     // RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager gps_cb_flag : [%d]", this->gps_cb_flag_);
-
-    double longitude = 0.0;
-    double latitude = 0.0;
-
     if (this->gps_cb_flag_)
     {
-        longitude = this->gps_cb_->longitude;
-        latitude = this->gps_cb_->latitude;
+        const double &longitude = this->gps_cb_->longitude;
+        const double &latitude = this->gps_cb_->latitude;
+        rbt_status->set__x(longitude);
+        rbt_status->set__y(latitude);
     }
-    rbt_status->set__x(longitude);
-    rbt_status->set__y(latitude);
+    else
+    {
+        rbt_status->set__x(DEFAULT_DOUBLE)
+        rbt_status->set__y(DEFAULT_DOUBLE);
+    };
     // ############################################
 
     // ############################################
@@ -330,13 +422,15 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // 필수
     // /drive/rtt_odom
     // RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager rtt_odom_cb_flag : [%d]", this->rtt_odom_cb_flag_);
-
-    double heading = 0.0;
     if (this->rtt_odom_cb_flag_)
     {
-        heading = this->rtt_odom_cb_->pose.orientation.y;
+        const double &heading = this->rtt_odom_cb_->pose.orientation.y;
+        rbt_status->set__heading(heading);
     }
-    rbt_status->set__heading(heading);
+    else
+    {
+        rbt_status->set__heading(DEFAULT_DOUBLE);
+    }
     // ############################################
 
     // ############################################
@@ -344,26 +438,27 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // 실내/실외 구분값
     // 필수
     // ??
-    rbt_status->set__is_indoor(true);
+    rbt_status->set__is_indoor(false);
     // ############################################
 
     // ############################################
     // coord_code
     // 로봇 주행 좌표계 코드
-    if (rbt_status->is_indoor)
-    {
-        rbt_status->set__coord_code(COORD_CORD_SLAM);
-    }
-    else
-    {
-        rbt_status->set__coord_code(COORD_CORD_GPS);
-    }
+    rbt_status->set__coord_code(COORD_CORD_GPS);
     // ############################################
 
     // ############################################
     // service_mode
     // 서비스 모드
-    rbt_status->set__service_mode("delivering");
+    if (this->robot_navigation_status_cb_flag_)
+    {
+        const std::string &service_mode = this->robot_navigation_status_cb_->service_mode;
+        rbt_status->set__service_mode(service_mode);
+    }
+    else
+    {
+        rbt_status->set__service_mode("");
+    }
     // ############################################
 
     // ############################################
@@ -375,7 +470,7 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
 
     // ############################################
     // firmware_version
-    rbt_status->set__firmware_version("humble");
+    rbt_status->set__firmware_version("1.0.5.21");
     // ############################################
 
     // RCLCPP_INFO(
