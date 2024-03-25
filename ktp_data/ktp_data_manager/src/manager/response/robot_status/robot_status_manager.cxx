@@ -208,7 +208,7 @@ void ktp::data::RobotStatusManager::robot_navigation_status_from_task_ctrl_cb(co
 
     if (this->robot_navigation_status_cb_ != nullptr)
     {
-        this->robot_navigation_status_cb_ = true;
+        this->robot_navigation_status_cb_flag_ = true;
     }
     else
     {
@@ -411,7 +411,7 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     }
     else
     {
-        rbt_status->set__x(DEFAULT_DOUBLE)
+        rbt_status->set__x(DEFAULT_DOUBLE);
         rbt_status->set__y(DEFAULT_DOUBLE);
     };
     // ############################################
