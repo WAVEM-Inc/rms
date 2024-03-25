@@ -9,3 +9,7 @@ ktp::data::ObstacleDetectManager::ObstacleDetectManager(rclcpp::Node::SharedPtr 
 {
     
 }
+
+ktp::data::ObstacleDetectManager::~ObstacleDetectManager()
+{
+}
