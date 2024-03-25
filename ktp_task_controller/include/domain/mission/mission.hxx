@@ -41,6 +41,7 @@ namespace ktp
             route_msgs::msg::Node start_node_;
             route_msgs::msg::Node end_node_;
             ktp_data_msgs::msg::MissionTask mission_task_;
+
         public:
             explicit NavigationStatus();
             virtual ~NavigationStatus();
