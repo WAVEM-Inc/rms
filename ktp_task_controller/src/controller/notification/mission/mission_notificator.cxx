@@ -134,6 +134,17 @@ void ktp::controller::MissionNotificator::notify_robot_navigation_status(ktp::do
     const route_msgs::msg::Node &end_node = navigation_status.get__end_node();
     robot_navigation_status->set__to_node(end_node.node_id);
 
+    const std::string &service_mode = mission_task.task_code;
+    robot_navigation_status->set__service_mode(service_mode);
+
+    printf("\n");
+    RCLCPP_INFO(this->node_->get_logger(), "--------------------------- Notify Navigation Status --------------------------------");
+    RCLCPP_INFO(
+            this->node_->get_logger(),
+            "map_id : [%s]\n\tdrive_status : [%d]\n\tfrom_node : [%s]\n\tto_node : [%s]",
+            map_id.c_str(), drive_status, start_node.node_id.c_str(), end_node.node_id.c_str());
+    printf("\n");
+
     const ktp_data_msgs::msg::Status &&robot_navigation_status_moved = std::move(*(robot_navigation_status));
 
     this->notify_robot_navigation_status_publisher_->publish(robot_navigation_status_moved);
