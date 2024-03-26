@@ -35,37 +35,37 @@ const ResponseComponents: React.FC<ResponseComponentsProps> = ({ mqttService }: 
         console.info(`ResponseComponent publishButtonOnClick topic : ${topic}, json : ${JSON.stringify(payloadJSON)}`);
 
         mqttService.publish(topic, JSON.stringify(payloadJSON));
-    };
+    }
 
     return (
         <div className={"response_components_container"}>
             <button onClick={() => {
-                publishButtonOnClick("/rms/ktp/data/service_status", JSON.stringify(serviceStatusJSON))
+                publishButtonOnClick("/rms/ktp/data/service_status", JSON.stringify(serviceStatusJSON));
             }}>
                 Service Status
             </button>
             <button onClick={() => {
-                publishButtonOnClick("/rms/ktp/data/control_report", JSON.stringify(controlReportJSON))
+                publishButtonOnClick("/rms/ktp/data/control_report", JSON.stringify(controlReportJSON));
             }}>
                 Control Report
             </button>
             <button onClick={() => {
-                publishButtonOnClick("/rms/ktp/data/control_report", JSON.stringify(graphListReportJSON))
+                publishButtonOnClick("/rms/ktp/data/control_report", JSON.stringify(graphListReportJSON));
             }}>
                 Graph List Report
             </button>
             <button onClick={() => {
-                publishButtonOnClick("/rms/ktp/data/graph_list", JSON.stringify(graphListJSON))
+                publishButtonOnClick("/rms/ktp/data/graph_list", JSON.stringify(graphListJSON));
             }}>
                 Graph List
             </button>
             <button onClick={() => {
-                publishButtonOnClick("/rms/ktp/data/obstacle_detect", JSON.stringify(obstacleDetectJSON))
+                publishButtonOnClick("/rms/ktp/data/obstacle_detect", JSON.stringify(obstacleDetectJSON));
             }}>
                 Obstacle Detect
             </button>
             <button onClick={() => {
-                publishButtonOnClick("/rms/ktp/data/lidar_signal", JSON.stringify(lidarSignalJSON))
+                publishButtonOnClick("/rms/ktp/data/lidar_signal", JSON.stringify(lidarSignalJSON));
             }}>
                 LiDAR Signal
             </button>
