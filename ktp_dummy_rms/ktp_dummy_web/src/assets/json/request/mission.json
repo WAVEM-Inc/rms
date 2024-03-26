@@ -1,19 +1,20 @@
 {
     "owner": "padmin",
-    "request_time": "240322101055168",
+    "request_time": "",
+    "mission_id": "",
+    "mission_code": "ktdelivery",
     "task": [
         {
-            "task_id": "KECDSEMITB0012403221010551681",
+            "task_id": "",
             "task_code": "delivering",
-            "seq": 1,
+            "seq": 0,
             "task_data": {
+                "map_id": "966",
+                "source": "NO-966-0001",
                 "goal": [
-                    "NO-966-1001"
-                ],
-                "map_id": "966"
+                    "NO-966-0003"
+                ]
             }
         }
-    ],
-    "mission_id": "KECDSEMITB001240322101055168",
-    "mission_code": "ktdelivery"
+    ]
 }
