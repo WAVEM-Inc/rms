@@ -9,6 +9,7 @@
 #include "manager/response/control_report/control_report_manager.hxx"
 #include "manager/response/graph_list/graph_list_manager.hxx"
 #include "manager/response/obstacle_detect/obstacle_detect_manager.hxx"
+#include "manager/response/lidar_signal/lidar_signal_manager.hxx"
 
 #define DEFAULT_QOS 10
 
@@ -30,6 +31,7 @@ namespace ktp
             ktp::data::ControlReportManager::SharedPtr control_report_manager_;
             ktp::data::GraphListManager::SharedPtr graph_list_manager_;
             ktp::data::ObstacleDetectManager::SharedPtr obstacle_detect_manager_;
+            ktp::data::LiDARSignalManager::SharedPtr lidar_signal_manager_;
 
         public:
             explicit ResponseManager(rclcpp::Node::SharedPtr node);
