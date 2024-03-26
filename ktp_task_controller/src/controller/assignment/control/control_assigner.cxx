@@ -46,7 +46,7 @@ void ktp::controller::ControlAssigner::assign_control_service_cb(
     {
         RCLCPP_INFO(this->node_->get_logger(), "MsComplete");
         this->control_notificator_->notify_control_report(control, CONTROL_RECEPTION_SUCCEEDED_CODE);
-        this->mission_notificator_->notify_mission_status(MISSION_TASK_ENDED_CODE,this->mission_assigner_->return_current_mission_task());
+        // this->mission_notificator_->notify_mission_status(MISSION_TASK_ENDED_CODE,this->mission_assigner_->return_current_mission_task());
     }
     else
     {
