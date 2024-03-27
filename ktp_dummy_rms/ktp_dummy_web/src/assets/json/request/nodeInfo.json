@@ -1,0 +1,926 @@
+{
+    "mapId": "966",
+    "node": [
+        {
+            "nodeId": "NO-966-1001",
+            "nodeName": "NO-966-1001",
+            "position": {
+                "latitude": 36.113787,
+                "longitude": 128.3673833
+            },
+            "type": "work_node"
+        },
+        {
+            "nodeId": "NO-966-1002",
+            "nodeName": "NO-966-1002",
+            "position": {
+                "latitude": 36.11374149999999,
+                "longitude": 128.36814633005943
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-1003",
+            "nodeName": "NO-966-1003",
+            "position": {
+                "latitude": 36.1138834,
+                "longitude": 128.3681557
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-1004",
+            "nodeName": "NO-966-1004",
+            "position": {
+                "latitude": 36.1138856,
+                "longitude": 128.3673001
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-1005",
+            "nodeName": "NO-966-1005",
+            "position": {
+                "latitude": 36.11388560044436,
+                "longitude": 128.36716465889552
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-1006",
+            "nodeName": "NO-966-1006",
+            "position": {
+                "latitude": 36.1137848,
+                "longitude": 128.3671674
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-1007",
+            "nodeName": "NO-966-1007",
+            "position": {
+                "latitude": 36.1137881,
+                "longitude": 128.3672974
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-3001",
+            "nodeName": "NO-966-3001",
+            "position": {
+                "latitude": 36.114488,
+                "longitude": 128.3705149
+            },
+            "type": "work_node"
+        },
+        {
+            "nodeId": "NO-966-3002",
+            "nodeName": "NO-966-3002",
+            "position": {
+                "latitude": 36.11374368277019,
+                "longitude": 128.36752728357547
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-3003",
+            "nodeName": "NO-966-3003",
+            "position": {
+                "latitude": 36.1137447,
+                "longitude": 128.367689
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-3004",
+            "nodeName": "NO-966-3004",
+            "position": {
+                "latitude": 36.1137848,
+                "longitude": 128.3683772
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-3005",
+            "nodeName": "NO-966-3005",
+            "position": {
+                "latitude": 36.1137816,
+                "longitude": 128.3686978
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-3006",
+            "nodeName": "NO-966-3006",
+            "position": {
+                "latitude": 36.1137761,
+                "longitude": 128.3689378
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-3007",
+            "nodeName": "NO-966-3007",
+            "position": {
+                "latitude": 36.1137653,
+                "longitude": 128.3690894
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-3008",
+            "nodeName": "NO-966-3008",
+            "position": {
+                "latitude": 36.1145056,
+                "longitude": 128.3690877
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-3009",
+            "nodeName": "NO-966-3009",
+            "position": {
+                "latitude": 36.1145511,
+                "longitude": 128.3690823
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-3010",
+            "nodeName": "NO-966-3010",
+            "position": {
+                "latitude": 36.1145522,
+                "longitude": 128.3693103
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-3011",
+            "nodeName": "NO-966-3011",
+            "position": {
+                "latitude": 36.114552,
+                "longitude": 128.3704465
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-3012",
+            "nodeName": "NO-966-3012",
+            "position": {
+                "latitude": 36.114552,
+                "longitude": 128.3705082
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-9001",
+            "nodeName": "NO-966-9001",
+            "position": {
+                "latitude": 36.1137155,
+                "longitude": 128.3676005
+            },
+            "type": "workplace_node"
+        },
+        {
+            "nodeId": "NO-966-9002",
+            "nodeName": "NO-966-9002",
+            "position": {
+                "latitude": 36.11451786601452,
+                "longitude": 128.37051246441803
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-9003",
+            "nodeName": "NO-966-9003",
+            "position": {
+                "latitude": 36.11461588339728,
+                "longitude": 128.37050455337297
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-9004",
+            "nodeName": "NO-966-9004",
+            "position": {
+                "latitude": 36.114579050193385,
+                "longitude": 128.37050723558198
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-9005",
+            "nodeName": "NO-966-9005",
+            "position": {
+                "latitude": 36.1145805,
+                "longitude": 128.3695562
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-9006",
+            "nodeName": "NO-966-9006",
+            "position": {
+                "latitude": 36.1145903,
+                "longitude": 128.3691243
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-9007",
+            "nodeName": "NO-966-9007",
+            "position": {
+                "latitude": 36.11459136718138,
+                "longitude": 128.36904786441804
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-9008",
+            "nodeName": "NO-966-9008",
+            "position": {
+                "latitude": 36.1139186,
+                "longitude": 128.3690535
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-9009",
+            "nodeName": "NO-966-9009",
+            "position": {
+                "latitude": 36.113819,
+                "longitude": 128.3690495
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-9010",
+            "nodeName": "NO-966-9010",
+            "position": {
+                "latitude": 36.1138103,
+                "longitude": 128.3688577
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-9011",
+            "nodeName": "NO-966-9011",
+            "position": {
+                "latitude": 36.1137171,
+                "longitude": 128.367172
+            },
+            "type": "path_node"
+        },
+        {
+            "nodeId": "NO-966-9012",
+            "nodeName": "NO-966-9012",
+            "position": {
+                "latitude": 36.113716,
+                "longitude": 128.3672967
+            },
+            "type": "path_node"
+        }
+    ],
+    "path": [
+        {
+            "id": "103001",
+            "name": "배송",
+            "nodeList": [
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": 242,
+                    "kind": "endpoint",
+                    "nodeId": "NO-966-1001",
+                    "position": {
+                        "latitude": 36.113787,
+                        "longitude": 128.3673833
+                    },
+                    "type": "work_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": 273,
+                    "kind": "connecting",
+                    "nodeId": "NO-966-3002",
+                    "position": {
+                        "latitude": 36.1137371,
+                        "longitude": 128.3674948
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 270,
+                    "kind": "connecting",
+                    "nodeId": "NO-966-3003",
+                    "position": {
+                        "latitude": 36.1137447,
+                        "longitude": 128.367689
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 284,
+                    "kind": "connecting",
+                    "nodeId": "NO-966-1002",
+                    "position": {
+                        "latitude": 36.1137415,
+                        "longitude": 128.3681463
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 270,
+                    "kind": "connecting",
+                    "nodeId": "NO-966-3004",
+                    "position": {
+                        "latitude": 36.1137848,
+                        "longitude": 128.3683772
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 269,
+                    "kind": "connecting",
+                    "nodeId": "NO-966-3005",
+                    "position": {
+                        "latitude": 36.1137816,
+                        "longitude": 128.3686978
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [
+                        {
+                            "actionCode": "waiting",
+                            "height": 10.0,
+                            "offset": 2.0,
+                            "widthLeft": 10.0,
+                            "widthRight": 20.0
+                        }
+                    ],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 265,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-3006",
+                    "position": {
+                        "latitude": 36.1137761,
+                        "longitude": 128.3689378
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": -1,
+                    "kind": "intersection",
+                    "nodeId": "NO-966-3007",
+                    "position": {
+                        "latitude": 36.1137653,
+                        "longitude": 128.3690894
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [
+                        {
+                            "actionCode": "waiting",
+                            "height": 10.0,
+                            "offset": 3.0,
+                            "widthLeft": 6.0,
+                            "widthRight": 10.0
+                        }
+                    ],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 5,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-3008",
+                    "position": {
+                        "latitude": 36.1145056,
+                        "longitude": 128.3690877
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 271,
+                    "kind": "intersection",
+                    "nodeId": "NO-966-3009",
+                    "position": {
+                        "latitude": 36.1145511,
+                        "longitude": 128.3690823
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [
+                        {
+                            "actionCode": "waiting",
+                            "height": 10.0,
+                            "offset": 5.0,
+                            "widthLeft": 10.0,
+                            "widthRight": 20.0
+                        }
+                    ],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": -1,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-3010",
+                    "position": {
+                        "latitude": 36.1145522,
+                        "longitude": 128.3693103
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [
+                        {
+                            "actionCode": "waiting",
+                            "height": 3.0,
+                            "offset": 2.0,
+                            "widthLeft": 2.0,
+                            "widthRight": 12.0
+                        }
+                    ],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 271,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-3011",
+                    "position": {
+                        "latitude": 36.114552,
+                        "longitude": 128.3704465
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": 185,
+                    "kind": "intersection",
+                    "nodeId": "NO-966-3012",
+                    "position": {
+                        "latitude": 36.114552,
+                        "longitude": 128.3705082
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": -1,
+                    "kind": "endpoint",
+                    "nodeId": "NO-966-3001",
+                    "position": {
+                        "latitude": 36.114488,
+                        "longitude": 128.3705149
+                    },
+                    "type": "work_node"
+                }
+            ]
+        },
+        {
+            "id": "309001",
+            "name": "대기",
+            "nodeList": [
+                {
+                    "detectionRange": [],
+                    "direction": "backward",
+                    "drivingOption": "odom",
+                    "heading": 7,
+                    "kind": "endpoint",
+                    "nodeId": "NO-966-3001",
+                    "position": {
+                        "latitude": 36.114488,
+                        "longitude": 128.3705149
+                    },
+                    "type": "work_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": 3,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-9002",
+                    "position": {
+                        "latitude": 36.1145179,
+                        "longitude": 128.3705125
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": 184,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-9003",
+                    "position": {
+                        "latitude": 36.1146159,
+                        "longitude": 128.3705046
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 89,
+                    "kind": "intersection",
+                    "nodeId": "NO-966-9004",
+                    "position": {
+                        "latitude": 36.1145791,
+                        "longitude": 128.3705072
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [
+                        {
+                            "actionCode": "waiting",
+                            "height": 10.0,
+                            "offset": 5.0,
+                            "widthLeft": 10.0,
+                            "widthRight": 10.0
+                        }
+                    ],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 90,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-9005",
+                    "position": {
+                        "latitude": 36.1145805,
+                        "longitude": 128.3695562
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [
+                        {
+                            "actionCode": "waiting",
+                            "height": 6.0,
+                            "offset": 2.0,
+                            "widthLeft": 10.0,
+                            "widthRight": 10.0
+                        }
+                    ],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": 88,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-9006",
+                    "position": {
+                        "latitude": 36.1145903,
+                        "longitude": 128.3691243
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 181,
+                    "kind": "intersection",
+                    "nodeId": "NO-966-9007",
+                    "position": {
+                        "latitude": 36.1145914,
+                        "longitude": 128.3690479
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [
+                        {
+                            "actionCode": "waiting",
+                            "height": 10.0,
+                            "offset": 6.0,
+                            "widthLeft": 20.0,
+                            "widthRight": 10.0
+                        }
+                    ],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 178,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-9008",
+                    "position": {
+                        "latitude": 36.1139186,
+                        "longitude": 128.3690535
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 93,
+                    "kind": "intersection",
+                    "nodeId": "NO-966-9009",
+                    "position": {
+                        "latitude": 36.113819,
+                        "longitude": 128.3690495
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 102,
+                    "kind": "connecting",
+                    "nodeId": "NO-966-9010",
+                    "position": {
+                        "latitude": 36.1138103,
+                        "longitude": 128.3688577
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 89,
+                    "kind": "connecting",
+                    "nodeId": "NO-966-3005",
+                    "position": {
+                        "latitude": 36.1137816,
+                        "longitude": 128.3686978
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 61,
+                    "kind": "connecting",
+                    "nodeId": "NO-966-3004",
+                    "position": {
+                        "latitude": 36.1137848,
+                        "longitude": 128.3683772
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 89,
+                    "kind": "connecting",
+                    "nodeId": "NO-966-1003",
+                    "position": {
+                        "latitude": 36.1138834,
+                        "longitude": 128.3681557
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [
+                        {
+                            "actionCode": "waiting",
+                            "height": 13.0,
+                            "offset": 3.0,
+                            "widthLeft": 19.0,
+                            "widthRight": 2.0
+                        }
+                    ],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": 89,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-1004",
+                    "position": {
+                        "latitude": 36.1138856,
+                        "longitude": 128.3673001
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": 182,
+                    "kind": "intersection",
+                    "nodeId": "NO-966-1005",
+                    "position": {
+                        "latitude": 36.1138856,
+                        "longitude": 128.3671647
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "",
+                    "drivingOption": "",
+                    "heading": -1,
+                    "kind": "",
+                    "nodeId": "NO-966-9011",
+                    "position": {
+                        "latitude": 36.1137171,
+                        "longitude": 128.367172
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [
+                        {
+                            "actionCode": "waiting",
+                            "height": 20.0,
+                            "offset": 3.0,
+                            "widthLeft": 5.0,
+                            "widthRight": 2.0
+                        }
+                    ],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": 270,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-9012",
+                    "position": {
+                        "latitude": 36.113716,
+                        "longitude": 128.3672967
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": -1,
+                    "kind": "endpoint",
+                    "nodeId": "NO-966-9001",
+                    "position": {
+                        "latitude": 36.1137155,
+                        "longitude": 128.3676005
+                    },
+                    "type": "workplace_node"
+                }
+            ]
+        },
+        {
+            "id": "901001",
+            "name": "호출",
+            "nodeList": [
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": 293,
+                    "kind": "endpoint",
+                    "nodeId": "NO-966-9001",
+                    "position": {
+                        "latitude": 36.1137155,
+                        "longitude": 128.3676005
+                    },
+                    "type": "workplace_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 270,
+                    "kind": "connecting",
+                    "nodeId": "NO-966-3003",
+                    "position": {
+                        "latitude": 36.1137447,
+                        "longitude": 128.367689
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 360,
+                    "kind": "connecting",
+                    "nodeId": "NO-966-1002",
+                    "position": {
+                        "latitude": 36.1137415,
+                        "longitude": 128.3681584
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "",
+                    "drivingOption": "",
+                    "heading": -1,
+                    "kind": "",
+                    "nodeId": "NO-966-1003",
+                    "position": {
+                        "latitude": 36.1138834,
+                        "longitude": 128.3681557
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [
+                        {
+                            "actionCode": "waiting",
+                            "height": 15.0,
+                            "offset": 0.0,
+                            "widthLeft": 3.0,
+                            "widthRight": 6.0
+                        }
+                    ],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 89,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-1004",
+                    "position": {
+                        "latitude": 36.1138856,
+                        "longitude": 128.3673001
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 182,
+                    "kind": "intersection",
+                    "nodeId": "NO-966-1005",
+                    "position": {
+                        "latitude": 36.1138856,
+                        "longitude": 128.3671647
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "gps",
+                    "heading": 272,
+                    "kind": "intersection",
+                    "nodeId": "NO-966-1006",
+                    "position": {
+                        "latitude": 36.1137848,
+                        "longitude": 128.3671674
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [
+                        {
+                            "actionCode": "waiting",
+                            "height": 10.0,
+                            "offset": 0.0,
+                            "widthLeft": 3.0,
+                            "widthRight": 3.0
+                        }
+                    ],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": 270,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-1007",
+                    "position": {
+                        "latitude": 36.1137881,
+                        "longitude": 128.3672974
+                    },
+                    "type": "path_node"
+                },
+                {
+                    "detectionRange": [],
+                    "direction": "forward",
+                    "drivingOption": "odom",
+                    "heading": -1,
+                    "kind": "waiting",
+                    "nodeId": "NO-966-1001",
+                    "position": {
+                        "latitude": 36.113787,
+                        "longitude": 128.3673833
+                    },
+                    "type": "work_node"
+                }
+            ]
+        }
+    ],
+    "version": "1.0"
+}
