@@ -31,7 +31,7 @@ class ControlManager:
         );
 
     def deliver_control_callback_json(self, control_callback_json: Any) -> None:
-        control: Any = message_conversion.populate_instance(msg=control_callback_json, inst=Control());
+        control: Any = message_conversion.populate_instance(msg=json.loads(control_callback_json), inst=Control());
         self.__node.get_logger().info(f"Control Callback From KTP : {json.dumps(control, indent=4)}");
         self.__assign_control_request(control=control);
 

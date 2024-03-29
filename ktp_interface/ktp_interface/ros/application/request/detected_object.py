@@ -1,4 +1,4 @@
-import rclpy;
+import json;
 
 from rclpy.node import Node;
 from rclpy.publisher import Publisher;
@@ -26,7 +26,7 @@ class DetectedObjectManager:
         );
 
     def deliver_detected_object_callback_json(self, detected_object_callback_json: Any) -> None:
-        detected_object: Any = message_conversion.populate_instance(detected_object_callback_json, DetectedObject());
+        detected_object: Any = message_conversion.populate_instance(json.loads(detected_object_callback_json), DetectedObject());
         self.__node.get_logger().info(f"Detected Object Callback From KTP : {detected_object}");
         self.__detected_object_publish(detected_object=detected_object);
 
