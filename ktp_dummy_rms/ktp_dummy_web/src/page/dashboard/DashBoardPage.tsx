@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import MqttService from "../../api/MqttService";
-import ResponseComponents from "../../components/response/ResponseComponents";
+import ResponseComponents from "../../components/request/RequestComponents";
 import "./DashBoardPage.css";
 import RequestComponents from "../../components/request/RequestComponents";
 

@@ -1,5 +1,7 @@
 import React from "react";
 import MqttService from "../../api/MqttService";
+import * as graphListReportJSON from "../../assets/json/response/graph_list_report.json";
+import * as graphListJSON from "../../assets/json/response/graph_list.json";
 import * as controlGrapySyncJSON from "../../assets/json/request/control_graphsync.json";
 import * as controlMoveToDestJSON from "../../assets/json/request/control_movetodest.json";
 import * as controlMsCompleteJSON from "../../assets/json/request/control_mscomplete.json";
@@ -42,6 +44,10 @@ const RequestComponents: React.FC<RequestComponentProps> = ({ mqttService }: Req
                 console.info(`RequestComponents publishButtonOnClick topic : ${topic}, json : ${JSON.stringify(parsedJSON)}`);
                 mqttService.publish(topic, JSON.stringify(parsedJSON));
             }
+            else if (topic.includes("control_report") || topic.includes("graph_list_report"))
+            {
+                payloadJSON.control_id = `c${KTP_DEV_ID}${payloadJSON.create_time}`;
+            }
         }
         else if (payloadJSON.create_time != null)
         {
@@ -68,6 +74,11 @@ const RequestComponents: React.FC<RequestComponentProps> = ({ mqttService }: Req
                 publishButtonOnClick("/ktp_data_manager/assign/control", JSON.stringify(controlGrapySyncJSON));
             }}>
                 Control - GraphSync
+            </button>
+            <button onClick={() => {
+                publishButtonOnClick("/rms/ktp/data/graph_list", JSON.stringify(graphListJSON));
+            }}>
+                Graph List
             </button>
             <button onClick={() => {
                 publishButtonOnClick("/ktp_data_manager/assign/mission", JSON.stringify(missionJSON));

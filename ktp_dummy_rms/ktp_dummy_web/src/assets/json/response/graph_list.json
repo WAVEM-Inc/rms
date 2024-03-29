@@ -7,15 +7,6 @@
 			"is_indoor": false,
 			"node_list": [
 				{
-					"node_id": "NO-966-0101",
-					"node_name": "NO-966-0101",
-					"x": 128.3675466436848,
-					"y": 36.11371836023979,
-					"node_type": "initial_node",
-					"heading": 270.0,
-					"critical": false
-				},
-				{
 					"node_id": "NO-966-1001",
 					"node_name": "NO-966-1001",
 					"x": 128.36733609027713,
