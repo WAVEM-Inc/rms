@@ -7,7 +7,7 @@ ktp::data::ControlReportManager::ControlReportManager(rclcpp::Node::SharedPtr no
     rclcpp::PublisherOptions control_report_response_publisher_opts;
     control_report_response_publisher_opts.callback_group = this->control_report_to_itf_publisher_cb_group_;
     this->control_report_to_itf_publisher_ = this->node_->create_publisher<ktp_data_msgs::msg::ControlReport>(
-        NOTIFY_CONTROL_REPORT_FROM_TASK_CTRL_TOPIC,
+        CONTROL_REPORT_TO_ITF_TOPIC,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         control_report_response_publisher_opts);
 
@@ -15,7 +15,7 @@ ktp::data::ControlReportManager::ControlReportManager(rclcpp::Node::SharedPtr no
     rclcpp::SubscriptionOptions notify_mission_report_from_task_ctrl_subscription_opts;
     notify_mission_report_from_task_ctrl_subscription_opts.callback_group = this->notify_mission_report_from_task_ctrl_subscription_cb_group_;
     this->notify_mission_report_from_task_ctrl_subscription_ = this->node_->create_subscription<ktp_data_msgs::msg::ControlReport>(
-        NOTIFY_MISSION_REPORT_FROM_TASK_CTRL_TOPIC,
+        NOTIFY_CONTROL_REPORT_FROM_TASK_CTRL_TOPIC,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         std::bind(&ktp::data::ControlReportManager::notify_mission_report_from_task_ctrl_subscription_cb, this, _1),
         notify_mission_report_from_task_ctrl_subscription_opts);

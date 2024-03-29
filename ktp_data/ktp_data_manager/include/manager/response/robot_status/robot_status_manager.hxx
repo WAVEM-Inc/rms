@@ -22,9 +22,9 @@
 #define DEFAULT_QOS 10
 #define DEFAULT_DOUBLE 0.0
 
-#define STATUS_TO_ITF_TOPIC "/rms/ktp/data/robot_status"
+#define STATUS_TO_ITF_TOPIC "/rms/ktp/data/rbt_status"
 #define STATUS_TO_ITF_RATE 1000
-#define ROBOT_NAVIGATION_STATUS_FROM_TASK_CTRL_TOPIC "/rms/ktp/task/navigation/status"
+#define ROBOT_NAVIGATION_STATUS_FROM_TASK_CTRL_TOPIC "/rms/ktp/task/notify/navigation/status"
 
 #define BATTERY_STATE_TOPIC "/sensor/battery/state"
 #define VELOCITY_STATE_TOPIC "/drive/velocity/state"

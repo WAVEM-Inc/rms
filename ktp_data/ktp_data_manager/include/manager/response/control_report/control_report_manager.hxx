@@ -11,7 +11,6 @@
 
 #define CONTROL_REPORT_TO_ITF_TOPIC "/rms/ktp/data/control_report"
 
-#define NOTIFY_MISSION_REPORT_FROM_TASK_CTRL_TOPIC "/rms/ktp/task/notify/mission/report"
 #define NOTIFY_CONTROL_REPORT_FROM_TASK_CTRL_TOPIC "/rms/ktp/task/notify/control/report"
 
 using std::placeholders::_1;

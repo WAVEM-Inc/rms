@@ -9,6 +9,8 @@
 
 #include <ktp_data_msgs/srv/assign_mission.hpp>
 
+#include <std_msgs/msg/bool.hpp>
+
 #define DEFAULT_QOS 10
 
 #define ASSIGN_MISSION_FROM_ITF_SERVICE_NAME "/ktp_data_manager/assign/mission"
@@ -26,6 +28,7 @@ namespace ktp
         {
         private:
             rclcpp::Node::SharedPtr node_;
+            bool mission_in_progress_flag_ = false;
 
             rclcpp::CallbackGroup::SharedPtr assign_mission_from_itf_service_cb_group_;
             rclcpp::Service<ktp_data_msgs::srv::AssignMission>::SharedPtr assign_mission_from_itf_service_;
@@ -34,9 +37,13 @@ namespace ktp
                 const std::shared_ptr<ktp_data_msgs::srv::AssignMission::Request> request,
                 const std::shared_ptr<ktp_data_msgs::srv::AssignMission::Response> response);
 
-            rclcpp::CallbackGroup::SharedPtr assign_mission_client_cb_group_;
-            rclcpp::Client<ktp_data_msgs::srv::AssignMission>::SharedPtr assign_mission_client_;
-            bool assign_mission_service_req(const ktp_data_msgs::msg::Mission mission_request_from_itf);
+            // rclcpp::CallbackGroup::SharedPtr assign_mission_client_cb_group_;
+            // rclcpp::Client<ktp_data_msgs::srv::AssignMission>::SharedPtr assign_mission_client_;
+            // bool assign_mission_service_req(const ktp_data_msgs::msg::Mission mission_request_from_itf);
+
+            rclcpp::CallbackGroup::SharedPtr assign_mission_publisher_cb_group_;
+            rclcpp::Publisher<ktp_data_msgs::msg::Mission>::SharedPtr assign_mission_publisher_;
+            void assign_mission_publish(ktp_data_msgs::msg::Mission mission);
 
         public:
             explicit MissionManager(rclcpp::Node::SharedPtr node);

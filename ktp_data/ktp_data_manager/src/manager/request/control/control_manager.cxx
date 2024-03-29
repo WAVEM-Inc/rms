@@ -10,15 +10,13 @@ ktp::data::ControlManager::ControlManager(rclcpp::Node::SharedPtr node)
         ASSIGN_CONTROL_FROM_ITF_SERVICE_NAME,
         std::bind(&ktp::data::ControlManager::assign_control_from_itf_service_cb, this, _1, _2, _3),
         rmw_qos_profile_services_default,
-        this->assign_control_from_itf_service_cb_group_
-        );
+        this->assign_control_from_itf_service_cb_group_);
 
     this->assign_control_to_task_ctrl_service_client_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     this->assign_control_to_task_ctrl_service_client_ = this->node_->create_client<ktp_data_msgs::srv::AssignControl>(
         ASSIGN_CONTROL_TO_TASK_CTRL_SERVICE_NAME,
         rmw_qos_profile_services_default,
-        this->assign_control_to_task_ctrl_service_client_cb_group_
-        );
+        this->assign_control_to_task_ctrl_service_client_cb_group_);
 }
 
 ktp::data::ControlManager::~ControlManager()
@@ -59,6 +57,12 @@ void ktp::data::ControlManager::assign_control_from_itf_service_cb(
 
 bool ktp::data::ControlManager::request_assign_control_to_task_ctrl(ktp_data_msgs::srv::AssignControl::Request::SharedPtr request)
 {
+    if (this->mission_in_progress_flag_)
+    {
+        RCLCPP_ERROR(this->node_->get_logger(), "Assign Control is already Mission in progress...");
+        return false;
+    }
+
     const bool &is_assign_control_service_server_ready = this->assign_control_to_task_ctrl_service_client_->wait_for_service(std::chrono::seconds(1));
 
     if (is_assign_control_service_server_ready)

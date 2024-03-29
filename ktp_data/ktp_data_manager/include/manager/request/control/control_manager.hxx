@@ -5,6 +5,7 @@
 
 #include <ktp_data_msgs/msg/control.hpp>
 #include <ktp_data_msgs/srv/assign_control.hpp>
+#include <std_msgs/msg/bool.hpp>
 
 #include "manager/response/graph_list/graph_list_manager.hxx"
 
@@ -29,6 +30,7 @@ namespace ktp
         {
         private:
             rclcpp::Node::SharedPtr node_;
+            bool mission_in_progress_flag_ = false;
 
             ktp::data::GraphListManager::SharedPtr graph_list_manager_;
 
