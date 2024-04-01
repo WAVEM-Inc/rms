@@ -20,6 +20,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ServiceStatusTaskData.msg"
   "msg/ErrorReport.msg"
   "msg/Control.msg"
+  "msg/ControlData.msg"
   "msg/ControlReport.msg"
   "msg/ControlReportData.msg"
   "msg/ControlReportDataGraphList.msg"

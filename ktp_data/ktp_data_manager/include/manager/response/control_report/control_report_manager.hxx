@@ -28,17 +28,14 @@ namespace ktp
             rclcpp::CallbackGroup::SharedPtr control_report_to_itf_publisher_cb_group_;
             rclcpp::Publisher<ktp_data_msgs::msg::ControlReport>::SharedPtr control_report_to_itf_publisher_;
 
-            rclcpp::CallbackGroup::SharedPtr notify_mission_report_from_task_ctrl_subscription_cb_group_;
-            rclcpp::Subscription<ktp_data_msgs::msg::ControlReport>::SharedPtr notify_mission_report_from_task_ctrl_subscription_;
-            void notify_mission_report_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::ControlReport::SharedPtr notify_mission_cb);
-
-            rclcpp::CallbackGroup::SharedPtr notify_control_response_from_task_ctrl_subscription_cb_group_;
-            rclcpp::Subscription<ktp_data_msgs::msg::ControlReport>::SharedPtr notify_control_response_from_task_ctrl_subscription_;
-            void notify_control_response_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::ControlReport::SharedPtr notify_control_cb);
+            rclcpp::CallbackGroup::SharedPtr notify_control_report_from_task_ctrl_subscription_cb_group_;
+            rclcpp::Subscription<ktp_data_msgs::msg::ControlReport>::SharedPtr notify_control_report_from_task_ctrl_subscription_;
+            void notify_control_report_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::ControlReport::SharedPtr notify_mission_cb);
 
         public:
             explicit ControlReportManager(rclcpp::Node::SharedPtr node);
             virtual ~ControlReportManager();
+            void notify_control_report_to_itf(ktp_data_msgs::msg::ControlReport control_report);
 
         public:
             using SharedPtr = std::shared_ptr<ControlReportManager>;

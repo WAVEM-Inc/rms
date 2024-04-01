@@ -37,13 +37,9 @@ namespace ktp
                 const std::shared_ptr<ktp_data_msgs::srv::AssignMission::Request> request,
                 const std::shared_ptr<ktp_data_msgs::srv::AssignMission::Response> response);
 
-            // rclcpp::CallbackGroup::SharedPtr assign_mission_client_cb_group_;
-            // rclcpp::Client<ktp_data_msgs::srv::AssignMission>::SharedPtr assign_mission_client_;
-            // bool assign_mission_service_req(const ktp_data_msgs::msg::Mission mission_request_from_itf);
-
-            rclcpp::CallbackGroup::SharedPtr assign_mission_publisher_cb_group_;
-            rclcpp::Publisher<ktp_data_msgs::msg::Mission>::SharedPtr assign_mission_publisher_;
-            void assign_mission_publish(ktp_data_msgs::msg::Mission mission);
+            rclcpp::CallbackGroup::SharedPtr assign_mission_client_cb_group_;
+            rclcpp::Client<ktp_data_msgs::srv::AssignMission>::SharedPtr assign_mission_client_;
+            bool assign_mission_service_req(const ktp_data_msgs::msg::Mission mission_request_from_itf);
 
         public:
             explicit MissionManager(rclcpp::Node::SharedPtr node);

@@ -17,10 +17,12 @@
 
 #define DEFAULT_QOS 10
 
-#define PATH_GRAPH_GRAPH_SERVICE_NAME "/path_graph_msgs/graph"
 #define GRAPH_LIST_TO_ITF_TOPIC "/rms/ktp/data/graph_list"
+#define GRAPH_LIST_FROM_TASK_CTRL_TOPIC "/rms/ktp/task/notify/graph_list"
 
 #define DEV_ID "KECDSEMITB001"
+
+using std::placeholders::_1;
 
 namespace ktp
 {
@@ -31,17 +33,16 @@ namespace ktp
         private:
             rclcpp::Node::SharedPtr node_;
 
-            rclcpp::CallbackGroup::SharedPtr path_graph_graph_service_client_cb_group_;
-            rclcpp::Client<path_graph_msgs::srv::Graph>::SharedPtr path_graph_graph_service_client_;
+            rclcpp::CallbackGroup::SharedPtr graph_list_from_task_ctrl_subscription_cb_group_;
+            rclcpp::Subscription<ktp_data_msgs::msg::GraphList>::SharedPtr graph_list_from_task_ctrl_subscription_;
+            void graph_list_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::GraphList::SharedPtr graph_list_cb);
 
             rclcpp::CallbackGroup::SharedPtr graph_list_to_itf_publisher_cb_group_;
-            rclcpp::Publisher<std_msgs::msg::String>::SharedPtr graph_list_to_itf_publisher_;
-          void graph_list_publish(std::string response_graph_list);
+            rclcpp::Publisher<ktp_data_msgs::msg::GraphList>::SharedPtr graph_list_to_itf_publisher_;
 
         public:
             explicit GraphListManager(rclcpp::Node::SharedPtr node);
             virtual ~GraphListManager();
-            void path_graph_graph_request();
 
         public:
             using SharedPtr = std::shared_ptr<GraphListManager>;

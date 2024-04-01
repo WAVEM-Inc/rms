@@ -4,6 +4,7 @@ ktp::data::ControlManager::ControlManager(rclcpp::Node::SharedPtr node)
     : node_(node)
 {
     this->graph_list_manager_ = std::make_shared<ktp::data::GraphListManager>(this->node_);
+    this->control_report_manager_ = std::make_shared<ktp::data::ControlReportManager>(this->node_);
 
     this->assign_control_from_itf_service_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     this->assign_control_from_itf_service_ = this->node_->create_service<ktp_data_msgs::srv::AssignControl>(
@@ -34,11 +35,6 @@ void ktp::data::ControlManager::assign_control_from_itf_service_cb(
     {
         RCLCPP_ERROR(this->node_->get_logger(), "Assign Control From ITF control_code is empty");
         return;
-    }
-    else if (control_code == CONTROL_CODE_GRAPH_SYNC)
-    {
-        RCLCPP_INFO(this->node_->get_logger(), "Assign Control From ITF control_code is [%s]", control_code.c_str());
-        this->graph_list_manager_->path_graph_graph_request();
     }
     else
     {
