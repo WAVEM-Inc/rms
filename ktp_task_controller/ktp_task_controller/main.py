@@ -3,7 +3,7 @@ import rclpy;
 from rclpy.node import Node;
 from rclpy.executors import MultiThreadedExecutor;
 from rclpy.exceptions import ROSInterruptException;
-from ktp_task_controller.node.controller import KTPTaskController;
+from ktp_task_controller.presentation.controller import KTPTaskController;
 
 
 def main(args=None) -> None:

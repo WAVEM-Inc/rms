@@ -26,7 +26,6 @@ from ktp_data_msgs.msg import Control;
 from ktp_data_msgs.msg import ControlReport;
 from ktp_data_msgs.srv import AssignControl;
 from std_msgs.msg import String;
-from std_msgs.msg import Bool;
 from path_graph_msgs.srv import Path;
 from sensor_msgs.msg import NavSatFix;
 from route_msgs.action import RouteToPose;
@@ -34,8 +33,8 @@ from action_msgs.msg import GoalStatus;
 import route_msgs.msg as route;
 from typing import Any;
 from typing import Tuple;
-from ktp_task_controller.application.utils import ros_message_dumps;
-from ktp_task_controller.application.utils import get_current_time;
+from ktp_task_controller.utils import ros_message_dumps;
+from ktp_task_controller.utils import get_current_time;
 
 NODE_NAME: str = "ktp_task_controller";
 ASSIGN_MISSION_TOPIC_NAME: str = "/rms/ktp/data/assign/mission";
@@ -91,7 +90,7 @@ DRIVE_STATUS_DRIVE_FAILED: int = 5;
 DRIVE_STATUS_MISSION_IMPOSSIBLE: int = 14;
 
 
-class MissionController:
+class Processor:
 
     def __init__(self, node: Node) -> None:
         self.__node: Node = node;
@@ -106,13 +105,13 @@ class MissionController:
         self.__drive_status: int = DRIVE_STATUS_WAIT;
         self.__drive_current: Tuple[str, str] = ("", "");
 
-        assign_mission_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
-        self.__assign_mission_subscription: Subscription = self.__node.create_subscription(
-            topic=ASSIGN_MISSION_TOPIC_NAME,
-            msg_type=Mission,
-            callback_group=assign_mission_subscription_cb_group,
-            qos_profile=qos_profile_system_default,
-            callback=self.assign_mission_subscription_cb
+        assign_mission_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__assign_mission_service: Service = self.__node.create_service(
+            srv_name=ASSIGN_MISSION_SERVICE_NAME,
+            srv_type=AssignMission,
+            callback_group=assign_mission_service_cb_group,
+            callback=self.assign_mission_service_cb,
+            qos_profile=qos_profile_services_default
         );
 
         assign_control_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
@@ -131,15 +130,6 @@ class MissionController:
             callback_group=control_report_publisher_cb_group,
             qos_profile=qos_profile_system_default
         );
-
-        # assign_mission_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
-        # self.__assign_mission_service: Service = self.__node.create_service(
-        #     srv_name=ASSIGN_MISSION_SERVICE_NAME,
-        #     srv_type=AssignMission,
-        #     callback_group=assign_mission_service_cb_group,
-        #     callback=self.assign_mission_service_cb,
-        #     qos_profile=qos_profile_services_default
-        # );
 
         route_to_pose_action_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__route_to_pose_action_client: ActionClient = rclpy_action.ActionClient(
@@ -197,20 +187,29 @@ class MissionController:
             qos_profile=qos_profile_system_default
         );
 
-    def assign_mission_subscription_cb(self, mission: Mission) -> None:
-        self.__log.info(f"{ASSIGN_MISSION_TOPIC_NAME} callback");
+    def assign_mission_service_cb(self, request: AssignMission.Request, response: AssignMission.Response) -> AssignMission.Response:
+        request_mission_json: str = ros_message_dumps(message=request.mission);
+        self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} request\n{request_mission_json}");
+
         if self.__mission is not None:
-            self.__log.error(f"{ASSIGN_MISSION_TOPIC_NAME} Mission has already scheduled...");
+            self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Mission has already scheduled...");
+            response.result = False;
         else:
-            self.__mission = mission;
+            self.__mission = message_conversion.populate_instance(json.loads(request_mission_json), Mission());
 
             global to_source_flag;
             to_source_flag = True;
 
             if self.__ublox_fix is None:
-                self.__log.error(f"{ASSIGN_MISSION_TOPIC_NAME} {UBLOX_FIX_TOPIC_NAME} is None...");
+                self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} {UBLOX_FIX_TOPIC_NAME} is None...");
+                request_mission_json = "";
+                self.__mission = None;
+                response.result = False;
             else:
                 self.command_navigation_with_path();
+                response.result = True;
+
+        return response;
 
     def assign_control_service_cb(self, request: AssignControl.Request, response: AssignControl.Response) -> AssignControl.Response:
         request_control_json: str = ros_message_dumps(message=request.control);
@@ -263,29 +262,6 @@ class MissionController:
 
         self.__control_report_publisher.publish(msg=control_report);
 
-    # def assign_mission_service_cb(self, request: AssignMission.Request, response: AssignMission.Response) -> AssignMission.Response:
-    #     request_mission_json: str = ros_message_dumps(message=request.mission);
-    #     self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} request\n{request_mission_json}");
-    #
-    #     if self.__mission is not None:
-    #         self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Mission has already scheduled...");
-    #         response.result = False;
-    #     else:
-    #         self.__mission = message_conversion.populate_instance(json.loads(request_mission_json), Mission());
-    #
-    #         global to_source_flag;
-    #         to_source_flag = True;
-    #
-    #         if self.__ublox_fix is None:
-    #             self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} {UBLOX_FIX_TOPIC_NAME} is None...");
-    #             response.result = False;
-    #         else:
-    #             self.command_navigation_with_path();
-    #             self.notify_mission_in_progress(flag=True);
-    #             response.result = True;
-    #
-    #     return response;
-
     def command_navigation_with_path(self) -> None:
         self.__log.info(f"{PATH_GRAPH_PATH_SERVICE_NAME} Current Drive Status : {self.__drive_status}");
 
@@ -324,7 +300,7 @@ class MissionController:
                 path_graph_path_request.end_node = mission_task.task_data.source;
 
                 self.__log.info(
-                    f"{PATH_GRAPH_PATH_SERVICE_NAME} To Source Path Request is ready : {ros_message_dumps(message=path_graph_path_request)}");
+                    f"{PATH_GRAPH_PATH_SERVICE_NAME} To Source Path Request is ready\n{ros_message_dumps(message=path_graph_path_request)}");
 
                 is_path_graph_path_service_server_ready: bool = self.__path_graph_path_service_client.wait_for_service(timeout_sec=1.0);
 
@@ -458,8 +434,7 @@ class MissionController:
         end_node: route.Node = node_list[self.__route_to_pose_goal_index + 1];
         goal.end_node = end_node;
 
-        self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Send Goal[{self.__route_to_pose_goal_index}]\n\t"
-                        f"{ros_message_dumps(message=goal)}");
+        self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Send Goal[{self.__route_to_pose_goal_index}]\n{ros_message_dumps(message=goal)}");
 
         if self.__route_to_pose_action_client.wait_for_server(timeout_sec=0.75):
             self.__route_to_pose_send_goal_future = self.__route_to_pose_action_client.send_goal_async(goal=goal, feedback_callback=self.route_to_pose_feedback_cb);
@@ -480,7 +455,7 @@ class MissionController:
 
     def route_to_pose_feedback_cb(self, feedback_msg: RouteToPose.Impl.FeedbackMessage) -> None:
         feedback: RouteToPose.Feedback = feedback_msg.feedback;
-        self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} feedback cb : {ros_message_dumps(message=feedback)}");
+        self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} feedback cb\n{ros_message_dumps(message=feedback)}");
 
         global to_source_flag;
         global to_dest_flag;
@@ -524,11 +499,9 @@ class MissionController:
         status: int = future.result().status;
 
         if status == GoalStatus.STATUS_SUCCEEDED:
-            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal succeeded![{self.__route_to_pose_goal_index}] Result: {ros_message_dumps(message=result)}");
+            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal succeeded![{self.__route_to_pose_goal_index}]\n{ros_message_dumps(message=result)}");
         else:
             self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} Goal failed[{self.__route_to_pose_goal_index}]");
-
-        self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} result cb : {ros_message_dumps(message=result)}");
 
         global to_source_flag;
         global to_dest_flag;
@@ -636,7 +609,7 @@ class MissionController:
         service_status_task.task_data = service_status_task_data;
 
         self.__log.info(
-            f"{NOTIFY_MISSION_STATUS_TOPIC_NAME} Service Status : {ros_message_dumps(message=service_status)}");
+            f"{NOTIFY_MISSION_STATUS_TOPIC_NAME} Service Status\n{ros_message_dumps(message=service_status)}");
         self.__notify_mission_status_publisher.publish(msg=service_status);
 
     def notify_navigation_status_publish(self) -> None:
@@ -655,4 +628,4 @@ class MissionController:
             self.notify_navigation_status_publish();
 
 
-__all__ = ["MissionController", "set_to_source_flag", "set_to_dest_flag", "set_returning_flag"];
+__all__ = ["Processor", "set_to_source_flag", "set_to_dest_flag", "set_returning_flag"];
