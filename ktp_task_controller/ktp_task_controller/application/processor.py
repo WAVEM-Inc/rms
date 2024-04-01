@@ -25,8 +25,12 @@ from ktp_data_msgs.srv import AssignMission;
 from ktp_data_msgs.msg import Control;
 from ktp_data_msgs.msg import ControlReport;
 from ktp_data_msgs.srv import AssignControl;
+from ktp_data_msgs.msg import GraphList;
+from ktp_data_msgs.msg import ControlReportData;
+from ktp_data_msgs.msg import ControlReportDataGraphList;
 from std_msgs.msg import String;
 from path_graph_msgs.srv import Path;
+from path_graph_msgs.srv import Graph;
 from sensor_msgs.msg import NavSatFix;
 from route_msgs.action import RouteToPose;
 from action_msgs.msg import GoalStatus;
@@ -47,12 +51,15 @@ NOTIFY_NAVIGATION_STATUS_TOPIC_NAME: str = "/rms/ktp/task/notify/navigation/stat
 ERROR_REPORT_TOPIC_NAME: str = "/rms/ktp/data/notify/error/status";
 ASSIGN_CONTROL_SERVICE_NAME: str = f"/{NODE_NAME}/assign/control";
 NOTIFY_CONTROL_REPORT_TOPIC_NAME: str = "/rms/ktp/task/notify/control/report";
+PATH_GRAPH_GRAPH_SERVICE_NAME: str = "/path_graph_msgs/graph";
+GRAPH_LIST_TOPIC: str = "/rms/ktp/task/notify/graph_list";
 
 CONTROL_CODE_STOP: str = "stop";
 CONTROL_CODE_RELEASE: str = "release";
 CONTROL_MS_CANCEL: str = "mscancel";
 CONTROL_CODE_MOVE_TO_DEST: str = "movetodest";
 CONTROL_CODE_MS_COMPLETE: str = "mscomplete";
+CONTORL_CODE_GRAPH_SYNC: str = "graphsync";
 
 to_source_flag: bool = False;
 to_dest_flag: bool = False;
@@ -88,6 +95,8 @@ DRIVE_STATUS_CANCELLED: int = 3;
 DRIVE_STATUS_OBJECT_DETECTED: int = 4;
 DRIVE_STATUS_DRIVE_FAILED: int = 5;
 DRIVE_STATUS_MISSION_IMPOSSIBLE: int = 14;
+
+KTP_DEVICE_ID: str = "KECDSEMITB001";
 
 
 class Processor:
@@ -187,6 +196,22 @@ class Processor:
             qos_profile=qos_profile_system_default
         );
 
+        path_graph_graph_service_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__path_graph_graph_service_client: Client = self.__node.create_client(
+            srv_name=PATH_GRAPH_GRAPH_SERVICE_NAME,
+            srv_type=Graph,
+            callback_group=path_graph_graph_service_client_cb_group,
+            qos_profile=qos_profile_services_default
+        );
+
+        graph_list_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__graph_list_publisher: Publisher = self.__node.create_publisher(
+            topic=GRAPH_LIST_TOPIC,
+            msg_type=GraphList,
+            callback_group=graph_list_publisher_cb_group,
+            qos_profile=qos_profile_system_default
+        );
+
     def assign_mission_service_cb(self, request: AssignMission.Request, response: AssignMission.Response) -> AssignMission.Response:
         request_mission_json: str = ros_message_dumps(message=request.mission);
         self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} request\n{request_mission_json}");
@@ -228,39 +253,72 @@ class Processor:
         elif control_code == CONTROL_CODE_MOVE_TO_DEST:
             if get_to_source_flag() is True or get_to_dest_flag() is True:
                 self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Robot is Moving To Source");
-                self.control_report_publish(control=control, response_code=400);
+                self.control_report_publish(control=control, control_type="control", response_code=400);
                 response.result = False;
             else:
                 set_to_source_flag(flag=False);
                 set_to_dest_flag(flag=True);
                 set_returning_flag(flag=False);
                 self.command_navigation_with_path();
-                self.control_report_publish(control=control, response_code=201);
+                self.control_report_publish(control=control, control_type="control",response_code=201);
                 response.result = True;
         elif control_code == CONTROL_CODE_MS_COMPLETE:
             if get_to_dest_flag() is True or get_to_source_flag() is True:
                 self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Robot is Moving To Dest");
-                self.control_report_publish(control=control, response_code=400);
+                self.control_report_publish(control=control, control_type="control", response_code=400);
                 response.result = False;
             else:
                 set_to_source_flag(flag=False);
                 set_to_dest_flag(flag=False);
                 set_returning_flag(flag=True);
                 self.command_navigation_with_path();
-                self.control_report_publish(control=control, response_code=201);
+                self.control_report_publish(control=control, control_type="control", response_code=201);
                 response.result = True;
+        elif control_code == CONTORL_CODE_GRAPH_SYNC:
+            graph_sync_result: Graph.Response = self.graph_sync_request();
 
+            if graph_sync_result is not None:
+                try:
+                    graph_list: GraphList = message_conversion.populate_instance(msg=json.loads(graph_sync_result.graph_list), inst=GraphList());
+                    self.__log.info(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} Graph List\n{ros_message_dumps(message=graph_list)}");
+                    self.__graph_list_publisher.publish(msg=graph_list);
+                    control_report_data: dict = {
+                        "map_id": graph_list.graph[0].map_id,
+                        "version": graph_list.graph[0].version
+                    };
+                    self.control_report_publish(control=control, control_type="graph", response_code=201, control_data=control_report_data);
+                except message_conversion.NonexistentFieldException as nefe:
+                    self.__log.error(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} : {nefe}");
+
+                response.result = True;
+            else:
+                response.result = False;
+        else:
+            self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Unknown Control Code...");
+            response.result = False;
         return response;
 
-    def control_report_publish(self, control: Control, response_code: int) -> None:
-        control_report: ControlReport = ControlReport();
-        control_report.create_time = get_current_time();
-        control_report.control_id = control.control_id;
-        control_report.control_type = "control";
-        control_report.control_code = control.control_code;
-        control_report.response_code = response_code;
+    def control_report_publish(self, control: Control, control_type: str, response_code: int, control_data: dict | None = None) -> None:
+        try:
+            control_report: ControlReport = ControlReport();
+            control_report.create_time = get_current_time();
+            control_report.control_id = control.control_id;
+            control_report.control_code = control.control_code;
+            control_report.response_code = response_code;
 
-        self.__control_report_publisher.publish(msg=control_report);
+            if control_type == "control":
+                control_report.control_type = control_type;
+            elif control_type == "graph":
+                control_report.control_type = "";
+
+                control_report_data_graph_list: list[ControlReportDataGraphList] = [];
+                control_report_data_graph_list.append(message_conversion.populate_instance(msg=control_data, inst=ControlReportDataGraphList()));
+                control_report.data.graph_list = control_report_data_graph_list;
+
+            self.__control_report_publisher.publish(msg=control_report);
+        except TypeError as te:
+            self.__log.error(f"{NOTIFY_CONTROL_REPORT_TOPIC_NAME} : {te}");
+            return;
 
     def command_navigation_with_path(self) -> None:
         self.__log.info(f"{PATH_GRAPH_PATH_SERVICE_NAME} Current Drive Status : {self.__drive_status}");
@@ -626,6 +684,22 @@ class Processor:
     def notify_mission_timer_cb(self) -> None:
         if self.__path_response is not None:
             self.notify_navigation_status_publish();
+
+    def graph_sync_request(self) -> Graph.Response | None:
+        graph_request: Graph.Request = Graph.Request();
+        graph_request.send_id = f"{KTP_DEVICE_ID}{get_current_time()}";
+
+        is_path_graph_graph_service_server_ready: bool = self.__path_graph_graph_service_client.wait_for_service(timeout_sec=0.8);
+
+        if is_path_graph_graph_service_server_ready:
+            graph_response: Graph.Response = self.__path_graph_graph_service_client.call(request=graph_request);
+
+            self.__log.info(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} Graph Response\n{ros_message_dumps(message=graph_response)}");
+
+            return graph_response;
+        else:
+            self.__log.error(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} Service Server is Not Ready...");
+            return None;
 
 
 __all__ = ["Processor", "set_to_source_flag", "set_to_dest_flag", "set_returning_flag"];

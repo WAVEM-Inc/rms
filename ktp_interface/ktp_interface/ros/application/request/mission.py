@@ -32,28 +32,18 @@ class MissionManager:
             qos_profile=qos_profile_services_default,
             callback_group=assign_mission_service_client_cb_group
         );
-        
-        self.test_sub: Subscription = self.__node.create_subscription(
-            topic="/rms/ktp/itf/mission/test",
-            msg_type=Mission,
-            qos_profile=qos_profile_system_default,
-            callback_group=MutuallyExclusiveCallbackGroup(),
-            callback=self.test_cb
-        );
-        
-    def test_cb(self, mission_cb: Mission) -> None:
-        mission_dumped = json.dumps(obj=message_conversion.extract_values(inst=mission_cb), indent=4);
-        print(f"mission_dumped : {mission_dumped}");
-        
-        mission: Any = message_conversion.populate_instance(json.loads(mission_dumped), Mission());
-        self.__assign_mission_request(mission=mission);
 
     def deliver_mission_callback_json(self, mission_callback_json: Any) -> None:
-        mission: Any = message_conversion.populate_instance(json.loads(mission_callback_json), Mission());
-        self.__node.get_logger().info(f"Mission Callback From KTP : {mission}");
-        self.__assign_mission_request(mission=mission);
+        try:
+            mission: Mission = message_conversion.populate_instance(msg=mission_callback_json, inst=Mission());
+            self.__node.get_logger().info(f"Mission Callback From KTP : {json.dumps(obj=message_conversion.extract_values(inst=mission), indent=4)}");
+            self.__assign_mission_request(mission=mission);
 
-    def __assign_mission_request(self, mission: Any) -> None:
+        except message_conversion.NonexistentFieldException as nefe:
+            self.__log.error(f"{mqtt_topic} : {nefe}");
+            return;
+
+    def __assign_mission_request(self, mission: Mission) -> None:
         assign_mission_request: AssignMission.Request = AssignMission.Request();
         assign_mission_request.mission = mission;
 

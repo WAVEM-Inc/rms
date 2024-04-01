@@ -1,0 +1,9 @@
+/ktp_dummy_interface:
+  ros__parameters:
+    host: "192.168.0.187"
+    port: 1883
+    client_id: "wavem1234"
+    client_keep_alive: 60
+    user_name: "wavem"
+    password: "1234"
+    type: "tcp"

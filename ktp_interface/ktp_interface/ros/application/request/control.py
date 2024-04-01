@@ -31,11 +31,16 @@ class ControlManager:
         );
 
     def deliver_control_callback_json(self, control_callback_json: Any) -> None:
-        control: Any = message_conversion.populate_instance(msg=json.loads(control_callback_json), inst=Control());
-        self.__node.get_logger().info(f"Control Callback From KTP : {json.dumps(control, indent=4)}");
-        self.__assign_control_request(control=control);
+        try:
+            control: Control = message_conversion.populate_instance(msg=control_callback_json, inst=Control());
+            self.__node.get_logger().info(f"Control Callback From KTP : {json.dumps(obj=message_conversion.extract_values(inst=control), indent=4)}");
+            self.__assign_control_request(control=control);
 
-    def __assign_control_request(self, control: Any) -> None:
+        except message_conversion.NonexistentFieldException as nefe:
+            self.__log.error(f"{mqtt_topic} : {nefe}");
+            return;
+
+    def __assign_control_request(self, control: Control) -> None:
         assign_control_request: AssignControl.Request = AssignControl.Request();
         assign_control_request.control = control;
 

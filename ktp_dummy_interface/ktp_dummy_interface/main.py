@@ -3,14 +3,14 @@ import rclpy;
 from rclpy.node import Node;
 from rclpy.executors import MultiThreadedExecutor;
 from rclpy.exceptions import ROSInterruptException;
-from ktp_task_controller.presentation.node import KTPTaskController;
+from ktp_dummy_interface.presentation.node import KTPDummyInterface;
 
 
 def main(args=None) -> None:
     rclpy.init(args=args);
 
     try:
-        node: Node = KTPTaskController();
+        node: Node = KTPDummyInterface();
         node_name: str = node.get_name();
         multi_threaded_executor: MultiThreadedExecutor = MultiThreadedExecutor();
         multi_threaded_executor.add_node(node=node);
@@ -22,7 +22,7 @@ def main(args=None) -> None:
     rclpy.shutdown();
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main();
 
 __all__ = ["main"];
