@@ -20,6 +20,7 @@ class Client:
         self.__user_name: str = self.__node.get_parameter(name="user_name").get_parameter_value().string_value;
         self.__password: str = self.__node.get_parameter(name="password").get_parameter_value().string_value;
         self.__type: str = self.__node.get_parameter(name="type").get_parameter_value().string_value;
+        self.__path: str = self.__node.get_parameter(name="path").get_parameter_value().string_value;
         self.is_connected: bool = False;
 
     def check_broker_opened(self) -> bool:
@@ -45,20 +46,14 @@ class Client:
                 f"port : {self.__port}\n"
                 f"type : {self.__type}\n");
 
-            self.client = mqtt.Client(client_id=self.__client_name, clean_session=True, userdata=None);
+            self.client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2, client_id=self.__client_name, clean_session=True, userdata=None, transport=self.__type);
+                
             self.client.username_pw_set(self.__user_name, self.__password);
 
             self.client.on_connect = self.on_connect;
             self.client.on_disconnect = self.on_disconnect;
             self.client.on_message = self.on_message;
             self.client.connect(host=self.__host, port=self.__port, keepalive=self.__client_keep_alive);
-
-            if self.client.is_connected:
-                self.__log.info(f"MQTT Client is connected to [{self.__host}:{self.__port}]");
-                self.is_connected = self.client.is_connected;
-            else:
-                self.__log.error("MQTT failed to connect");
-                self.is_connected = self.client.is_connected;
         except OSError as ose:
             self.__log.error(f"MQTT OSError : {ose}");
         except Exception as e:

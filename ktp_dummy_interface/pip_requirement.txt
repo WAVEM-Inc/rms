@@ -1,2 +1,2 @@
 msgpack-python>=0.4.8
-paho-mqtt>=1.2
+paho-mqtt>=2.0

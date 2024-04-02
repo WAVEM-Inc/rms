@@ -33,7 +33,8 @@ class KTPDummyInterface(Node):
             "client_keep_alive": DEFAULT_INT,
             "user_name": DEFAULT_STRING,
             "password": DEFAULT_STRING,
-            "type": DEFAULT_STRING
+            "type": DEFAULT_STRING,
+            "path": DEFAULT_STRING
         };
 
         for key, value in parameters_dict.items():
