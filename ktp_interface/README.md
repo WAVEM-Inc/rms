@@ -1,8 +1,8 @@
-# ktp_visualization
-- 내부 테스트 용 KTP 대체 웹 어플리케이션
+# ktp_interface
+- KTP 3rd Party Agent 통신(ROS - TCP) 인터페이스 패키지
 
 ## Document
-- [ktp_visualization](#ktp_visualization)
+- [ktp_interface](#ktp_interface)
   - [Document](#document)
   - [Environment](#1-environment)
   - [SetUp Installation](#2-setup-installation)
@@ -16,8 +16,8 @@
 ## 1. Environment
 * <img src="https://img.shields.io/badge/ROS2 humble-22314E?style=for-the-badge&logo=ros&logoColor=white">
 * <img src="https://img.shields.io/badge/ubuntu 22.04-E95420?style=for-the-badge&logo=ubuntu&logoColor=white">
-* <img src="https://img.shields.io/badge/react-61DAFB?style=for-the-badge&logo=react&logoColor=black">
-* <img src="https://img.shields.io/badge/Typescript-3178C6.svg?style=for-the-badge&logo=typescript&logoColor=white">
+* <img src="https://img.shields.io/badge/python 3.10.12-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54">
+* <img src="https://img.shields.io/badge/CMake-064F8C.svg?style=for-the-badge&logo=cmake&logoColor=white">
 
 ## 2. SetUp Installation
 
@@ -41,11 +41,11 @@ git clone https://github.com/WAVEM-Inc/rms.git
 ### 2-2. Build Project
 ```bash
 cd ~/kec_ws/src/rms/
-colcon build --packages-select ktp_task_controller
+colcon build --packages-select ktp_interface
 ```
 
 ## 3. Launch Check
 ```bash
 source ~/kec_ws/src/rms/install/setup.bash
-ros2 launch ktp_task_controller ktp_task_controller.launch.py
+ros2 launch ktp_interface ktp_interface.launch.py
 ```

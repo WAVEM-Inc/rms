@@ -1,8 +1,8 @@
-# ktp_visualization
-- 내부 테스트 용 KTP 대체 웹 어플리케이션
+# ktp_data_msgs
+- KTP 연동 규격 별 ROS 메세지 패키지
 
 ## Document
-- [ktp_visualization](#ktp_visualization)
+- [ktp_data_msgs](#ktp_data_msgs)
   - [Document](#document)
   - [Environment](#1-environment)
   - [SetUp Installation](#2-setup-installation)
@@ -10,14 +10,13 @@
   - [Clone & Build Project](#2-clone--build-project)
     - [Clone Project](#2-1-clone-project)
     - [Build Project](#2-2-build-project)
-  - [Launch Check](#3-build-check)
+  - [Build Check](#3-build-check)
 
 
 ## 1. Environment
 * <img src="https://img.shields.io/badge/ROS2 humble-22314E?style=for-the-badge&logo=ros&logoColor=white">
 * <img src="https://img.shields.io/badge/ubuntu 22.04-E95420?style=for-the-badge&logo=ubuntu&logoColor=white">
-* <img src="https://img.shields.io/badge/react-61DAFB?style=for-the-badge&logo=react&logoColor=black">
-* <img src="https://img.shields.io/badge/Typescript-3178C6.svg?style=for-the-badge&logo=typescript&logoColor=white">
+* <img src="https://img.shields.io/badge/CMake-064F8C.svg?style=for-the-badge&logo=cmake&logoColor=white">
 
 ## 2. SetUp Installation
 
@@ -30,6 +29,7 @@ Before installing, please ensure the following software is installed and configu
 - [ROS2](https://index.ros.org/doc/ros2/Installation/) version required humble-hawksbill -
   **INSTALL [ROS2 humble-hawksbill](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html)**
 
+
 ## 2. Clone & Build Project
 
 ### 2-1. Clone Project
@@ -41,11 +41,11 @@ git clone https://github.com/WAVEM-Inc/rms.git
 ### 2-2. Build Project
 ```bash
 cd ~/kec_ws/src/rms/
-colcon build --packages-select ktp_task_controller
+colcon build --packages-select ktp_data_msgs
 ```
 
-## 3. Launch Check
+## 3. Build Check
 ```bash
 source ~/kec_ws/src/rms/install/setup.bash
-ros2 launch ktp_task_controller ktp_task_controller.launch.py
+ros2 interface list | grep ktp_data_msgs
 ```

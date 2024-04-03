@@ -1,8 +1,8 @@
-# ktp_visualization
-- 내부 테스트 용 KTP 대체 웹 어플리케이션
+# ktp_task_controller
+- KTP 임무 / 제어 관리 패키지
 
 ## Document
-- [ktp_visualization](#ktp_visualization)
+- [ktp_task_controller](#ktp_task_controller)
   - [Document](#document)
   - [Environment](#1-environment)
   - [SetUp Installation](#2-setup-installation)
@@ -16,8 +16,8 @@
 ## 1. Environment
 * <img src="https://img.shields.io/badge/ROS2 humble-22314E?style=for-the-badge&logo=ros&logoColor=white">
 * <img src="https://img.shields.io/badge/ubuntu 22.04-E95420?style=for-the-badge&logo=ubuntu&logoColor=white">
-* <img src="https://img.shields.io/badge/react-61DAFB?style=for-the-badge&logo=react&logoColor=black">
-* <img src="https://img.shields.io/badge/Typescript-3178C6.svg?style=for-the-badge&logo=typescript&logoColor=white">
+* <img src="https://img.shields.io/badge/python 3.10.12-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54">
+* <img src="https://img.shields.io/badge/CMake-064F8C.svg?style=for-the-badge&logo=cmake&logoColor=white">
 
 ## 2. SetUp Installation
 
