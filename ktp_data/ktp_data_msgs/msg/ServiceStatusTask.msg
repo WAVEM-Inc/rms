@@ -1,0 +1,5 @@
+string task_id
+string task_code
+string status
+int16 seq
+ktp_data_msgs/ServiceStatusTaskData task_data

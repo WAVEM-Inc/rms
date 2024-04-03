@@ -1,6 +1,12 @@
 .vscode
+.idea
 build
 install
 log
 test
 __pycache__
+venv
+dist-packages
+cmake-build-debug
+cmake-build-debug-remote
+*.egg-info

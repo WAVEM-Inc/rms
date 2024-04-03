@@ -1,0 +1,5 @@
+ktp_data_msgs/Control control
+
+---
+
+bool result

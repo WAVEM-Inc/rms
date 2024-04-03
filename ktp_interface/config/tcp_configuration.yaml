@@ -1,0 +1,6 @@
+server_address: "14.63.249.103"
+server_port: 32139
+dev_id: "KECDSEMITB001"
+dev_pw: "1234"
+dev_gw: "M_OPENRM_UNMANNED_SOLUTION"
+log_level: 3

@@ -1,0 +1,101 @@
+.response_callback_grid_container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 20px;
+    border-bottom: 2px solid #ccc;
+    padding: 20px;
+    height: 750px;
+    overflow: hidden;
+}
+
+.grid_item {
+    border: 1px solid #ccc;
+    padding: 10px;
+    width: 400px;
+    margin: 0 auto;
+    transition: height 0.3s ease-in-out;
+}
+
+.grid_item.rbt_status.collapsed {
+    height: 60px;
+    overflow: hidden;
+}
+
+.grid_item.rbt_status.expanded {
+    height: auto;
+}
+
+.grid_item.service_status.collapsed {
+    height: 60px;
+    overflow: hidden;
+}
+
+.grid_item.service_status.expanded {
+    height: auto;
+}
+
+.grid_item.error_report.collapsed {
+    height: 60px;
+    overflow: hidden;
+}
+
+.grid_item.error_report.expanded {
+    height: auto;
+}
+
+.grid_item.control_report.collapsed {
+    height: 60px;
+    overflow: hidden;
+}
+
+.grid_item.control_report.expanded {
+    height: auto;
+}
+
+.grid_item.graph_list.collapsed {
+    height: 60px;
+    overflow: hidden;
+}
+
+.grid_item.graph_list.expanded {
+    height: auto;
+}
+
+.grid_item.obstacle_detect.collapsed {
+    height: 60px;
+    overflow: hidden;
+}
+
+.grid_item.obstacle_detect.expanded {
+    height: auto;
+}
+
+.grid_item.lidar_signal.collapsed {
+    height: 60px;
+    overflow: hidden;
+}
+
+.grid_item.lidar_signal.expanded {
+    height: auto;
+}
+
+
+.grid_item_data_container {
+    width: 350px;
+}
+
+.grid_item_title {
+    font-size: 20px;
+    margin-top: -2%;
+    padding: 20px;
+    border-bottom: 2px solid #ccc;
+}
+
+.grid_item_data {
+    font-size: 14px;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

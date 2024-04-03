@@ -1,0 +1,24 @@
+.top_components
+{
+    width: 150px;
+    margin: 0.5% auto;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.top_components:hover
+{
+    color: grey;
+}
+
+.top_title_link {
+    text-decoration : none;
+}
+
+#top_title {
+    color: black;
+}
+
+#top_title:hover {
+    color: grey;
+}
