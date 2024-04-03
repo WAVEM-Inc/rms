@@ -27,5 +27,6 @@ ktp::data::GraphListManager::~GraphListManager()
 
 void ktp::data::GraphListManager::graph_list_from_task_ctrl_subscription_cb(const ktp_data_msgs::msg::GraphList::SharedPtr graph_list_cb)
 {
+    RCLCPP_INFO(this->node_->get_logger(), "Graph List CB : {%s}", graph_list_cb->graph[0].map_id.c_str());
     this->graph_list_to_itf_publisher_->publish(*(graph_list_cb));
 }
