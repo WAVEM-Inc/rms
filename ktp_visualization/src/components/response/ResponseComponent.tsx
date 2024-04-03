@@ -2,10 +2,18 @@ import React, { useEffect, useState } from "react";
 import './ResponseComponent.css';
 
 interface ResponseComponentProps {
-    responseData: any
+    responseData: any;
+    onErrorReportClick: () => void;
+    onObstacleDetectClick: () => void;
+    onLiDARSignalClick: () => void;
 }
 
-const ResponseComponent: React.FC<ResponseComponentProps> = ({ responseData }: ResponseComponentProps) => {
+const ResponseComponent: React.FC<ResponseComponentProps> = ({
+    responseData,
+    onErrorReportClick,
+    onObstacleDetectClick,
+    onLiDARSignalClick
+}: ResponseComponentProps) => {
     const [rbtStatusExpanded, setRbtStatusExpanded] = useState<boolean>(false);
     const [serviceStatusExpanded, setServiceStatusExpanded] = useState<boolean>(false);
     const [errorReportExpanded, setErrorReportExpanded] = useState<boolean>(false);
@@ -13,6 +21,7 @@ const ResponseComponent: React.FC<ResponseComponentProps> = ({ responseData }: R
     const [graphListExpanded, setGraphListExpanded] = useState<boolean>(false);
     const [obstacleDetectExpanded, setObstacleDetectExpanded] = useState<boolean>(false);
     const [lidarSignalExpanded, setLidarSignalExpanded] = useState<boolean>(false);
+    const [dummyPublishExapnded, setDummyPublishExpanded] = useState<boolean>(false);
 
     const [rbtStatus, setRbtStatus] = useState<string>("");
     const [serviceStatus, setServiceStatus] = useState<string>("");
@@ -49,14 +58,17 @@ const ResponseComponent: React.FC<ResponseComponentProps> = ({ responseData }: R
     const toggleLidarSignal = () => {
         setLidarSignalExpanded(!lidarSignalExpanded);
     }
-    
+
+    const toggleDummyPublish = () => {
+        setDummyPublishExpanded(!dummyPublishExapnded);
+    }
 
     useEffect(() => {
         setRbtStatus(JSON.stringify(responseData.rbt_status, null, 4));
         setServiceStatus(JSON.stringify(responseData.service_status, null, 4));
         setErrorReport(JSON.stringify(responseData.error_report, null, 4));
         setControlReport(JSON.stringify(responseData.control_report, null, 4));
-        setGraphList(JSON.stringify(responseData.graph_list, null, 4));
+        setGraphList(JSON.stringify(responseData.graph_list, null, 2));
         setObstacleDetect(JSON.stringify(responseData.obstacle_detect, null, 4));
         setLidarSignal(JSON.stringify(responseData.lidar_signal, null, 4));
     }, [responseData]);
@@ -120,7 +132,14 @@ const ResponseComponent: React.FC<ResponseComponentProps> = ({ responseData }: R
                         </div>
                     </div>
                 </div>
-                {/* <div className={`grid_item ${isExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleExpansion}>섹션 8</div> */}
+                <div className={`grid_item dummy_publish ${dummyPublishExapnded ? 'expanded' : 'collapsed'}`} onClick={toggleDummyPublish}>
+                    <div className="grid_item_title">가상 데이터 발행</div>
+                    <div className="grid_item_data_container dummy_publish_btn_container">
+                        <button onClick={onErrorReportClick}>Error Report</button>
+                        <button onClick={onObstacleDetectClick}>Obstacle Detect</button>
+                        <button onClick={onLiDARSignalClick}>LiDAR Signal</button>
+                    </div>
+                </div>
             </div>
         </div>
     );

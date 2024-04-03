@@ -6,7 +6,7 @@
     border-bottom: 2px solid #ccc;
     padding: 20px;
     height: 750px;
-    overflow: hidden;
+    overflow: auto;
 }
 
 .grid_item {
@@ -98,4 +98,34 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.grid_item.dummy_publish.collapsed {
+    height: 60px;
+    overflow: hidden;
+}
+
+.grid_item.dummy_publish.expanded {
+    height: auto;
+}
+
+.dummy_publish_btn_container {
+    margin-top: 15%;
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    align-items: center;
+}
+
+.dummy_publish_btn_container button {
+    border-radius: 50%;
+    width: 200px;
+    height: 100px;
+    background-color: #fff;
+    margin-bottom: 40px;
+    font-size: 20px;
+}
+
+.dummy_publish_btn_container button:hover {
+    background-color: #ccc;
 }

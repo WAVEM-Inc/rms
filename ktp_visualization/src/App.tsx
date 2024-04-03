@@ -1,12 +1,15 @@
-import React from 'react';
-import logo from './logo.svg';
+import { Route, Switch } from 'react-router-dom';
 import './App.css';
 import DashboardPage from './page/DashBoardPage';
 
 function App() {
   return (
     <div className="App">
-      <DashboardPage />
+      <Switch>
+        <Route exact path={"/"}>
+          <DashboardPage />
+        </Route>
+      </Switch>
     </div>
   );
 }

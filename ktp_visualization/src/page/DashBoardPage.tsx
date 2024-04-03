@@ -3,14 +3,17 @@ import { useEffect, useState } from "react";
 import MqttClient from "../api/mqttClient";
 import * as controlGraphSyncJSON from "../assets/json/control_graphsync.json";
 import * as controlMoveToDestJSON from "../assets/json/control_movetodest.json";
-import * as controlMsCompleteJSON from "../assets/json/control_movetodest.json";
+import * as controlMsCompleteJSON from "../assets/json/control_mscomplete.json";
 import * as detectedObjectJSON from "../assets/json/detected_object.json";
 import * as missionJSON from "../assets/json/mission.json";
+// import * as errorReportJSON from "../assets/json/error_report.json";
+// import * as obstacleDetectJSON from "../assets/json/obstacle_detect.json";
+// import * as lidarSignalJSON from "../assets/json/lidar_signal.json";
 import RequestComponent from "../components/request/RequestComponent";
 import ResponseComponent from "../components/response/ResponseComponent";
 import TopComponents from "../components/top/TopComponent";
+import { KTP_DEV_ID, getCurrentTime } from "../utils/Utils";
 import './DashBoardPage.css';
-import { getCurrentTime } from "../utils/Utils";
 
 export default function DashboardPage() {
     const [mqttClient, setMqttClient] = useState<MqttClient | undefined>();
@@ -45,6 +48,7 @@ export default function DashboardPage() {
     const onControlGraphSyncClick = (): void => {
         const newJSON: any = filterJSON(controlGraphSyncJSON);
         newJSON.request_time = getCurrentTime();
+        newJSON.control_id = `c${KTP_DEV_ID}${newJSON.request_time}`;
 
         const controlGraphSyncJSONStringified: string = JSON.stringify(newJSON);
         console.info(`${requiredRequestTopicList[0]}[GrapySync] publish with : ${controlGraphSyncJSONStringified}`);
@@ -54,6 +58,7 @@ export default function DashboardPage() {
     const onControlMoveToDestClick = (): void => {
         const newJSON: any = filterJSON(controlMoveToDestJSON);
         newJSON.request_time = getCurrentTime();
+        newJSON.control_id = `c${KTP_DEV_ID}${newJSON.request_time}`;
 
         const controlMoveToDestJSONStringified: string = JSON.stringify(newJSON);
         console.info(`${requiredRequestTopicList[0]}[MoveToDest] publish with : ${controlMoveToDestJSONStringified}`);
@@ -63,6 +68,7 @@ export default function DashboardPage() {
     const onControlMsCompleteClick = (): void => {
         const newJSON: any = filterJSON(controlMsCompleteJSON);
         newJSON.request_time = getCurrentTime();
+        newJSON.control_id = `c${KTP_DEV_ID}${newJSON.request_time}`;
 
         const controlMsCompleteJSONStringified: string = JSON.stringify(newJSON);
         console.info(`${requiredRequestTopicList[0]}[MsComplete] publish with : ${controlMsCompleteJSONStringified}`);
@@ -80,11 +86,23 @@ export default function DashboardPage() {
     
     const onDetectedObjectClick = (): void => {
         const newJSON: any = filterJSON(detectedObjectJSON);
-        newJSON.request_time = getCurrentTime();
+        newJSON.create_time = getCurrentTime();
 
         const detecteObjectJSONStringified: string = JSON.stringify(newJSON);
         console.info(`${requiredRequestTopicList[2]} publish with : ${detecteObjectJSONStringified}`);
         mqttClient!.publish(requiredRequestTopicList[2], detecteObjectJSONStringified);
+    }
+
+    const onErrorReportClick = (): void => {
+        
+    }
+
+    const onObstacleDetectClick = (): void => {
+
+    }
+
+    const onLiDARSignalClick = (): void => {
+
     }
 
     const setUpResponseMQTTConnections = (mqttClient: MqttClient): void => {
@@ -108,31 +126,31 @@ export default function DashboardPage() {
                     ...prevData,
                     service_status: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic == requiredResponseTopicList[2]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     error_report: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic == requiredResponseTopicList[3]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     control_report: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic == requiredResponseTopicList[4]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     graph_list: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic == requiredResponseTopicList[5]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     obstacle_detect: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic == requiredResponseTopicList[6]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
@@ -156,7 +174,11 @@ export default function DashboardPage() {
                 <TopComponents />
             </div>
             <div className="response_component_container">
-                <ResponseComponent responseData={responseData} />
+                <ResponseComponent
+                responseData={responseData}
+                onErrorReportClick={onErrorReportClick}
+                onObstacleDetectClick={onObstacleDetectClick}
+                onLiDARSignalClick={onLiDARSignalClick} />
             </div>
             <div className="request_component_container">
                 <RequestComponent 
