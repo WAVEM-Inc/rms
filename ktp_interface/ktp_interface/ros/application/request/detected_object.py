@@ -31,7 +31,7 @@ class DetectedObjectManager:
             self.__node.get_logger().info(f"Detected Object Callback From KTP : {json.dumps(obj=message_conversion.extract_values(inst=detected_object), indent=4)}");
             self.__detected_object_publish(detected_object=detected_object);
         except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{mqtt_topic} : {nefe}");
+            self.__node.get_logger().error(f"DetectedObject Callback : {nefe}");
             return;
 
     def __detected_object_publish(self, detected_object: DetectedObject) -> None:

@@ -35,9 +35,8 @@ class ControlManager:
             control: Control = message_conversion.populate_instance(msg=control_callback_json, inst=Control());
             self.__node.get_logger().info(f"Control Callback From KTP : {json.dumps(obj=message_conversion.extract_values(inst=control), indent=4)}");
             self.__assign_control_request(control=control);
-
         except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{mqtt_topic} : {nefe}");
+            self.__node.get_logger().error(f"Control Callback : {nefe}");
             return;
 
     def __assign_control_request(self, control: Control) -> None:

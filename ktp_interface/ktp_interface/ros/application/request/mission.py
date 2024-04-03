@@ -38,9 +38,8 @@ class MissionManager:
             mission: Mission = message_conversion.populate_instance(msg=mission_callback_json, inst=Mission());
             self.__node.get_logger().info(f"Mission Callback From KTP : {json.dumps(obj=message_conversion.extract_values(inst=mission), indent=4)}");
             self.__assign_mission_request(mission=mission);
-
         except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{mqtt_topic} : {nefe}");
+            self.__node.get_logger().error(f"DetectedObject Callback : {nefe}");
             return;
 
     def __assign_mission_request(self, mission: Mission) -> None:
