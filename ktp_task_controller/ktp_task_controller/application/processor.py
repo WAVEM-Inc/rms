@@ -28,6 +28,7 @@ from ktp_data_msgs.srv import AssignControl;
 from ktp_data_msgs.msg import GraphList;
 from ktp_data_msgs.msg import ControlReportData;
 from ktp_data_msgs.msg import ControlReportDataGraphList;
+from ktp_data_msgs.msg import ObstacleDetect;
 from std_msgs.msg import String;
 from path_graph_msgs.srv import Path;
 from path_graph_msgs.srv import Graph;
@@ -35,6 +36,7 @@ from sensor_msgs.msg import NavSatFix;
 from route_msgs.action import RouteToPose;
 from action_msgs.msg import GoalStatus;
 import route_msgs.msg as route;
+import obstacle_msgs.msg as obstacle;
 from typing import Any;
 from typing import Tuple;
 from ktp_task_controller.utils import ros_message_dumps;
@@ -51,8 +53,10 @@ NOTIFY_NAVIGATION_STATUS_TOPIC_NAME: str = "/rms/ktp/task/notify/navigation/stat
 ERROR_REPORT_TOPIC_NAME: str = "/rms/ktp/data/notify/error/status";
 ASSIGN_CONTROL_SERVICE_NAME: str = f"/{NODE_NAME}/assign/control";
 NOTIFY_CONTROL_REPORT_TOPIC_NAME: str = "/rms/ktp/task/notify/control/report";
+NOTIFY_OBSTACLE_DETECT_TOPIC_NAME: str = "/rms/ktp/task/notify/obstacle_detect";
 PATH_GRAPH_GRAPH_SERVICE_NAME: str = "/path_graph_msgs/graph";
 GRAPH_LIST_TOPIC: str = "/rms/ktp/task/notify/graph_list";
+DRIVE_OBSTACLE_TOPIC: str = "/drive/obstacle/event";
 
 CONTROL_CODE_STOP: str = "stop";
 CONTROL_CODE_RELEASE: str = "release";
@@ -212,6 +216,23 @@ class Processor:
             qos_profile=qos_profile_system_default
         );
 
+        obstacle_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__obstacle_status_subscription: Subscription = self.__node.create_subscription(
+            topic=DRIVE_OBSTACLE_TOPIC,
+            msg_type=obstacle.Status,
+            qos_profile=qos_profile_system_default,
+            callback_group=obstacle_status_subscription_cb_group,
+            callback=self.obstacle_status_subscription_cb
+        );
+
+        obstacle_detect_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__obstacle_detect_publisher: Publisher = self.__node.create_publisher(
+            topic=NOTIFY_OBSTACLE_DETECT_TOPIC_NAME,
+            msg_type=ObstacleDetect,
+            qos_profile=qos_profile_system_default,
+            callback_group=obstacle_detect_publisher_cb_group
+        );
+
     def assign_mission_service_cb(self, request: AssignMission.Request, response: AssignMission.Response) -> AssignMission.Response:
         request_mission_json: str = ros_message_dumps(message=request.mission);
         self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} request\n{request_mission_json}");
@@ -260,6 +281,7 @@ class Processor:
                 set_to_source_flag(flag=False);
                 set_to_dest_flag(flag=True);
                 set_returning_flag(flag=False);
+                self.__log.info(f"To Dest Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
                 self.command_navigation_with_path();
                 self.control_report_publish(control=control, control_type="control",response_code=201);
                 response.result = True;
@@ -272,6 +294,7 @@ class Processor:
                 set_to_source_flag(flag=False);
                 set_to_dest_flag(flag=False);
                 set_returning_flag(flag=True);
+                self.__log.info(f"Return Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
                 self.command_navigation_with_path();
                 self.control_report_publish(control=control, control_type="control", response_code=201);
                 response.result = True;
@@ -591,6 +614,8 @@ class Processor:
                     returning_flag = False;
 
                     self.__log.info(f"==================================== Source Arrived ====================================");
+                    self.__log.info(f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
+                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tto_dest : {self.__drive_current}");
                 else:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
                     self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} To Source will proceed Next Goal [{self.__route_to_pose_goal_index}]");
@@ -614,6 +639,8 @@ class Processor:
                     returning_flag = False;
 
                     self.__log.info(f"==================================== Dest Arrived ====================================");
+                    self.__log.info(f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
+                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tto_dest : {self.__drive_current}");
                 else:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
                     self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} To Dest will proceed Next Goal [{self.__route_to_pose_goal_index}]");
@@ -626,6 +653,7 @@ class Processor:
                 if is_returning_finished:
                     self.__drive_status = DRIVE_STATUS_WAIT;
                     self.__drive_current = ("", "");
+                    self.notify_navigation_status_publish();
 
                     self.__route_to_pose_goal_index = 0;
                     self.__path_response = None;
@@ -635,6 +663,8 @@ class Processor:
                     to_dest_flag = False;
                     returning_flag = False;
                     self.__log.info(f"==================================== Returning Finished ====================================");
+                    self.__log.info(f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
+                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tto_dest : {self.__drive_current}");
                 else:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
                     self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Returning will proceed Next Goal [{self.__route_to_pose_goal_index}]");
@@ -706,6 +736,19 @@ class Processor:
         std_string: String = String();
         std_string.data = error_code;
         self.__error_report_publisher.publish(msg=std_string);
+
+    def obstacle_status_subscription_cb(self, obstacle_status_cb: obstacle.Status) -> None:
+        obstacle_detect: ObstacleDetect = ObstacleDetect();
+        obstacle_detect.create_time = get_current_time();
+        obstacle_detect.event_type = "STOP";
+        obstacle_detect.object_id = obstacle_status_cb.obstacle_id;
+
+        if obstacle_status_cb.obstacle_status == 2:
+            obstacle_detect.is_cooperative = True;
+        else:
+            obstacle_detect.is_cooperative = False;
+
+        self.__obstacle_detect_publisher.publish(msg=obstacle_detect);
 
 
 __all__ = ["Processor", "set_to_source_flag", "set_to_dest_flag", "set_returning_flag"];
