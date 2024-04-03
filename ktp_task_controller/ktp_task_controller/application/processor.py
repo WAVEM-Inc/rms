@@ -615,7 +615,7 @@ class Processor:
 
                     self.__log.info(f"==================================== Source Arrived ====================================");
                     self.__log.info(f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
-                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tto_dest : {self.__drive_current}");
+                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tdrive_current : {self.__drive_current}");
                 else:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
                     self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} To Source will proceed Next Goal [{self.__route_to_pose_goal_index}]");
@@ -640,7 +640,7 @@ class Processor:
 
                     self.__log.info(f"==================================== Dest Arrived ====================================");
                     self.__log.info(f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
-                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tto_dest : {self.__drive_current}");
+                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tdrive_current : {self.__drive_current}");
                 else:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
                     self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} To Dest will proceed Next Goal [{self.__route_to_pose_goal_index}]");
@@ -651,20 +651,19 @@ class Processor:
                 """
                 is_returning_finished: bool = (self.__route_to_pose_goal_index + 1 == self.__path_response_list_size - 1);
                 if is_returning_finished:
-                    self.__drive_status = DRIVE_STATUS_WAIT;
-                    self.__drive_current = ("", "");
-                    self.notify_navigation_status_publish();
-
                     self.__route_to_pose_goal_index = 0;
                     self.__path_response = None;
+                    self.__drive_status = DRIVE_STATUS_WAIT;
+                    self.__drive_current = ("", "");
                     self.__path_response_list_size = 0;
                     self.__mission = None;
                     to_source_flag = False;
                     to_dest_flag = False;
                     returning_flag = False;
+
                     self.__log.info(f"==================================== Returning Finished ====================================");
                     self.__log.info(f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
-                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tto_dest : {self.__drive_current}");
+                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tdrive_current : {self.__drive_current}");
                 else:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
                     self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Returning will proceed Next Goal [{self.__route_to_pose_goal_index}]");
@@ -704,7 +703,11 @@ class Processor:
     def notify_navigation_status_publish(self) -> None:
         status: Status = Status();
 
-        status.map_id = self.__path_response.map_id;
+        if self.__path_response is not None:
+            status.map_id = self.__path_response.map_id;
+        else:
+            status.map_id = "";
+
         status.drive_status = self.__drive_status;
 
         status.from_node = self.__drive_current[0];
@@ -715,6 +718,10 @@ class Processor:
     def notify_mission_timer_cb(self) -> None:
         if self.__path_response is not None:
             self.notify_navigation_status_publish();
+        elif self.__path_response is None:
+            self.notify_navigation_status_publish();
+        else:
+            return;
 
     def graph_sync_request(self) -> Graph.Response | None:
         graph_request: Graph.Request = Graph.Request();
