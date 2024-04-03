@@ -19,6 +19,8 @@ ktp::data::ControlReportManager::ControlReportManager(rclcpp::Node::SharedPtr no
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         std::bind(&ktp::data::ControlReportManager::notify_control_report_from_task_ctrl_subscription_cb, this, _1),
         notify_control_report_from_task_ctrl_subscription_opts);
+    
+    RCLCPP_INFO(this->node_->get_logger(), "=============== Response ControlReportManager initialized ===============");
 }
 
 ktp::data::ControlReportManager::~ControlReportManager()

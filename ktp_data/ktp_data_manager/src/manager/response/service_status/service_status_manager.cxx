@@ -19,6 +19,8 @@ ktp::data::ServiceStatusManager::ServiceStatusManager(rclcpp::Node::SharedPtr no
         SERVICE_STATUS_TO_ITF_TOPIC,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         service_status_to_itf_publisher_opts);
+    
+    RCLCPP_INFO(this->node_->get_logger(), "=============== Response ServiceStatusManager initialized ===============");
 }
 
 ktp::data::ServiceStatusManager::~ServiceStatusManager()

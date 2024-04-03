@@ -51,12 +51,14 @@ namespace ktp
         {
         private:
             rclcpp::Node::SharedPtr node_;
-            
+
             ktp::data::RequestManager::SharedPtr request_manager_;
             ktp::data::ResponseManager::SharedPtr response_manager_;
+
         public:
             explicit Manager();
             virtual ~Manager();
+
         public:
             using SharedPtr = std::shared_ptr<Manager>;
         };

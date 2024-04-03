@@ -19,6 +19,8 @@ ktp::data::GraphListManager::GraphListManager(rclcpp::Node::SharedPtr node)
         GRAPH_LIST_TO_ITF_TOPIC,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         graph_list_publisher_opts);
+
+    RCLCPP_INFO(this->node_->get_logger(), "=============== Response GraphListManager initialized ===============");
 }
 
 ktp::data::GraphListManager::~GraphListManager()

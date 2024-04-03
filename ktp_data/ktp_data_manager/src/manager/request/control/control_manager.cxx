@@ -15,6 +15,8 @@ ktp::data::ControlManager::ControlManager(rclcpp::Node::SharedPtr node)
         ASSIGN_CONTROL_TO_TASK_CTRL_SERVICE_NAME,
         rmw_qos_profile_services_default,
         this->assign_control_to_task_ctrl_service_client_cb_group_);
+
+    RCLCPP_INFO(this->node_->get_logger(), "=============== Request ControlManager initialized ===============");
 }
 
 ktp::data::ControlManager::~ControlManager()
