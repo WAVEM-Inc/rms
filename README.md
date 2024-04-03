@@ -5,7 +5,7 @@
 - [ktp_rms](#ktp_rms)
   - [Document](#document)
   - [Environment](#1-environment)
-  - [SetUp Installation](#2-links)
+  - [Links](#2-links)
 
 
 ## 1. Environment
