@@ -23,7 +23,7 @@ MQTT_DEFAULT_QOS: int = 0;
 MQTT_RBT_STATUS_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/rbt_status";
 MQTT_SERVICE_STATUS_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/service_status";
 MQTT_ERROR_REPORT_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/error_report";
-MQTT_CONTROL_REPORT_RESPONSE_TOPIC: str = "/rms/ktp/dummy/repsonse/control_report";
+MQTT_CONTROL_REPORT_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/control_report";
 MQTT_GRAPH_LIST_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/graph_list";
 MQTT_OBSTACLE_DETECT_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/obstacle_detect";
 MQTT_LIDAR_SIGNAL_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/lidar_signal";
@@ -53,12 +53,12 @@ class ResponseBridge:
             callback=self.rbt_status_subscription_cb
         );
     
-        service_status_subscripiton_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        service_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__service_status_subscription_cb: Subscription = self.__node.create_subscription(
             topic=SERVICE_STATUS_TOPIC_NAME,
             msg_type=ServiceStatus,
             qos_profile=qos_profile_system_default,
-            callback_group=service_status_subscripiton_cb_group,
+            callback_group=service_status_subscription_cb_group,
             callback=self.service_status_subscription_cb
         );
 
@@ -71,12 +71,12 @@ class ResponseBridge:
             callback=self.error_report_subscription_cb
         );
     
-        control_report_subscripiton_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        control_report_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__control_report_subscription: Subscription = self.__node.create_subscription(
             topic=CONTROL_REPORT_TOPIC_NAME,
             msg_type=ControlReport,
             qos_profile=qos_profile_system_default,
-            callback_group=control_report_subscripiton_cb_group,
+            callback_group=control_report_subscription_cb_group,
             callback=self.control_report_subscription_cb
         );
     

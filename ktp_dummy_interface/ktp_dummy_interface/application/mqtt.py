@@ -1,5 +1,7 @@
 import socket;
 import paho.mqtt.client as mqtt;
+import paho.mqtt.publish as publish;
+import paho.mqtt.subscribe as subscribe;
 
 from rclpy.node import Node;
 from rclpy.impl.rcutils_logger import RcutilsLogger;
@@ -34,10 +36,6 @@ class Client:
 
         return False;
 
-    def initialize(self) -> None:
-        self.connect();
-        self.run();
-
     def connect(self) -> None:
         try:
             self.__log.info(
@@ -47,11 +45,11 @@ class Client:
                 f"type : {self.__type}\n");
 
             self.client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2, client_id=self.__client_name, clean_session=True, userdata=None, transport=self.__type);
+            self.client.ws_set_options(path="/mqtt");
                 
             self.client.username_pw_set(self.__user_name, self.__password);
 
             self.client.on_connect = self.on_connect;
-            self.client.on_disconnect = self.on_disconnect;
             self.client.on_message = self.on_message;
             self.client.connect(host=self.__host, port=self.__port, keepalive=self.__client_keep_alive);
         except OSError as ose:
@@ -60,31 +58,33 @@ class Client:
             self.__log.error(f"MQTT Error : {e}");
 
     def run(self) -> None:
-        if self.is_connected:
-            self.__log.info("MQTT Client is running");
-            self.client.loop_start();
-        else:
-            self.__log.error("MQTT Client is not connected to broker");
-            return
+        self.client.loop_forever(timeout=1.0, retry_first_connection=True);
 
-    def rerun(self) -> None:
-        self.client.disconnect();
-        self.client.loop_stop();
-        self.run();
-
-    def on_connect(self, client: Any, user_data: Any, flags: Any, rc: Any) -> None:
-        if rc == 0:
-            self.__log.info(f"MQTT connection succeeded result code : [{str(rc)}]");
+    def on_connect(self, client, userdata, flags, reason_code, properties):
+        if reason_code.is_failure:
+            self.__log.error(f"Failed to connect: {reason_code}. loop_forever() will retry connection")
         else:
-            self.__log.error(f"MQTT connection failed result code : [{str(rc)}] ");
+            self.is_connected = True;
+            self.__log.info(f"MQTT Succeeded to Connect");
 
     def on_disconnect(self, client: Any, user_data: Any, rc: Any) -> None:
         if rc != 0:
             self.__log.error(f"MQTT disconnection result code : [{str(rc)}] ");
-            self.rerun();
 
     def on_message(self, client: Any, user_data: Any, msg: Any) -> None:
         pass;
+
+    def on_subscribe(self, client, userdata, mid, reason_code_list, properties) -> None:
+        if reason_code_list[0].is_failure:
+            self.__log.error(f"MQTT Broker rejected you subscription: {reason_code_list[0]}")
+        else:
+            self.__log.info(f"MQTT Broker granted the following QoS: {reason_code_list[0].value}")
+
+    def on_unsubscribe(self, client, userdata, mid, reason_code_list, properties) -> None:
+        if len(reason_code_list) == 0 or not reason_code_list[0].is_failure:
+            self.__log.error("MQTT unsubscribe succeeded (if SUBACK is received in MQTTv3 it success)");
+        else:
+            self.__log.info(f"MQTT Broker replied with failure: {reason_code_list[0]}");
 
     def publish(self, topic: str, payload: Any, qos: int) -> None:
         self.client.publish(topic=topic, payload=payload, qos=qos);

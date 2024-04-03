@@ -1,9 +1,9 @@
+import threading;
 from rclpy.node import Node;
 
 from ktp_dummy_interface.application.mqtt import Client;
 from ktp_dummy_interface.application.request.bridge import RequestBridge;
 from ktp_dummy_interface.application.response.bridge import ResponseBridge;
-
 
 NODE_NAME: str = "ktp_dummy_interface";
 DEFAULT_STRING: str = "";
@@ -20,7 +20,13 @@ class KTPDummyInterface(Node):
 
         self.declare_mqtt_parameters();
         __mqtt_client: Client = Client(node=self);
-        __mqtt_client.initialize();
+        __mqtt_client.connect();
+
+        def mqtt_thread_cb() -> None:
+            __mqtt_client.run();
+
+        mqtt_thread: threading.Thread = threading.Thread(target=mqtt_thread_cb);
+        mqtt_thread.start();
 
         request_bridge: RequestBridge = RequestBridge(node=self, mqtt_client=__mqtt_client);
         response_bridge: ResponseBridge = ResponseBridge(node=self, mqtt_client=__mqtt_client);
