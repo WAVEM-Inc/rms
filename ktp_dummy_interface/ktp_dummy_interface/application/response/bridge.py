@@ -163,4 +163,5 @@ class ResponseBridge:
             self.__log.error(f"{MQTT_LIDAR_SIGNAL_RESPONSE_TOPIC} : {nefe}");
             return;
 
+
 __all__ = ["ResponseBridge"];

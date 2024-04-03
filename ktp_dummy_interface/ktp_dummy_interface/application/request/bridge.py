@@ -23,7 +23,7 @@ MQTT_DETECTED_OBJECT_REQUEST_TOPIC: str = "/rms/ktp/dummy/request/detected_objec
 
 ASSIGN_CONTROL_SERVICE_NAME: str = "/ktp_data_manager/assign/control";
 ASSIGN_MISSION_SERVICE_NAME: str = "/ktp_data_manager/assign/mission";
-DETECTED_OBJECT_TOPIC: str = "/rms/ktp/data/detected_object";
+DETECTED_OBJECT_TOPIC: str = "/rms/ktp/itf/detected_object";
 
 
 class RequestBridge:
@@ -163,7 +163,7 @@ class RequestBridge:
             mqtt_decoded_payload: str = mqtt_message.payload.decode();
             mqtt_json: Any = json.loads(mqtt_message.payload);
 
-            detected_object: DetectedObject = message_conversion.populate_instance(msg=mqtt_json, inst=Mission());
+            detected_object: DetectedObject = message_conversion.populate_instance(msg=mqtt_json, inst=DetectedObject());
             self.__log.info(f"{mqtt_topic} cb\n{json.dumps(obj=message_conversion.extract_values(inst=detected_object), indent=4)}");
 
             self.detected_object_publish(detected_object=detected_object);
