@@ -230,6 +230,7 @@ class Processor:
                 request_mission_json = "";
                 self.__mission = None;
                 response.result = False;
+                self.error_report_publish(error_code="451");
             else:
                 self.command_navigation_with_path();
                 response.result = True;
@@ -700,6 +701,11 @@ class Processor:
         else:
             self.__log.error(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} Service Server is Not Ready...");
             return None;
+
+    def error_report_publish(self, error_code: str) -> None:
+        std_string: String = String();
+        std_string.data = error_code;
+        self.__error_report_publisher.publish(msg=std_string);
 
 
 __all__ = ["Processor", "set_to_source_flag", "set_to_dest_flag", "set_returning_flag"];
