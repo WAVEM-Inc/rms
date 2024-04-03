@@ -3,12 +3,16 @@
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(2, 1fr);
     gap: 20px;
+    border-bottom: 2px solid #ccc;
+    padding: 20px;
+    height: 750px;
+    overflow: hidden;
 }
 
 .grid_item {
     border: 1px solid #ccc;
     padding: 10px;
-    width: 350px;
+    width: 400px;
     margin: 0 auto;
     transition: height 0.3s ease-in-out;
 }

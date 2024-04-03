@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import './ResponseComponent.css';
 
 interface ResponseComponentProps {
@@ -52,7 +52,6 @@ const ResponseComponent: React.FC<ResponseComponentProps> = ({ responseData }: R
     
 
     useEffect(() => {
-        console.log("responseData가 업데이트되었습니다:", JSON.stringify(responseData));
         setRbtStatus(JSON.stringify(responseData.rbt_status, null, 4));
         setServiceStatus(JSON.stringify(responseData.service_status, null, 4));
         setErrorReport(JSON.stringify(responseData.error_report, null, 4));
