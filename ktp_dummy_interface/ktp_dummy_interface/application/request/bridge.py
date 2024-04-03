@@ -7,7 +7,6 @@ from rclpy.publisher import Publisher;
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
 from rclpy.qos import qos_profile_system_default;
 from rclpy.qos import qos_profile_services_default;
-from rclpy.task import Future;
 from rosbridge_library.internal import message_conversion;
 from ktp_data_msgs.msg import Control;
 from ktp_data_msgs.srv import AssignControl;
