@@ -101,6 +101,7 @@ DRIVE_STATUS_DRIVE_FAILED: int = 5;
 DRIVE_STATUS_MISSION_IMPOSSIBLE: int = 14;
 
 KTP_DEVICE_ID: str = "KECDSEMITB001";
+MAP_ID: str = "966";
 
 
 class Processor:
@@ -304,6 +305,7 @@ class Processor:
             if graph_sync_result is not None:
                 try:
                     graph_list: GraphList = message_conversion.populate_instance(msg=json.loads(graph_sync_result.graph_list), inst=GraphList());
+                    graph_list.send_id = control.control_id;
                     self.__log.info(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} Graph List\n{ros_message_dumps(message=graph_list)}");
                     self.__graph_list_publisher.publish(msg=graph_list);
                     control_report_data: dict = {
@@ -333,11 +335,11 @@ class Processor:
             if control_type == "control":
                 control_report.control_type = control_type;
             elif control_type == "graph":
-                control_report.control_type = "";
+                control_report.control_type = "control";
 
                 control_report_data_graph_list: list[ControlReportDataGraphList] = [];
-                control_report_data_graph_list.append(message_conversion.populate_instance(msg=control_data, inst=ControlReportDataGraphList()));
-                control_report.data.graph_list = control_report_data_graph_list;
+                # control_report_data_graph_list.append(message_conversion.populate_instance(msg=control_data, inst=ControlReportDataGraphList()));
+                # control_report.data.graph_list = control_report_data_graph_list;
 
             self.__control_report_publisher.publish(msg=control_report);
         except TypeError as te:
@@ -692,6 +694,7 @@ class Processor:
         service_status_task_data.map_id = mission_task_data.map_id;
         service_status_task_data.source = mission_task_data.source;
         service_status_task_data.goal = mission_task_data.goal;
+        service_status_task_data.lock_status = "0";
 
         service_status.task = [service_status_task];
         service_status_task.task_data = service_status_task_data;
@@ -703,11 +706,11 @@ class Processor:
     def notify_navigation_status_publish(self) -> None:
         status: Status = Status();
 
-        if self.__path_response is not None:
-            status.map_id = self.__path_response.map_id;
-        else:
-            status.map_id = "";
-
+        # if self.__path_response is not None:
+        #     status.map_id = self.__path_response.map_id;
+        # else:
+        #     status.map_id = "";
+        status.map_id = MAP_ID;
         status.drive_status = self.__drive_status;
 
         status.from_node = self.__drive_current[0];
@@ -749,6 +752,7 @@ class Processor:
         obstacle_detect.create_time = get_current_time();
         obstacle_detect.event_type = "STOP";
         obstacle_detect.object_id = obstacle_status_cb.obstacle_id;
+        obstacle_detect.event_reason_code = "cooperative_detect";
 
         if obstacle_status_cb.obstacle_status == 2:
             obstacle_detect.is_cooperative = True;
