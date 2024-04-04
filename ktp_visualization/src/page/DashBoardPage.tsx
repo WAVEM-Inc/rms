@@ -4,11 +4,11 @@ import MqttClient from "../api/mqttClient";
 import * as controlGraphSyncJSON from "../assets/json/control_graphsync.json";
 import * as controlMoveToDestJSON from "../assets/json/control_movetodest.json";
 import * as controlMsCompleteJSON from "../assets/json/control_mscomplete.json";
-import * as detectedObjectJSON from "../assets/json/detected_object.json";
+import * as cooperativeStartJSON from "../assets/json/cooperative_start.json";
+import * as cooperativeStopJSON from "../assets/json/cooperative_stop.json";
+import * as errorStatusJSON from "../assets/json/error_status.json";
 import * as missionJSON from "../assets/json/mission.json";
-// import * as errorReportJSON from "../assets/json/error_report.json";
-// import * as obstacleDetectJSON from "../assets/json/obstacle_detect.json";
-// import * as lidarSignalJSON from "../assets/json/lidar_signal.json";
+import * as obstacleStatusJSON from "../assets/json/obstacle_status.json";
 import RequestComponent from "../components/request/RequestComponent";
 import ResponseComponent from "../components/response/ResponseComponent";
 import TopComponents from "../components/top/TopComponent";
@@ -36,7 +36,10 @@ export default function DashboardPage() {
     const requiredRequestTopicList: Array<string> = [
         `${requestTopicFormat}/control`,
         `${requestTopicFormat}/mission`,
-        `${requestTopicFormat}/detected_object`
+        `${requestTopicFormat}/detected_object`,
+        `${requestTopicFormat}/error_status`,
+        `${requestTopicFormat}/obstacle/status`,
+        `${requestTopicFormat}/obstacle/cooperative`
     ];
 
     const filterJSON = (json: any): any => {
@@ -85,24 +88,41 @@ export default function DashboardPage() {
     }
     
     const onDetectedObjectClick = (): void => {
-        const newJSON: any = filterJSON(detectedObjectJSON);
-        newJSON.create_time = getCurrentTime();
-
-        const detecteObjectJSONStringified: string = JSON.stringify(newJSON);
+        const detecteObjectJSONStringified: string = JSON.stringify(errorStatusJSON);
         console.info(`${requiredRequestTopicList[2]} publish with : ${detecteObjectJSONStringified}`);
         mqttClient!.publish(requiredRequestTopicList[2], detecteObjectJSONStringified);
     }
 
-    const onErrorReportClick = (): void => {
-        
+    const onErrorStatusClick = (): void => {
+        const newJSON: any = filterJSON(errorStatusJSON);
+
+        const errorStatusJSONStringified: string = JSON.stringify(newJSON);
+        console.info(`${requiredRequestTopicList[3]} publish with : ${errorStatusJSONStringified}`);
+        mqttClient!.publish(requiredRequestTopicList[3], errorStatusJSONStringified);
     }
 
-    const onObstacleDetectClick = (): void => {
+    const onObstacleStatusClick = (): void => {
+        const newJSON: any = filterJSON(obstacleStatusJSON);
 
+        const obstacleStatusJSONStringified: string = JSON.stringify(newJSON);
+        console.info(`${requiredRequestTopicList[4]} publish with : ${obstacleStatusJSONStringified}`);
+        mqttClient!.publish(requiredRequestTopicList[4], obstacleStatusJSONStringified);
     }
 
-    const onLiDARSignalClick = (): void => {
+    const onCooperativeStartClick = (): void => {
+        const newJSON: any = filterJSON(cooperativeStartJSON);
 
+        const obstacleCooperativeJSONStringified: string = JSON.stringify(newJSON);
+        console.info(`${requiredRequestTopicList[5]} publish with : ${obstacleCooperativeJSONStringified}`);
+        mqttClient!.publish(requiredRequestTopicList[5], obstacleCooperativeJSONStringified);
+    }
+
+    const onCooperativeStopClick = (): void => {
+        const newJSON: any = filterJSON(cooperativeStopJSON);
+
+        const obstacleCooperativeJSONStringified: string = JSON.stringify(newJSON);
+        console.info(`${requiredRequestTopicList[5]} publish with : ${obstacleCooperativeJSONStringified}`);
+        mqttClient!.publish(requiredRequestTopicList[5], obstacleCooperativeJSONStringified);
     }
 
     const setUpResponseMQTTConnections = (mqttClient: MqttClient): void => {
@@ -176,9 +196,10 @@ export default function DashboardPage() {
             <div className="response_component_container">
                 <ResponseComponent
                 responseData={responseData}
-                onErrorReportClick={onErrorReportClick}
-                onObstacleDetectClick={onObstacleDetectClick}
-                onLiDARSignalClick={onLiDARSignalClick} />
+                onErrorStatusClick={onErrorStatusClick}
+                onObstacleStatusClick={onObstacleStatusClick}
+                onCooperativeStartClick={onCooperativeStartClick}
+                onCooperativeStopClick={onCooperativeStopClick} />
             </div>
             <div className="request_component_container">
                 <RequestComponent 

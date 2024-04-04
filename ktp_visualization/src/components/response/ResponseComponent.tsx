@@ -3,16 +3,18 @@ import './ResponseComponent.css';
 
 interface ResponseComponentProps {
     responseData: any;
-    onErrorReportClick: () => void;
-    onObstacleDetectClick: () => void;
-    onLiDARSignalClick: () => void;
+    onErrorStatusClick: () => void;
+    onObstacleStatusClick: () => void;
+    onCooperativeStartClick: () => void;
+    onCooperativeStopClick: () => void;
 }
 
 const ResponseComponent: React.FC<ResponseComponentProps> = ({
     responseData,
-    onErrorReportClick,
-    onObstacleDetectClick,
-    onLiDARSignalClick
+    onErrorStatusClick,
+    onObstacleStatusClick,
+    onCooperativeStartClick,
+    onCooperativeStopClick
 }: ResponseComponentProps) => {
     const [rbtStatusExpanded, setRbtStatusExpanded] = useState<boolean>(false);
     const [serviceStatusExpanded, setServiceStatusExpanded] = useState<boolean>(false);
@@ -132,12 +134,13 @@ const ResponseComponent: React.FC<ResponseComponentProps> = ({
                         </div>
                     </div>
                 </div>
-                <div className={`grid_item dummy_publish ${dummyPublishExapnded ? 'expanded' : 'collapsed'}`} onClick={toggleDummyPublish}>
+                <div className={`grid_item dummy_publish`} onClick={toggleDummyPublish}>
                     <div className="grid_item_title">가상 데이터 발행</div>
                     <div className="grid_item_data_container dummy_publish_btn_container">
-                        <button onClick={onErrorReportClick}>Error Report</button>
-                        <button onClick={onObstacleDetectClick}>Obstacle Detect</button>
-                        <button onClick={onLiDARSignalClick}>LiDAR Signal</button>
+                        <button onClick={onErrorStatusClick}>Error Status</button>
+                        <button onClick={onObstacleStatusClick}>Obstacle Status</button>
+                        <button className={"btn_cooperative_start"} onClick={onCooperativeStartClick}>Cooperative Start</button>
+                        <button className={"btn_cooperative_stop"} onClick={onCooperativeStopClick}>Cooperative Stop</button>
                     </div>
                 </div>
             </div>

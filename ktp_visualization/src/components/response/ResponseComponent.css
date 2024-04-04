@@ -121,9 +121,16 @@
     border-radius: 50%;
     width: 200px;
     height: 100px;
-    background-color: #fff;
     margin-bottom: 40px;
     font-size: 20px;
+}
+
+.btn_cooperative_start {
+    background-color: green;
+}
+
+.btn_cooperative_stop {
+    background-color: red;
 }
 
 .dummy_publish_btn_container button:hover {
