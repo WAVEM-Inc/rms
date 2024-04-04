@@ -13,6 +13,8 @@ from ktp_data_msgs.srv import AssignControl;
 from ktp_data_msgs.msg import Mission;
 from ktp_data_msgs.srv import AssignMission;
 from ktp_data_msgs.msg import DetectedObject;
+from std_msgs.msg import String;
+from obstacle_msgs.msg import Status;
 from ktp_dummy_interface.application.mqtt import Client;
 from typing import Dict;
 from typing import Any;
@@ -20,10 +22,16 @@ from typing import Any;
 MQTT_CONTROL_REQUEST_TOPIC: str = "/rms/ktp/dummy/request/control";
 MQTT_MISSION_REQUEST_TOPIC: str = "/rms/ktp/dummy/request/mission";
 MQTT_DETECTED_OBJECT_REQUEST_TOPIC: str = "/rms/ktp/dummy/request/detected_object";
+MQTT_ERROR_STATUS_TOPIC: str = "/rms/ktp/dummy/request/error_status";
+MQTT_OBSTACLE_STATUS_TOPIC: str = "/rms/ktp/dummy/request/obstacle/status";
+MQTT_DRIVE_OBSTACLE_COOPERATIVE_TOPIC: str = "/rms/ktp/dummy/request/obstacle/cooperative";
 
 ASSIGN_CONTROL_SERVICE_NAME: str = "/ktp_data_manager/assign/control";
 ASSIGN_MISSION_SERVICE_NAME: str = "/ktp_data_manager/assign/mission";
 DETECTED_OBJECT_TOPIC: str = "/rms/ktp/itf/detected_object";
+ERROR_STATUS_TOPIC: str = "/rms/ktp/data/notify/error/status";
+OBSTACLE_EVENT_TOPIC: str = "/drive/obstacle/event";
+DRIVE_OBSTACLE_COOPERATIVE: str = "/drive/obstacle/cooperative";
 
 
 class RequestBridge:
@@ -59,6 +67,30 @@ class RequestBridge:
             callback_group=detected_object_publisher_cb_group
         );
 
+        error_status_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__error_status_publisher: Publisher = self.__node.create_publisher(
+            topic=ERROR_STATUS_TOPIC,
+            msg_type=String,
+            qos_profile=qos_profile_system_default,
+            callback_group=error_status_publisher_cb_group
+        );
+
+        obstacle_event_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__obstacle_event_publisher: Publisher = self.__node.create_publisher(
+            topic=OBSTACLE_EVENT_TOPIC,
+            msg_type=Status,
+            qos_profile=qos_profile_system_default,
+            callback_group=obstacle_event_publisher_cb_group
+        );
+
+        drive_obstacle_cooperative_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__drive_obstacle_cooperative_publisher: Publisher = self.__node.create_publisher(
+            topic=DRIVE_OBSTACLE_COOPERATIVE,
+            msg_type=String,
+            qos_profile=qos_profile_system_default,
+            callback_group=drive_obstacle_cooperative_publisher_cb_group
+        );
+
     def mqtt_subscribe_for_request(self) -> None:
         self.__mqtt_client.subscribe(topic=MQTT_CONTROL_REQUEST_TOPIC, qos=0);
         self.__mqtt_client.client.message_callback_add(sub=MQTT_CONTROL_REQUEST_TOPIC, callback=self.mqtt_control_request_cb);
@@ -68,6 +100,15 @@ class RequestBridge:
 
         self.__mqtt_client.subscribe(topic=MQTT_DETECTED_OBJECT_REQUEST_TOPIC, qos=0);
         self.__mqtt_client.client.message_callback_add(sub=MQTT_DETECTED_OBJECT_REQUEST_TOPIC, callback=self.mqtt_detected_object_cb);
+
+        self.__mqtt_client.subscribe(topic=MQTT_ERROR_STATUS_TOPIC, qos=0);
+        self.__mqtt_client.client.message_callback_add(sub=MQTT_ERROR_STATUS_TOPIC, callback=self.mqtt_error_status_cb);
+
+        self.__mqtt_client.subscribe(topic=MQTT_OBSTACLE_STATUS_TOPIC, qos=0);
+        self.__mqtt_client.client.message_callback_add(sub=MQTT_OBSTACLE_STATUS_TOPIC, callback=self.mqtt_obstacle_event_cb);
+
+        self.__mqtt_client.subscribe(topic=MQTT_DRIVE_OBSTACLE_COOPERATIVE_TOPIC, qos=0);
+        self.__mqtt_client.client.message_callback_add(sub=MQTT_DRIVE_OBSTACLE_COOPERATIVE_TOPIC, callback=self.mqtt_drive_obstacle_cooperative_cb);
 
     def mqtt_control_request_cb(self, mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
         try:
@@ -79,7 +120,6 @@ class RequestBridge:
             self.__log.info(f"{mqtt_topic} cb\n{json.dumps(obj=message_conversion.extract_values(inst=control), indent=4)}");
 
             self.assign_control_service_request(control=control);
-
         except KeyError as ke:
             self.__log.error(f"Invalid JSON Key in MQTT {mqtt_topic} subscription callback: {ke}");
             return;
@@ -186,6 +226,96 @@ class RequestBridge:
 
     def detected_object_publish(self, detected_object: DetectedObject) -> None:
         self.__detected_object_publisher.publish(msg=detected_object);
+
+    def mqtt_error_status_cb(self, mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
+        try:
+            mqtt_topic: str = mqtt_message.topic;
+            mqtt_decoded_payload: str = mqtt_message.payload.decode();
+            mqtt_json: Any = json.loads(mqtt_message.payload);
+
+            error_status: String = message_conversion.populate_instance(msg=mqtt_json, inst=String());
+
+            self.__log.info(f"{mqtt_topic} cb\n{json.dumps(obj=message_conversion.extract_values(inst=error_status), indent=4)}");
+
+            self.error_status_publish(error_status=error_status);
+        except KeyError as ke:
+            self.__log.error(f"Invalid JSON Key in MQTT {mqtt_topic} subscription callback: {ke}");
+            return;
+
+        except json.JSONDecodeError as jde:
+            self.__log.error(f"Invalid JSON format in MQTT {mqtt_topic} subscription callback: {jde.msg}");
+            return;
+
+        except message_conversion.NonexistentFieldException as nefe:
+            self.__log.error(f"{mqtt_topic} : {nefe}");
+            return;
+
+        except Exception as e:
+            self.__log.error(f"Exception in MQTT {mqtt_topic} subscription callback: {e}");
+            raise;
+
+    def error_status_publish(self, error_status: String) -> None:
+        self.__error_status_publisher.publish(msg=error_status);
+
+    def mqtt_obstacle_event_cb(self, mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
+        try:
+            mqtt_topic: str = mqtt_message.topic;
+            mqtt_decoded_payload: str = mqtt_message.payload.decode();
+            mqtt_json: Any = json.loads(mqtt_message.payload);
+
+            obstacle_status: Status = message_conversion.populate_instance(msg=mqtt_json, inst=Status());
+
+            self.__log.info(f"{mqtt_topic} cb\n{json.dumps(obj=message_conversion.extract_values(inst=obstacle_status), indent=4)}");
+
+            self.obstacle_event_publish(obstacle_status=obstacle_status);
+        except KeyError as ke:
+            self.__log.error(f"Invalid JSON Key in MQTT {mqtt_topic} subscription callback: {ke}");
+            return;
+
+        except json.JSONDecodeError as jde:
+            self.__log.error(f"Invalid JSON format in MQTT {mqtt_topic} subscription callback: {jde.msg}");
+            return;
+
+        except message_conversion.NonexistentFieldException as nefe:
+            self.__log.error(f"{mqtt_topic} : {nefe}");
+            return;
+
+        except Exception as e:
+            self.__log.error(f"Exception in MQTT {mqtt_topic} subscription callback: {e}");
+            raise;
+
+    def obstacle_event_publish(self, obstacle_status: Status) -> None:
+        self.__obstacle_event_publisher.publish(msg=obstacle_status);
+
+    def mqtt_drive_obstacle_cooperative_cb(self, mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
+        try:
+            mqtt_topic: str = mqtt_message.topic;
+            mqtt_decoded_payload: str = mqtt_message.payload.decode();
+            mqtt_json: Any = json.loads(mqtt_message.payload);
+
+            obstacle_cooperative: String = message_conversion.populate_instance(msg=mqtt_json, inst=String());
+
+            self.__log.info(f"{mqtt_topic} cb\n{json.dumps(obj=message_conversion.extract_values(inst=obstacle_cooperative), indent=4)}");
+
+            self.drive_obstacle_cooperative_publish(obstacle_cooperative=obstacle_cooperative);
+        except KeyError as ke:
+            self.__log.error(f"Invalid JSON Key in MQTT {mqtt_topic} subscription callback: {ke}");
+            return;
+
+        except json.JSONDecodeError as jde:
+            self.__log.error(f"Invalid JSON format in MQTT {mqtt_topic} subscription callback: {jde.msg}");
+            return;
+
+        except message_conversion.NonexistentFieldException as nefe:
+            self.__log.error(f"{mqtt_topic} : {nefe}");
+            return;
+
+        except Exception as e:
+            self.__log.error(f"Exception in MQTT {mqtt_topic} subscription callback: {e}");
+            raise;
+
+    def drive_obstacle_cooperative_publish(self, obstacle_cooperative: String) -> None:
+        self.__drive_obstacle_cooperative_publisher.publish(msg=obstacle_cooperative);
 
 
 __all__ = ["RequestBridge"];

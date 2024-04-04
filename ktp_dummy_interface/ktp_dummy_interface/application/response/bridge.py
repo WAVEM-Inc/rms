@@ -16,6 +16,7 @@ from ktp_data_msgs.msg import GraphList;
 from ktp_data_msgs.msg import ObstacleDetect;
 from ktp_data_msgs.msg import LiDARSignal;
 from ktp_dummy_interface.application.mqtt import Client;
+from ktp_dummy_interface.application.mqtt import filter_empty_values;
 from typing import Dict;
 from typing import Any;
 
@@ -109,56 +110,70 @@ class ResponseBridge:
 
     def rbt_status_subscription_cb(self, rbt_status_cb: Status) -> None:
         try:
-            deserialized_message_json: Any = json.dumps(obj=message_conversion.extract_values(inst=rbt_status_cb));
-            self.__mqtt_client.publish(topic=MQTT_RBT_STATUS_RESPONSE_TOPIC, payload=deserialized_message_json, qos=0);
+            properties: Any = message_conversion.extract_values(inst=rbt_status_cb);
+            properties_filtered: Any = filter_empty_values(properties);
+            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
+            self.__mqtt_client.publish(topic=MQTT_RBT_STATUS_RESPONSE_TOPIC, payload=filter_empty_values(properties_filtered), qos=0);
         except message_conversion.NonexistentFieldException as nefe:
             self.__log.error(f"{MQTT_RBT_STATUS_RESPONSE_TOPIC} : {nefe}");
             return;
 
     def service_status_subscription_cb(self, service_status_cb: ServiceStatus) -> None:
         try:
-            deserialized_message_json: Any = json.dumps(obj=message_conversion.extract_values(inst=service_status_cb));
-            self.__mqtt_client.publish(topic=MQTT_SERVICE_STATUS_RESPONSE_TOPIC, payload=deserialized_message_json, qos=0);
+            properties: Any = message_conversion.extract_values(inst=service_status_cb);
+            properties_filtered: Any = filter_empty_values(properties);
+            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
+            self.__mqtt_client.publish(topic=MQTT_SERVICE_STATUS_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
         except message_conversion.NonexistentFieldException as nefe:
             self.__log.error(f"{MQTT_SERVICE_STATUS_RESPONSE_TOPIC} : {nefe}");
             return;
     
     def error_report_subscription_cb(self, error_report_cb: ErrorReport) -> None:
         try:
-            deserialized_message_json: Any = json.dumps(obj=message_conversion.extract_values(inst=error_report_cb));
-            self.__mqtt_client.publish(topic=MQTT_ERROR_REPORT_RESPONSE_TOPIC, payload=deserialized_message_json, qos=0);
+            properties: Any = message_conversion.extract_values(inst=error_report_cb);
+            properties_filtered: Any = filter_empty_values(properties);
+            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
+            self.__mqtt_client.publish(topic=MQTT_ERROR_REPORT_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
         except message_conversion.NonexistentFieldException as nefe:
             self.__log.error(f"{MQTT_ERROR_REPORT_RESPONSE_TOPIC} : {nefe}");
             return;
 
     def control_report_subscription_cb(self, control_report_cb: ControlReport) -> None:
         try:
-            deserialized_message_json: Any = json.dumps(obj=message_conversion.extract_values(inst=control_report_cb));
-            self.__mqtt_client.publish(topic=MQTT_CONTROL_REPORT_RESPONSE_TOPIC, payload=deserialized_message_json, qos=0);
+            properties: Any = message_conversion.extract_values(inst=control_report_cb);
+            properties_filtered: Any = filter_empty_values(properties);
+            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
+            self.__mqtt_client.publish(topic=MQTT_CONTROL_REPORT_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
         except message_conversion.NonexistentFieldException as nefe:
             self.__log.error(f"{MQTT_CONTROL_REPORT_RESPONSE_TOPIC} : {nefe}");
             return;
 
     def graph_list_subscription_cb(self, graph_list_cb: GraphList) -> None:
         try:
-            deserialized_message_json: Any = json.dumps(obj=message_conversion.extract_values(inst=graph_list_cb));
-            self.__mqtt_client.publish(topic=MQTT_GRAPH_LIST_RESPONSE_TOPIC, payload=deserialized_message_json, qos=0);
+            properties: Any = message_conversion.extract_values(inst=graph_list_cb);
+            properties_filtered: Any = filter_empty_values(properties);
+            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None or v != []});
+            self.__mqtt_client.publish(topic=MQTT_GRAPH_LIST_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
         except message_conversion.NonexistentFieldException as nefe:
             self.__log.error(f"{MQTT_GRAPH_LIST_RESPONSE_TOPIC} : {nefe}");
             return;
 
     def obstacle_detect_subscription_cb(self, obstacle_detect_cb: ObstacleDetect) -> None:
         try:
-            deserialized_message_json: Any = json.dumps(obj=message_conversion.extract_values(inst=obstacle_detect_cb));
-            self.__mqtt_client.publish(topic=MQTT_OBSTACLE_DETECT_RESPONSE_TOPIC, payload=deserialized_message_json, qos=0);
+            properties: Any = message_conversion.extract_values(inst=obstacle_detect_cb);
+            properties_filtered: Any = filter_empty_values(properties);
+            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
+            self.__mqtt_client.publish(topic=MQTT_OBSTACLE_DETECT_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
         except message_conversion.NonexistentFieldException as nefe:
             self.__log.error(f"{MQTT_OBSTACLE_DETECT_RESPONSE_TOPIC} : {nefe}");
             return;
     
     def lidar_signal_subscription_cb(self, lidar_signal_cb: LiDARSignal) -> None:
         try:
-            deserialized_message_json: Any = json.dumps(obj=message_conversion.extract_values(inst=lidar_signal_cb));
-            self.__mqtt_client.publish(topic=MQTT_LIDAR_SIGNAL_RESPONSE_TOPIC, payload=deserialized_message_json, qos=0);
+            properties: Any = message_conversion.extract_values(inst=lidar_signal_cb);
+            properties_filtered: Any = filter_empty_values(properties);
+            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
+            self.__mqtt_client.publish(topic=MQTT_LIDAR_SIGNAL_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
         except message_conversion.NonexistentFieldException as nefe:
             self.__log.error(f"{MQTT_LIDAR_SIGNAL_RESPONSE_TOPIC} : {nefe}");
             return;
