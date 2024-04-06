@@ -108,75 +108,39 @@ class ResponseBridge:
             callback=self.lidar_signal_subscription_cb
         );
 
-    def rbt_status_subscription_cb(self, rbt_status_cb: Status) -> None:
+    def mqtt_publish_after_filtering(self, topic: str, ros_callback_data: Any) -> None:
         try:
-            properties: Any = message_conversion.extract_values(inst=rbt_status_cb);
+            properties: Any = message_conversion.extract_values(inst=ros_callback_data);
             properties_filtered: Any = filter_empty_values(properties);
             properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
-            self.__mqtt_client.publish(topic=MQTT_RBT_STATUS_RESPONSE_TOPIC, payload=filter_empty_values(properties_filtered), qos=0);
+
+            self.__mqtt_client.publish(topic=topic, payload=properties_filtered, qos=0);
         except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{MQTT_RBT_STATUS_RESPONSE_TOPIC} : {nefe}");
+            self.__log.error(f"{topic} : {nefe}");
             return;
+        except Exception as e:
+            self.__log.error(f"{topic} : {e}");
+
+    def rbt_status_subscription_cb(self, rbt_status_cb: Status) -> None:
+        self.mqtt_publish_after_filtering(topic=MQTT_RBT_STATUS_RESPONSE_TOPIC, ros_callback_data=rbt_status_cb);
 
     def service_status_subscription_cb(self, service_status_cb: ServiceStatus) -> None:
-        try:
-            properties: Any = message_conversion.extract_values(inst=service_status_cb);
-            properties_filtered: Any = filter_empty_values(properties);
-            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
-            self.__mqtt_client.publish(topic=MQTT_SERVICE_STATUS_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
-        except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{MQTT_SERVICE_STATUS_RESPONSE_TOPIC} : {nefe}");
-            return;
+        self.mqtt_publish_after_filtering(topic=MQTT_SERVICE_STATUS_RESPONSE_TOPIC, ros_callback_data=service_status_cb);
     
     def error_report_subscription_cb(self, error_report_cb: ErrorReport) -> None:
-        try:
-            properties: Any = message_conversion.extract_values(inst=error_report_cb);
-            properties_filtered: Any = filter_empty_values(properties);
-            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
-            self.__mqtt_client.publish(topic=MQTT_ERROR_REPORT_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
-        except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{MQTT_ERROR_REPORT_RESPONSE_TOPIC} : {nefe}");
-            return;
+        self.mqtt_publish_after_filtering(topic=MQTT_ERROR_REPORT_RESPONSE_TOPIC, ros_callback_data=error_report_cb);
 
     def control_report_subscription_cb(self, control_report_cb: ControlReport) -> None:
-        try:
-            properties: Any = message_conversion.extract_values(inst=control_report_cb);
-            properties_filtered: Any = filter_empty_values(properties);
-            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
-            self.__mqtt_client.publish(topic=MQTT_CONTROL_REPORT_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
-        except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{MQTT_CONTROL_REPORT_RESPONSE_TOPIC} : {nefe}");
-            return;
+        self.mqtt_publish_after_filtering(topic=MQTT_CONTROL_REPORT_RESPONSE_TOPIC, ros_callback_data=control_report_cb);
 
     def graph_list_subscription_cb(self, graph_list_cb: GraphList) -> None:
-        try:
-            properties: Any = message_conversion.extract_values(inst=graph_list_cb);
-            properties_filtered: Any = filter_empty_values(properties);
-            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None or v != []});
-            self.__mqtt_client.publish(topic=MQTT_GRAPH_LIST_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
-        except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{MQTT_GRAPH_LIST_RESPONSE_TOPIC} : {nefe}");
-            return;
+        self.mqtt_publish_after_filtering(topic=MQTT_GRAPH_LIST_RESPONSE_TOPIC, ros_callback_data=graph_list_cb);
 
     def obstacle_detect_subscription_cb(self, obstacle_detect_cb: ObstacleDetect) -> None:
-        try:
-            properties: Any = message_conversion.extract_values(inst=obstacle_detect_cb);
-            properties_filtered: Any = filter_empty_values(properties);
-            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
-            self.__mqtt_client.publish(topic=MQTT_OBSTACLE_DETECT_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
-        except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{MQTT_OBSTACLE_DETECT_RESPONSE_TOPIC} : {nefe}");
-            return;
+        self.mqtt_publish_after_filtering(topic=MQTT_OBSTACLE_DETECT_RESPONSE_TOPIC, ros_callback_data=obstacle_detect_cb);
     
     def lidar_signal_subscription_cb(self, lidar_signal_cb: LiDARSignal) -> None:
-        try:
-            properties: Any = message_conversion.extract_values(inst=lidar_signal_cb);
-            properties_filtered: Any = filter_empty_values(properties);
-            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
-            self.__mqtt_client.publish(topic=MQTT_LIDAR_SIGNAL_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
-        except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{MQTT_LIDAR_SIGNAL_RESPONSE_TOPIC} : {nefe}");
-            return;
+        self.mqtt_publish_after_filtering(topic=MQTT_LIDAR_SIGNAL_RESPONSE_TOPIC, ros_callback_data=lidar_signal_cb);
 
 
 __all__ = ["ResponseBridge"];

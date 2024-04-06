@@ -19,6 +19,7 @@ from ktp_dummy_interface.application.mqtt import Client;
 from typing import Dict;
 from typing import Any;
 
+MQTT_COMMON_REQUEST_TOPIC: str = "/rms/ktp/dummy/request/common";
 MQTT_CONTROL_REQUEST_TOPIC: str = "/rms/ktp/dummy/request/control";
 MQTT_MISSION_REQUEST_TOPIC: str = "/rms/ktp/dummy/request/mission";
 MQTT_DETECTED_OBJECT_REQUEST_TOPIC: str = "/rms/ktp/dummy/request/detected_object";
@@ -92,14 +93,8 @@ class RequestBridge:
         );
 
     def mqtt_subscribe_for_request(self) -> None:
-        self.__mqtt_client.subscribe(topic=MQTT_CONTROL_REQUEST_TOPIC, qos=0);
-        self.__mqtt_client.client.message_callback_add(sub=MQTT_CONTROL_REQUEST_TOPIC, callback=self.mqtt_control_request_cb);
-
-        self.__mqtt_client.subscribe(topic=MQTT_MISSION_REQUEST_TOPIC, qos=0);
-        self.__mqtt_client.client.message_callback_add(sub=MQTT_MISSION_REQUEST_TOPIC, callback=self.mqtt_mission_request_cb);
-
-        self.__mqtt_client.subscribe(topic=MQTT_DETECTED_OBJECT_REQUEST_TOPIC, qos=0);
-        self.__mqtt_client.client.message_callback_add(sub=MQTT_DETECTED_OBJECT_REQUEST_TOPIC, callback=self.mqtt_detected_object_cb);
+        self.__mqtt_client.subscribe(topic=MQTT_COMMON_REQUEST_TOPIC, qos=0);
+        self.__mqtt_client.client.message_callback_add(sub=MQTT_COMMON_REQUEST_TOPIC, callback=self.mqtt_common_request_cb);
 
         self.__mqtt_client.subscribe(topic=MQTT_ERROR_STATUS_TOPIC, qos=0);
         self.__mqtt_client.client.message_callback_add(sub=MQTT_ERROR_STATUS_TOPIC, callback=self.mqtt_error_status_cb);
@@ -109,17 +104,39 @@ class RequestBridge:
 
         self.__mqtt_client.subscribe(topic=MQTT_DRIVE_OBSTACLE_COOPERATIVE_TOPIC, qos=0);
         self.__mqtt_client.client.message_callback_add(sub=MQTT_DRIVE_OBSTACLE_COOPERATIVE_TOPIC, callback=self.mqtt_drive_obstacle_cooperative_cb);
-
-    def mqtt_control_request_cb(self, mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
+    
+    def mqtt_common_request_cb(self, mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
         try:
             mqtt_topic: str = mqtt_message.topic;
             mqtt_decoded_payload: str = mqtt_message.payload.decode();
             mqtt_json: Any = json.loads(mqtt_message.payload);
 
-            control: Control = message_conversion.populate_instance(msg=mqtt_json, inst=Control());
-            self.__log.info(f"{mqtt_topic} cb\n{json.dumps(obj=message_conversion.extract_values(inst=control), indent=4)}");
+            self.__log.info(f"MQTT Common Request\n{json.dumps(obj=mqtt_json, indent=4)}");
+        
+            resource_id: str = mqtt_json["resource_id"];
+            data: Any = json.loads(json.dumps(mqtt_json["data"]));
 
-            self.assign_control_service_request(control=control);
+            self.__log.info(f"MQTT Common Request\n{json.dumps(obj=data, indent=4)}");
+        
+            if resource_id == "rbt_control":
+                control: Control = message_conversion.populate_instance(msg=data, inst=Control());
+                self.__log.info(f"{mqtt_topic} cb\n{json.dumps(obj=message_conversion.extract_values(inst=control), indent=4)}");
+
+                self.assign_control_service_request(control=control);
+            elif resource_id == "rbt_mission":
+                mission: Mission = message_conversion.populate_instance(msg=data, inst=Mission());
+                self.__log.info(f"{mqtt_topic} cb\n{json.dumps(obj=message_conversion.extract_values(inst=mission), indent=4)}");
+
+                self.assign_mission_service_request(mission=mission);
+            elif resource_id == "rbt_detected_object":
+                detected_object: DetectedObject = message_conversion.populate_instance(msg=data, inst=DetectedObject());
+                self.__log.info(f"{mqtt_topic} cb\n{json.dumps(obj=message_conversion.extract_values(inst=detected_object), indent=4)}");
+
+                self.detected_object_publish(detected_object=detected_object);
+            else:
+                self.__log.error(f"{mqtt_topic} Common Request Unknown resource_id : {resource_id}");
+                return;
+        
         except KeyError as ke:
             self.__log.error(f"Invalid JSON Key in MQTT {mqtt_topic} subscription callback: {ke}");
             return;
@@ -153,33 +170,6 @@ class RequestBridge:
             self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Service Server is Not Ready...");
             return;
 
-    def mqtt_mission_request_cb(self, mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
-        try:
-            mqtt_topic: str = mqtt_message.topic;
-            mqtt_decoded_payload: str = mqtt_message.payload.decode();
-            mqtt_json: Any = json.loads(mqtt_message.payload);
-
-            mission: Mission = message_conversion.populate_instance(msg=mqtt_json, inst=Mission());
-            self.__log.info(f"{mqtt_topic} cb\n{json.dumps(obj=message_conversion.extract_values(inst=mission), indent=4)}");
-
-            self.assign_mission_service_request(mission=mission);
-
-        except KeyError as ke:
-            self.__log.error(f"Invalid JSON Key in MQTT {mqtt_topic} subscription callback: {ke}");
-            return;
-
-        except json.JSONDecodeError as jde:
-            self.__log.error(f"Invalid JSON format in MQTT {mqtt_topic} subscription callback: {jde.msg}");
-            return;
-
-        except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{mqtt_topic} : {nefe}");
-            return;
-
-        except Exception as e:
-            self.__log.error(f"Exception in MQTT {mqtt_topic} subscription callback: {e}");
-            return;
-
     def assign_mission_service_request(self, mission: Mission) -> None:
         assign_mission_request: AssignMission.Request = AssignMission.Request();
         assign_mission_request.mission = mission;
@@ -196,33 +186,6 @@ class RequestBridge:
         else:
             self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Service Server is Not Ready...");
             return;
-
-    def mqtt_detected_object_cb(self, mqtt_client: mqtt.Client, mqtt_user_data: Dict, mqtt_message: mqtt.MQTTMessage) -> None:
-        try:
-            mqtt_topic: str = mqtt_message.topic;
-            mqtt_decoded_payload: str = mqtt_message.payload.decode();
-            mqtt_json: Any = json.loads(mqtt_message.payload);
-
-            detected_object: DetectedObject = message_conversion.populate_instance(msg=mqtt_json, inst=DetectedObject());
-            self.__log.info(f"{mqtt_topic} cb\n{json.dumps(obj=message_conversion.extract_values(inst=detected_object), indent=4)}");
-
-            self.detected_object_publish(detected_object=detected_object);
-
-        except KeyError as ke:
-            self.__log.error(f"Invalid JSON Key in MQTT {mqtt_topic} subscription callback: {ke}");
-            return;
-
-        except json.JSONDecodeError as jde:
-            self.__log.error(f"Invalid JSON format in MQTT {mqtt_topic} subscription callback: {jde.msg}");
-            return;
-
-        except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{mqtt_topic} : {nefe}");
-            return;
-
-        except Exception as e:
-            self.__log.error(f"Exception in MQTT {mqtt_topic} subscription callback: {e}");
-            raise;
 
     def detected_object_publish(self, detected_object: DetectedObject) -> None:
         self.__detected_object_publisher.publish(msg=detected_object);

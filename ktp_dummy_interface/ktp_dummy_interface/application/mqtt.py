@@ -8,6 +8,7 @@ from rclpy.impl.rcutils_logger import RcutilsLogger;
 from typing import Any;
 
 
+@staticmethod
 def filter_empty_values(data: Any) -> Any:
     if isinstance(data, dict):
         return {
