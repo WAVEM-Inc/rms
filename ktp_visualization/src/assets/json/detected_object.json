@@ -1,4 +1,6 @@
 {
+  "resource_id": "rbt_detected_object",
+  "data": {
     "create_time": "",
     "objects": [
       {
@@ -297,3 +299,4 @@
       }
     ]
   }
+}

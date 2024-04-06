@@ -1,9 +1,12 @@
 {
-    "control_data": {
-        "map_id": "966"
-    },
-    "owner": "padmin",
-    "control_id": "cKECDSEMITB001240404100302279",
-    "request_time": "240404100302279",
-    "control_code": "graphsync"
+    "resource_id": "rbt_control",
+    "data": {
+        "control_data": {
+            "map_id": "966"
+        },
+        "owner": "padmin",
+        "control_id": "cKECDSEMITB001240404100302279",
+        "request_time": "240404100302279",
+        "control_code": "graphsync"
+    }
 }

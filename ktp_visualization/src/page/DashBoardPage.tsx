@@ -9,6 +9,7 @@ import * as cooperativeStopJSON from "../assets/json/cooperative_stop.json";
 import * as errorStatusJSON from "../assets/json/error_status.json";
 import * as missionJSON from "../assets/json/mission.json";
 import * as obstacleStatusJSON from "../assets/json/obstacle_status.json";
+import * as detectedObjectJSON from "../assets/json/detected_object.json";
 import RequestComponent from "../components/request/RequestComponent";
 import ResponseComponent from "../components/response/ResponseComponent";
 import TopComponents from "../components/top/TopComponent";
@@ -34,9 +35,6 @@ export default function DashboardPage() {
     const requestTopicFormat: string = "/rms/ktp/dummy/request";
 
     const requiredRequestTopicList: Array<string> = [
-        `${requestTopicFormat}/control`,
-        `${requestTopicFormat}/mission`,
-        `${requestTopicFormat}/detected_object`,
         `${requestTopicFormat}/error_status`,
         `${requestTopicFormat}/obstacle/status`,
         `${requestTopicFormat}/obstacle/cooperative`
@@ -48,49 +46,38 @@ export default function DashboardPage() {
         return newData;
     }
 
-    const onControlGraphSyncClick = (): void => {
-        const newJSON: any = filterJSON(controlGraphSyncJSON);
-        newJSON.request_time = getCurrentTime();
-        newJSON.control_id = `c${KTP_DEV_ID}${newJSON.request_time}`;
+    const onRequestClick = (json: any): void => {
+        const newJSON: any = filterJSON(json);
 
-        const controlGraphSyncJSONStringified: string = JSON.stringify(newJSON);
-        console.info(`${requiredRequestTopicList[0]}[GrapySync] publish with : ${controlGraphSyncJSONStringified}`);
-        mqttClient!.publish(requiredRequestTopicList[0], controlGraphSyncJSONStringified);
+        if (newJSON.data.request_time != undefined) {
+            newJSON.data.request_time = getCurrentTime();
+        } else if (newJSON.data.create_time != undefined) {
+            newJSON.data.create_time = getCurrentTime();
+        }
+        
+        const requestJSONStringified: string = JSON.stringify(newJSON);
+        console.info(`${requestTopicFormat}/common[${newJSON.resource_id}] publish with : ${requestJSONStringified}`);
+        mqttClient!.publish(`${requestTopicFormat}/common`, requestJSONStringified);
+    }
+
+    const onControlGraphSyncClick = (): void => {
+        onRequestClick(controlGraphSyncJSON);
     }
 
     const onControlMoveToDestClick = (): void => {
-        const newJSON: any = filterJSON(controlMoveToDestJSON);
-        newJSON.request_time = getCurrentTime();
-        newJSON.control_id = `c${KTP_DEV_ID}${newJSON.request_time}`;
-
-        const controlMoveToDestJSONStringified: string = JSON.stringify(newJSON);
-        console.info(`${requiredRequestTopicList[0]}[MoveToDest] publish with : ${controlMoveToDestJSONStringified}`);
-        mqttClient!.publish(requiredRequestTopicList[0], controlMoveToDestJSONStringified);
+        onRequestClick(controlMoveToDestJSON);
     }
 
     const onControlMsCompleteClick = (): void => {
-        const newJSON: any = filterJSON(controlMsCompleteJSON);
-        newJSON.request_time = getCurrentTime();
-        newJSON.control_id = `c${KTP_DEV_ID}${newJSON.request_time}`;
-
-        const controlMsCompleteJSONStringified: string = JSON.stringify(newJSON);
-        console.info(`${requiredRequestTopicList[0]}[MsComplete] publish with : ${controlMsCompleteJSONStringified}`);
-        mqttClient!.publish(requiredRequestTopicList[0], controlMsCompleteJSONStringified);
+        onRequestClick(controlMsCompleteJSON);
     }
 
     const onMissionClick = (): void => {
-        const newJSON: any = filterJSON(missionJSON);
-        newJSON.request_time = getCurrentTime();
-
-        const missionJSONStringified: string = JSON.stringify(newJSON);
-        console.info(`${requiredRequestTopicList[1]} publish with : ${missionJSONStringified}`);
-        mqttClient!.publish(requiredRequestTopicList[1], missionJSONStringified);
+        onRequestClick(missionJSON);
     }
     
     const onDetectedObjectClick = (): void => {
-        const detecteObjectJSONStringified: string = JSON.stringify(errorStatusJSON);
-        console.info(`${requiredRequestTopicList[2]} publish with : ${detecteObjectJSONStringified}`);
-        mqttClient!.publish(requiredRequestTopicList[2], detecteObjectJSONStringified);
+        onRequestClick(detectedObjectJSON);
     }
 
     const onErrorStatusClick = (): void => {
