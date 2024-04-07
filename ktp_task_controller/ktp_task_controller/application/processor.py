@@ -26,7 +26,6 @@ from ktp_data_msgs.msg import Control;
 from ktp_data_msgs.msg import ControlReport;
 from ktp_data_msgs.srv import AssignControl;
 from ktp_data_msgs.msg import GraphList;
-from ktp_data_msgs.msg import ControlReportData;
 from ktp_data_msgs.msg import ControlReportDataGraphList;
 from ktp_data_msgs.msg import ObstacleDetect;
 from std_msgs.msg import String;
@@ -39,69 +38,61 @@ import route_msgs.msg as route;
 import obstacle_msgs.msg as obstacle;
 from typing import Any;
 from typing import Tuple;
-from ktp_task_controller.utils import ros_message_dumps;
-from ktp_task_controller.utils import get_current_time;
-
-NODE_NAME: str = "ktp_task_controller";
-ASSIGN_MISSION_TOPIC_NAME: str = "/rms/ktp/data/assign/mission";
-ASSIGN_MISSION_SERVICE_NAME: str = f"/{NODE_NAME}/assign/mission";
-PATH_GRAPH_PATH_SERVICE_NAME: str = "/path_graph_msgs/path";
-UBLOX_FIX_TOPIC_NAME: str = "/sensor/ublox/fix";
-ROUTE_TO_POSE_ACTION_NAME: str = "/route_to_pose";
-NOTIFY_MISSION_STATUS_TOPIC_NAME: str = "/rms/ktp/task/notify/mission/status";
-NOTIFY_NAVIGATION_STATUS_TOPIC_NAME: str = "/rms/ktp/task/notify/navigation/status";
-ERROR_REPORT_TOPIC_NAME: str = "/rms/ktp/data/notify/error/status";
-ASSIGN_CONTROL_SERVICE_NAME: str = f"/{NODE_NAME}/assign/control";
-NOTIFY_CONTROL_REPORT_TOPIC_NAME: str = "/rms/ktp/task/notify/control/report";
-NOTIFY_OBSTACLE_DETECT_TOPIC_NAME: str = "/rms/ktp/task/notify/obstacle_detect";
-PATH_GRAPH_GRAPH_SERVICE_NAME: str = "/path_graph_msgs/graph";
-GRAPH_LIST_TOPIC: str = "/rms/ktp/task/notify/graph_list";
-DRIVE_OBSTACLE_TOPIC: str = "/drive/obstacle/event";
-
-CONTROL_CODE_STOP: str = "stop";
-CONTROL_CODE_RELEASE: str = "release";
-CONTROL_MS_CANCEL: str = "mscancel";
-CONTROL_CODE_MOVE_TO_DEST: str = "movetodest";
-CONTROL_CODE_MS_COMPLETE: str = "mscomplete";
-CONTORL_CODE_GRAPH_SYNC: str = "graphsync";
+from ktp_task_controller.application.impl.mission import MissionProcessor;
+from ktp_task_controller.application.impl.navigation import NavigationProcessor;
+from ktp_task_controller.internal.utils import ros_message_dumps;
+from ktp_task_controller.internal.utils import get_current_time;
+from ktp_task_controller.internal.constants import (
+    ASSIGN_MISSION_SERVICE_NAME,
+    PATH_GRAPH_PATH_SERVICE_NAME,
+    PATH_GRAPH_GRAPH_SERVICE_NAME,
+    UBLOX_FIX_TOPIC_NAME,
+    ROUTE_TO_POSE_ACTION_NAME,
+    NOTIFY_MISSION_STATUS_TOPIC_NAME,
+    NOTIFY_NAVIGATION_STATUS_TOPIC_NAME,
+    ERROR_REPORT_TOPIC_NAME,
+    ASSIGN_CONTROL_SERVICE_NAME,
+    NOTIFY_CONTROL_REPORT_TOPIC_NAME,
+    NOTIFY_OBSTACLE_DETECT_TOPIC_NAME,
+    PATH_GRAPH_GRAPH_SERVICE_NAME,
+    GRAPH_LIST_TOPIC,
+    DRIVE_OBSTACLE_TOPIC,
+    CONTROL_CODE_STOP,
+    CONTROL_CODE_RELEASE,
+    CONTROL_MS_CANCEL,
+    CONTROL_CODE_MOVE_TO_DEST,
+    CONTROL_CODE_MS_COMPLETE,
+    CONTROL_CODE_GRAPH_SYNC,
+    DRIVE_STATUS_WAIT,
+    DRIVE_STATUS_ON_DRIVE,
+    DRIVE_STATUS_DRIVE_FINISHED,
+    DRIVE_STATUS_CANCELLED,
+    DRIVE_STATUS_OBJECT_DETECTED,
+    DRIVE_STATUS_DRIVE_FAILED,
+    DRIVE_STATUS_MISSION_IMPOSSIBLE
+);
 
 to_source_flag: bool = False;
 to_dest_flag: bool = False;
 returning_flag: bool = False;
 
-@staticmethod
 def get_to_source_flag() -> bool:
     return to_source_flag;
 
-@staticmethod
 def set_to_source_flag(flag: bool) -> None:
     global to_source_flag;
     to_source_flag = flag;
 
-@staticmethod
 def get_to_dest_flag() -> bool:
     return to_dest_flag;
 
-@staticmethod
 def set_to_dest_flag(flag: bool) -> None:
     global to_dest_flag;
     to_dest_flag = flag;
 
-@staticmethod
 def set_returning_flag(flag: bool) -> None:
     global returning_flag;
     returning_flag = flag;
-
-DRIVE_STATUS_WAIT: int = 0;
-DRIVE_STATUS_ON_DRIVE: int = 1;
-DRIVE_STATUS_DRIVE_FINISHED: int = 2;
-DRIVE_STATUS_CANCELLED: int = 3;
-DRIVE_STATUS_OBJECT_DETECTED: int = 4;
-DRIVE_STATUS_DRIVE_FAILED: int = 5;
-DRIVE_STATUS_MISSION_IMPOSSIBLE: int = 14;
-
-KTP_DEVICE_ID: str = "KECDSEMITB001";
-MAP_ID: str = "966";
 
 
 class Processor:
@@ -109,24 +100,32 @@ class Processor:
     def __init__(self, node: Node) -> None:
         self.__node: Node = node;
         self.__log: RcutilsLogger = self.__node.get_logger();
+        self.__device_id: str = self.__node.get_parameter(name="device_id").get_parameter_value().string_value;
+        self.__map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
+
         self.__mission: Mission = None;
         self.__ublox_fix: NavSatFix = None;
         self.__path_response: Path.Response = None;
         self.__path_response_list_size: int = 0;
+
         self.__route_to_pose_send_goal_future: Future = None;
         self.__route_to_pose_action_get_result_future: Any = None;
         self.__route_to_pose_goal_index: int = 0;
+
         self.__drive_status: int = DRIVE_STATUS_WAIT;
         self.__drive_current: Tuple[str, str] = ("", "");
 
-        assign_mission_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
-        self.__assign_mission_service: Service = self.__node.create_service(
-            srv_name=ASSIGN_MISSION_SERVICE_NAME,
-            srv_type=AssignMission,
-            callback_group=assign_mission_service_cb_group,
-            callback=self.assign_mission_service_cb,
-            qos_profile=qos_profile_services_default
-        );
+        mission_processor: MissionProcessor = MissionProcessor(node=self.__node);
+        navigation_processor: NavigationProcessor = NavigationProcessor(node=self.__node, mission_processor=mission_processor);
+
+        # assign_mission_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        # self.__assign_mission_service: Service = self.__node.create_service(
+        #     srv_name=ASSIGN_MISSION_SERVICE_NAME,
+        #     srv_type=AssignMission,
+        #     callback_group=assign_mission_service_cb_group,
+        #     callback=self.assign_mission_service_cb,
+        #     qos_profile=qos_profile_services_default
+        # );
 
         assign_control_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__assign_control_service: Service = self.__node.create_service(
@@ -145,21 +144,21 @@ class Processor:
             qos_profile=qos_profile_system_default
         );
 
-        route_to_pose_action_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
-        self.__route_to_pose_action_client: ActionClient = rclpy_action.ActionClient(
-            node=self.__node,
-            action_name=ROUTE_TO_POSE_ACTION_NAME,
-            action_type=RouteToPose,
-            callback_group=route_to_pose_action_client_cb_group
-        );
+        # route_to_pose_action_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        # self.__route_to_pose_action_client: ActionClient = rclpy_action.ActionClient(
+        #     node=self.__node,
+        #     action_name=ROUTE_TO_POSE_ACTION_NAME,
+        #     action_type=RouteToPose,
+        #     callback_group=route_to_pose_action_client_cb_group
+        # );
 
-        path_graph_path_service_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
-        self.__path_graph_path_service_client: Client = self.__node.create_client(
-            srv_name=PATH_GRAPH_PATH_SERVICE_NAME,
-            srv_type=Path,
-            callback_group=path_graph_path_service_client_cb_group,
-            qos_profile=qos_profile_services_default
-        );
+        # path_graph_path_service_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        # self.__path_graph_path_service_client: Client = self.__node.create_client(
+        #     srv_name=PATH_GRAPH_PATH_SERVICE_NAME,
+        #     srv_type=Path,
+        #     callback_group=path_graph_path_service_client_cb_group,
+        #     qos_profile=qos_profile_services_default
+        # );
 
         ublox_fix_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__ublox_fix_subscription: Subscription = self.__node.create_subscription(
@@ -234,30 +233,30 @@ class Processor:
             callback_group=obstacle_detect_publisher_cb_group
         );
 
-    def assign_mission_service_cb(self, request: AssignMission.Request, response: AssignMission.Response) -> AssignMission.Response:
-        request_mission_json: str = ros_message_dumps(message=request.mission);
-        self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} request\n{request_mission_json}");
+    # def assign_mission_service_cb(self, request: AssignMission.Request, response: AssignMission.Response) -> AssignMission.Response:
+    #     request_mission_json: str = ros_message_dumps(message=request.mission);
+    #     self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} request\n{request_mission_json}");
 
-        if self.__mission is not None:
-            self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Mission has already scheduled...");
-            response.result = False;
-        else:
-            self.__mission = message_conversion.populate_instance(json.loads(request_mission_json), Mission());
+    #     if self.__mission is not None:
+    #         self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Mission has already scheduled...");
+    #         response.result = False;
+    #     else:
+    #         self.__mission = message_conversion.populate_instance(json.loads(request_mission_json), Mission());
 
-            global to_source_flag;
-            to_source_flag = True;
+    #         global to_source_flag;
+    #         to_source_flag = True;
 
-            if self.__ublox_fix is None:
-                self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} {UBLOX_FIX_TOPIC_NAME} is None...");
-                request_mission_json = "";
-                self.__mission = None;
-                response.result = False;
-                self.error_report_publish(error_code="451");
-            else:
-                self.command_navigation_with_path();
-                response.result = True;
+    #         if self.__ublox_fix is None:
+    #             self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} {UBLOX_FIX_TOPIC_NAME} is None...");
+    #             request_mission_json = "";
+    #             self.__mission = None;
+    #             response.result = False;
+    #             self.error_report_publish(error_code="451");
+    #         else:
+    #             self.command_navigation_with_path();
+    #             response.result = True;
 
-        return response;
+    #     return response;
 
     def assign_control_service_cb(self, request: AssignControl.Request, response: AssignControl.Response) -> AssignControl.Response:
         request_control_json: str = ros_message_dumps(message=request.control);
@@ -299,7 +298,7 @@ class Processor:
                 self.command_navigation_with_path();
                 self.control_report_publish(control=control, control_type="control", response_code=201);
                 response.result = True;
-        elif control_code == CONTORL_CODE_GRAPH_SYNC:
+        elif control_code == CONTROL_CODE_GRAPH_SYNC:
             graph_sync_result: Graph.Response = self.graph_sync_request();
 
             if graph_sync_result is not None:
@@ -706,11 +705,7 @@ class Processor:
     def notify_navigation_status_publish(self) -> None:
         status: Status = Status();
 
-        # if self.__path_response is not None:
-        #     status.map_id = self.__path_response.map_id;
-        # else:
-        #     status.map_id = "";
-        status.map_id = MAP_ID;
+        status.map_id = self.__map_id;
         status.drive_status = self.__drive_status;
 
         status.from_node = self.__drive_current[0];
@@ -728,7 +723,7 @@ class Processor:
 
     def graph_sync_request(self) -> Graph.Response | None:
         graph_request: Graph.Request = Graph.Request();
-        graph_request.send_id = f"{KTP_DEVICE_ID}{get_current_time()}";
+        graph_request.send_id = f"{self.__device_id}{get_current_time()}";
 
         is_path_graph_graph_service_server_ready: bool = self.__path_graph_graph_service_client.wait_for_service(timeout_sec=0.8);
 

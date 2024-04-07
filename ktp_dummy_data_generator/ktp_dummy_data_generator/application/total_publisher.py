@@ -19,7 +19,7 @@ TEMPERATURE_TOPIC: str = "/sensor/temp/temperature";
 HUMIDITY_TOPIC: str = "/sensor/temp/humidity";
 
 
-class TotalPublisher:
+class DummyTotalPublisher:
     
     def __init__(self, node: Node) -> None:
         self.__node: Node = node;
@@ -125,4 +125,4 @@ class TotalPublisher:
         self.__humidity_publisher.publish(msg=humidity);
 
 
-__all__ = ["TotalPublisher"];
+__all__ = ["DummyTotalPublisher"];

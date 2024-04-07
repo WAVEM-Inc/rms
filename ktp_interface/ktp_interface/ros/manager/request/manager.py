@@ -26,7 +26,7 @@ class RequestManager:
 
         polling_timer_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__polling_timer: Timer = self.__node.create_timer(
-            timer_period_sec=0.5,
+            timer_period_sec=0.3,
             callback_group=polling_timer_cb_group,
             callback=self.__polling_timer_cb
         );

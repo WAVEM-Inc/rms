@@ -128,15 +128,13 @@ def on_resource_set_request_handler(pktBody, dev_id, resource_id, properties_in_
         set_control(properties);
 
         print(f"{resource_id} Callback : {json.dumps(get_control(), indent=4)}");
-
-    if resource_id == "rbt_mission":
+    elif resource_id == "rbt_mission":
         print("!!! Mission !!!");
         set_mission_callback_flag(True);
         set_mission(properties);
 
         print(f"{resource_id} Callback : {json.dumps(get_mission(), indent=4)}");
-
-    if resource_id == "rbt_detected_object":
+    elif resource_id == "rbt_detected_object":
         print("!!! DetectedObject !!!");
         set_detected_object_flag(True);
         set_detected_object(properties);
