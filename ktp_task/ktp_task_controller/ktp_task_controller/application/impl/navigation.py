@@ -44,8 +44,12 @@ from ktp_task_controller.internal.utils import ros_message_dumps;
 from ktp_task_controller.internal.utils import get_current_time;
 from ktp_task_controller.internal.constants import (
     ASSIGN_MISSION_SERVICE_NAME,
+    NAVIGATION_STATUS_READY_TO_MOVE,
+    LOOK_UP_PATH_SERVICE_NAME,
+    NAVIGATION_STATUS_TOPIC_NAME,
     PATH_GRAPH_PATH_SERVICE_NAME,
     PATH_GRAPH_GRAPH_SERVICE_NAME,
+    READY_TO_NAVIGATION_TOPIC_NAME,
     UBLOX_FIX_TOPIC_NAME,
     ROUTE_TO_POSE_ACTION_NAME,
     NOTIFY_MISSION_STATUS_TOPIC_NAME,
@@ -72,13 +76,23 @@ from ktp_task_controller.internal.constants import (
     DRIVE_STATUS_MISSION_IMPOSSIBLE
 );
 
+from ktp_task_msgs.srv import LookUpPath;
+
 
 class NavigationProcessor:
 
-    def __init__(self, node: Node, mission_processor: MissionProcessor) -> None:
+    def __init__(self, node: Node) -> None:
         self.__node: Node = node;
         self.__log: RcutilsLogger = self.__node.get_logger();
-        self.__mission_processor: MissionProcessor = mission_processor;
+        
+        self.__path_waiting_place_to_source: str | Any = self.__node.get_parameter(name="path_waiting_place_to_source").get_parameter_value().string_value;
+        self.__path_source_to_goal: str | Any = self.__node.get_parameter(name="path_source_to_goal").get_parameter_value().string_value;
+        self.__path_goal_to_waiting_place : str | Any = self.__node.get_parameter(name="path_goal_to_waiting_place").get_parameter_value().string_value;
+        
+        self.__node_list: list[route.Node] = [];
+        self.__node_index: int = 0;
+        self.__node_list_size: int = 0;
+        
         self.__path_response: Path.Response = None;
         self.__path_response_list_size: int = 0;
         self.__route_to_pose_send_goal_future: Future = None;
@@ -87,7 +101,24 @@ class NavigationProcessor:
 
         self.__drive_status: int = DRIVE_STATUS_WAIT;
         self.__drive_current: Tuple[str, str] = ("", "");
-
+        
+        ready_to_move_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__ready_to_move_subscription: Subscription = self.__node.create_subscription(
+            topic=READY_TO_NAVIGATION_TOPIC_NAME,
+            msg_type=Status,
+            callback_group=ready_to_move_subscription_cb_group,
+            callback=self.ready_to_move_subscrpition,
+            qos_profile=qos_profile_system_default
+        );
+        
+        navigation_status_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__navigation_status_publisher: Publisher = self.__node.create_publisher(
+            topic=NAVIGATION_STATUS_TOPIC_NAME,
+            msg_type=Status,
+            callback_group=navigation_status_publisher_cb_group,
+            qos_profile=qos_profile_system_default
+        );
+        
         route_to_pose_action_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__route_to_pose_action_client: ActionClient = rclpy_action.ActionClient(
             node=self.__node,
@@ -95,40 +126,66 @@ class NavigationProcessor:
             action_type=RouteToPose,
             callback_group=route_to_pose_action_client_cb_group
         );
+        
+        look_up_path_service_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__look_up_path_service_client: Client = self.__node.create_client(
+            srv_name=LOOK_UP_PATH_SERVICE_NAME,
+            srv_type=look_up_path_service_client_cb_group,
+            callback_group=look_up_path_service_client_cb_group,
+            qos_profile=qos_profile_services_default
+        );
+        
+    def ready_to_move_subscrpition(self, navigation_status: Status) -> None:
+        trigger: int = navigation_status.drive_status;
+        self.__log.info(message=f"{READY_TO_NAVIGATION_TOPIC_NAME} drive_status : {trigger}");
+        
+        if trigger == NAVIGATION_STATUS_READY_TO_MOVE:
+            self.__node_list = self.look_up_path_service_request(path_key=self.__path_waiting_place_to_source);
+            self.__node_list_size = len(self.__node_list);
+            self.route_to_pose_send_goal();
+        else:
+            self.__log.error(message=f"{READY_TO_NAVIGATION_TOPIC_NAME} Unknown trigger");
+            return;
+    
+    def navigation_status_publish(self, current_status: int, from_node: str, to_node: str) -> None:
+        status: Status = Status();
+        status.drive_status = current_status;
+        status.from_node = from_node;
+        status.to_node = to_node;
+        
+        self.__navigation_status_publisher.publish(msg=status);
 
     def route_to_pose_send_goal(self) -> None:
         goal: RouteToPose.Goal = RouteToPose.Goal();
-
-        node_list: list[route.Node] = self.__path_response.path.node_list;
-
-        start_node: route.Node = node_list[self.__route_to_pose_goal_index];
+        
+        start_node: route.Node = self.__node_list[self.__route_to_pose_goal_index];
         goal.start_node = start_node;
 
-        end_node: route.Node = node_list[self.__route_to_pose_goal_index + 1];
+        end_node: route.Node = self.__node_list[self.__route_to_pose_goal_index + 1];
         goal.end_node = end_node;
 
-        self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Send Goal[{self.__route_to_pose_goal_index}]\n{ros_message_dumps(message=goal)}");
+        self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} Send Goal[{self.__route_to_pose_goal_index}]\n{ros_message_dumps(message=goal)}");
 
         if self.__route_to_pose_action_client.wait_for_server(timeout_sec=0.75):
             self.__route_to_pose_send_goal_future = self.__route_to_pose_action_client.send_goal_async(goal=goal, feedback_callback=self.route_to_pose_feedback_cb);
             self.__route_to_pose_send_goal_future.add_done_callback(callback=self.goal_response_callback);
         else:
-            self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} is not ready...");
+            self.__log.error(message=f"{ROUTE_TO_POSE_ACTION_NAME} is not ready...");
 
     def goal_response_callback(self, future: Future) -> None:
         goal_handle: ClientGoalHandle = future.result();
         if not goal_handle.accepted:
-            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal rejected");
+            self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} Goal rejected");
             return;
 
-        self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal accepted");
+        self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} Goal accepted");
 
         self.__route_to_pose_action_get_result_future = goal_handle.get_result_async();
         self.__route_to_pose_action_get_result_future.add_done_callback(callback=self.route_to_pose_get_result_cb);
 
     def route_to_pose_feedback_cb(self, feedback_msg: RouteToPose.Impl.FeedbackMessage) -> None:
         feedback: RouteToPose.Feedback = feedback_msg.feedback;
-        self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} feedback cb\n{ros_message_dumps(message=feedback)}");
+        self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} feedback cb\n{ros_message_dumps(message=feedback)}");
 
         global to_source_flag;
         global to_dest_flag;
@@ -139,11 +196,10 @@ class NavigationProcessor:
         if status_code == 1001:  # 출발
             # 정상 주행 중 : 1
             self.__drive_status = DRIVE_STATUS_ON_DRIVE;
-            current_node_list: list[route.Node] = self.__path_response.path.node_list;
             self.__drive_current = (
-                current_node_list[self.__route_to_pose_goal_index].node_id,
-                current_node_list[self.__route_to_pose_goal_index + 1].node_id);
-            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Feedback Current Drive Status\n\t"
+                self.__node_list[self.__route_to_pose_goal_index].node_id,
+                self.__node_list[self.__route_to_pose_goal_index + 1].node_id);
+            self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} Feedback Current Drive Status\n\t"
                             f"Drive Status : {self.__drive_status}\n\t"
                             f"Drive Current: {self.__drive_current}");
 
@@ -153,7 +209,7 @@ class NavigationProcessor:
                     대기 장소 -> 상차지(출발지) 주행 출발 시
                     """
                     self.__mission_processor.notify_mission_status_publish(status="Started");
-                    self.__log.info(f"==================================== Started ====================================");
+                    self.__log.info(message=f"==================================== Started ====================================");
             elif to_dest_flag is True and to_source_flag is False and returning_flag is False:
                 if self.__route_to_pose_goal_index == 0:
                     """
@@ -172,9 +228,9 @@ class NavigationProcessor:
         status: int = future.result().status;
 
         if status == GoalStatus.STATUS_SUCCEEDED:
-            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal succeeded![{self.__route_to_pose_goal_index}]\n{ros_message_dumps(message=result)}");
+            self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} Goal succeeded![{self.__route_to_pose_goal_index}]\n{ros_message_dumps(message=result)}");
         else:
-            self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} Goal failed[{self.__route_to_pose_goal_index}]");
+            self.__log.error(message=f"{ROUTE_TO_POSE_ACTION_NAME} Goal failed[{self.__route_to_pose_goal_index}]");
 
         global to_source_flag;
         global to_dest_flag;
@@ -183,7 +239,7 @@ class NavigationProcessor:
         result_code: int = result.result;
 
         if result_code == 1001:  # 도착
-            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Result Last Drive Status\n\t"
+            self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} Result Last Drive Status\n\t"
                             f"Drive Status : {self.__drive_status}\n\t"
                             f"Drive Current: {self.__drive_current}");
             if to_source_flag is True and to_dest_flag is False and returning_flag is False:
@@ -204,12 +260,12 @@ class NavigationProcessor:
                     to_dest_flag = False;
                     returning_flag = False;
 
-                    self.__log.info(f"==================================== Source Arrived ====================================");
-                    self.__log.info(f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
-                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tdrive_current : {self.__drive_current}");
+                    self.__log.info(message=f"==================================== Source Arrived ====================================");
+                    self.__log.info(message=f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
+                    self.__log.info(message=f"Drive\n\tdrive_status : {self.__drive_status}\n\tdrive_current : {self.__drive_current}");
                 else:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
-                    self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} To Source will proceed Next Goal [{self.__route_to_pose_goal_index}]");
+                    self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} To Source will proceed Next Goal [{self.__route_to_pose_goal_index}]");
                     self.route_to_pose_send_goal();
             elif to_dest_flag is True and to_source_flag is False and returning_flag is False:
                 """
@@ -229,12 +285,12 @@ class NavigationProcessor:
                     to_dest_flag = False;
                     returning_flag = False;
 
-                    self.__log.info(f"==================================== Dest Arrived ====================================");
-                    self.__log.info(f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
-                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tdrive_current : {self.__drive_current}");
+                    self.__log.info(message=f"==================================== Dest Arrived ====================================");
+                    self.__log.info(message=f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
+                    self.__log.info(message=f"Drive\n\tdrive_status : {self.__drive_status}\n\tdrive_current : {self.__drive_current}");
                 else:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
-                    self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} To Dest will proceed Next Goal [{self.__route_to_pose_goal_index}]");
+                    self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} To Dest will proceed Next Goal [{self.__route_to_pose_goal_index}]");
                     self.route_to_pose_send_goal();
             elif returning_flag is True and to_source_flag is False and to_dest_flag is False:
                 """
@@ -252,14 +308,42 @@ class NavigationProcessor:
                     to_dest_flag = False;
                     returning_flag = False;
 
-                    self.__log.info(f"==================================== Returning Finished ====================================");
-                    self.__log.info(f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
-                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tdrive_current : {self.__drive_current}");
+                    self.__log.info(message=f"==================================== Returning Finished ====================================");
+                    self.__log.info(message=f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
+                    self.__log.info(message=f"Drive\n\tdrive_status : {self.__drive_status}\n\tdrive_current : {self.__drive_current}");
                 else:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
-                    self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Returning will proceed Next Goal [{self.__route_to_pose_goal_index}]");
+                    self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} Returning will proceed Next Goal [{self.__route_to_pose_goal_index}]");
                     self.route_to_pose_send_goal();
             else:
                 return;
         elif result_code == 2001:  # 실패
             self.__mission_processor.notify_mission_status_publish(status="Failed");
+            
+    def look_up_path_service_request(self, path_key: str) -> list[route.Node]:
+        self.__log.info(message=f"{LOOK_UP_PATH_SERVICE_NAME} request with path_key : {path_key}");
+        
+        look_up_path_request: LookUpPath.Request = LookUpPath.Request();
+        look_up_path_request.path_key = path_key;
+        
+        is_look_up_path_service_server_ready: bool = self.__look_up_path_service_client.wait_for_service(timeout_sec=0.75);
+        
+        if is_look_up_path_service_server_ready:
+            look_up_path_response: LookUpPath.Response = self.__look_up_path_service_client.call(request=look_up_path_request);
+            
+            node_list: list[route.Node] = look_up_path_response.path.node_list;
+            node_list_size: int = len(self.__node_list);
+            self.__log.info(message=f"{LOOK_UP_PATH_SERVICE_NAME} Response node_list_size : {node_list_size}");
+            
+            for node_index, node in enumerate(node_list):
+                self.__log.info(message=f"{LOOK_UP_PATH_SERVICE_NAME} Response node_list[{node_index}]\n{ros_message_dumps(message=node)}");
+            
+            if not node_list:
+                return None;
+            else:
+                return node_list;
+        else:
+            return None;
+        
+        
+__all__: list[str] = ["NavigationProcessor"];

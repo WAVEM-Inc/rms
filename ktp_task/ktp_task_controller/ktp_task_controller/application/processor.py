@@ -116,7 +116,7 @@ class Processor:
         self.__drive_current: Tuple[str, str] = ("", "");
 
         mission_processor: MissionProcessor = MissionProcessor(node=self.__node);
-        navigation_processor: NavigationProcessor = NavigationProcessor(node=self.__node, mission_processor=mission_processor);
+        navigation_processor: NavigationProcessor = NavigationProcessor(node=self.__node);
 
         # assign_mission_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         # self.__assign_mission_service: Service = self.__node.create_service(

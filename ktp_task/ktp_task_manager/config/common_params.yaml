@@ -1,0 +1,7 @@
+/ktp_task_controller:
+  ros__parameters:
+    device_id: "KECDSEMITB001"
+    map_id: "966"
+    path_waiting_place_to_source: "PATHWAITINGPLACETOSOURCE"
+    path_source_to_goal: "PATHSOURCETOGOAL"
+    path_goal_to_waiting_place: "PATHGOALTOWAITINGPLACE"

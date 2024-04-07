@@ -1,0 +1,5 @@
+string path_key
+
+---
+
+route_msgs/Path path

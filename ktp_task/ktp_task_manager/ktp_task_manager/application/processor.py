@@ -38,11 +38,9 @@ import route_msgs.msg as route;
 import obstacle_msgs.msg as obstacle;
 from typing import Any;
 from typing import Tuple;
-from ktp_task_controller.application.impl.mission import MissionProcessor;
-from ktp_task_controller.application.impl.navigation import NavigationProcessor;
-from ktp_task_controller.internal.utils import ros_message_dumps;
-from ktp_task_controller.internal.utils import get_current_time;
-from ktp_task_controller.internal.constants import (
+from ktp_task_manager.internal.utils import ros_message_dumps;
+from ktp_task_manager.internal.utils import get_current_time;
+from ktp_task_manager.internal.constants import (
     ASSIGN_MISSION_SERVICE_NAME,
     PATH_GRAPH_PATH_SERVICE_NAME,
     PATH_GRAPH_GRAPH_SERVICE_NAME,
@@ -71,28 +69,18 @@ from ktp_task_controller.internal.constants import (
     DRIVE_STATUS_DRIVE_FAILED,
     DRIVE_STATUS_MISSION_IMPOSSIBLE
 );
+from ktp_task_manager.application.impl.path import PathProcessor;
 
-class PathProcessor:
+
+class Processor:
 
     def __init__(self, node: Node) -> None:
         self.__node: Node = node;
         self.__log: RcutilsLogger = self.__node.get_logger();
+        self.__device_id: str = self.__node.get_parameter(name="device_id").get_parameter_value().string_value;
+        self.__map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
 
-        path_graph_path_service_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
-        self.__path_graph_path_service_client: Client = self.__node.create_client(
-            srv_name=PATH_GRAPH_PATH_SERVICE_NAME,
-            srv_type=Path,
-            callback_group=path_graph_path_service_client_cb_group,
-            qos_profile=qos_profile_services_default
-        );
+        path_processor: PathProcessor = PathProcessor(node=self.__node);
 
-        path_graph_graph_service_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
-        self.__path_graph_graph_service_client: Client = self.__node.create_client(
-            srv_name=PATH_GRAPH_GRAPH_SERVICE_NAME,
-            srv_type=Graph,
-            callback_group=path_graph_graph_service_client_cb_group,
-            qos_profile=qos_profile_services_default
-        );
 
-    def convert_task_to_path(self, mission_task: list[MissionTask]) -> None:
-        
+__all__ = ["Processor"];
