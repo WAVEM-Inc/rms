@@ -1,0 +1,6 @@
+string path_key
+route_msgs/Node[] current_node
+
+---
+
+bool result

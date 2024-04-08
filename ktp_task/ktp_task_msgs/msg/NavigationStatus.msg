@@ -1,0 +1,2 @@
+string path_source
+string path_goal
