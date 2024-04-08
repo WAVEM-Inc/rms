@@ -14,8 +14,10 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/NavigationStatus.msg"
   "srv/ConvertTaskToPath.srv"
   "srv/LookUpPath.srv"
+  "srv/RegisterNavigation.srv"
   DEPENDENCIES std_msgs ktp_data_msgs route_msgs
 )
 

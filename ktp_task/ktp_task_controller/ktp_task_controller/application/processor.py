@@ -100,6 +100,7 @@ class Processor:
     def __init__(self, node: Node) -> None:
         self.__node: Node = node;
         self.__log: RcutilsLogger = self.__node.get_logger();
+        
         self.__device_id: str = self.__node.get_parameter(name="device_id").get_parameter_value().string_value;
         self.__map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
 
@@ -116,7 +117,7 @@ class Processor:
         self.__drive_current: Tuple[str, str] = ("", "");
 
         mission_processor: MissionProcessor = MissionProcessor(node=self.__node);
-        navigation_processor: NavigationProcessor = NavigationProcessor(node=self.__node);
+        navigation_processor: NavigationProcessor = NavigationProcessor(node=self.__node, mission_processor=mission_processor);
 
         # assign_mission_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         # self.__assign_mission_service: Service = self.__node.create_service(

@@ -1,4 +1,5 @@
-import json;
+import json
+from os import path;
 import rclpy.action as rclpy_action;
 from rclpy.action.client import ClientGoalHandle;
 from rclpy.node import Node;
@@ -29,6 +30,7 @@ from ktp_data_msgs.msg import GraphList;
 from ktp_data_msgs.msg import ControlReportDataGraphList;
 from ktp_data_msgs.msg import ObstacleDetect;
 from std_msgs.msg import String;
+from std_msgs.msg import Bool;
 from path_graph_msgs.srv import Path;
 from path_graph_msgs.srv import Graph;
 from sensor_msgs.msg import NavSatFix;
@@ -50,6 +52,7 @@ from ktp_task_controller.internal.constants import (
     PATH_GRAPH_PATH_SERVICE_NAME,
     PATH_GRAPH_GRAPH_SERVICE_NAME,
     READY_TO_NAVIGATION_TOPIC_NAME,
+    TASK_MANAGER_NODE_NAME,
     UBLOX_FIX_TOPIC_NAME,
     ROUTE_TO_POSE_ACTION_NAME,
     NOTIFY_MISSION_STATUS_TOPIC_NAME,
@@ -77,21 +80,35 @@ from ktp_task_controller.internal.constants import (
 );
 
 from ktp_task_msgs.srv import LookUpPath;
+from ktp_task_msgs.srv import RegisterNavigation;
+from ktp_task_msgs.msg import NavigationStatus;
 
 
 class NavigationProcessor:
 
-    def __init__(self, node: Node) -> None:
+    def __init__(self, node: Node, mission_processor: MissionProcessor) -> None:
         self.__node: Node = node;
         self.__log: RcutilsLogger = self.__node.get_logger();
         
-        self.__path_waiting_place_to_source: str | Any = self.__node.get_parameter(name="path_waiting_place_to_source").get_parameter_value().string_value;
-        self.__path_source_to_goal: str | Any = self.__node.get_parameter(name="path_source_to_goal").get_parameter_value().string_value;
-        self.__path_goal_to_waiting_place : str | Any = self.__node.get_parameter(name="path_goal_to_waiting_place").get_parameter_value().string_value;
+        self.__mission_processor: MissionProcessor = mission_processor;
+        
+        device_id_parameter: str = self.__node.get_parameter(name="device_id").get_parameter_value().string_value;
+        map_id_parameter: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
+        
+        path_waiting_place_to_source_parameter: str | Any = self.__node.get_parameter(name="path_waiting_place_to_source").get_parameter_value().string_value;
+        self.__path_waiting_place_to_source: str = f"{device_id_parameter}{path_waiting_place_to_source_parameter}";
+        
+        path_source_to_goal_parmater: str | Any = self.__node.get_parameter(name="path_source_to_goal").get_parameter_value().string_value;
+        self.__path_source_to_goal: str = f"{device_id_parameter}{path_source_to_goal_parmater}";
+        
+        path_goal_to_waiting_place_parameter: str | Any = self.__node.get_parameter(name="path_goal_to_waiting_place").get_parameter_value().string_value;
+        self.__path_goal_to_waiting_place: str = f"{device_id_parameter}{path_goal_to_waiting_place_parameter}";
         
         self.__node_list: list[route.Node] = [];
         self.__node_index: int = 0;
         self.__node_list_size: int = 0;
+        
+        self.__navigation_status: NavigationStatus = None;
         
         self.__path_response: Path.Response = None;
         self.__path_response_list_size: int = 0;
@@ -105,17 +122,9 @@ class NavigationProcessor:
         ready_to_move_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__ready_to_move_subscription: Subscription = self.__node.create_subscription(
             topic=READY_TO_NAVIGATION_TOPIC_NAME,
-            msg_type=Status,
+            msg_type=Bool,
             callback_group=ready_to_move_subscription_cb_group,
-            callback=self.ready_to_move_subscrpition,
-            qos_profile=qos_profile_system_default
-        );
-        
-        navigation_status_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
-        self.__navigation_status_publisher: Publisher = self.__node.create_publisher(
-            topic=NAVIGATION_STATUS_TOPIC_NAME,
-            msg_type=Status,
-            callback_group=navigation_status_publisher_cb_group,
+            callback=self.ready_to_move_subscription_cb,
             qos_profile=qos_profile_system_default
         );
         
@@ -135,25 +144,57 @@ class NavigationProcessor:
             qos_profile=qos_profile_services_default
         );
         
-    def ready_to_move_subscrpition(self, navigation_status: Status) -> None:
-        trigger: int = navigation_status.drive_status;
-        self.__log.info(message=f"{READY_TO_NAVIGATION_TOPIC_NAME} drive_status : {trigger}");
+        register_navigation_service_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__register_navigation_service_client: Client = self.__node.create_client(
+            srv_name=f"/{TASK_MANAGER_NODE_NAME}/register/navigation",
+            srv_type=RegisterNavigation,
+            callback_group=register_navigation_service_client_cb_group,
+            qos_profile=qos_profile_services_default
+        );
         
-        if trigger == NAVIGATION_STATUS_READY_TO_MOVE:
+        navigation_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__navigation_status_subscription: Subscription = self.__node.create_subscription(
+            topic="/rms/ktp/task/navigation/status",
+            msg_type=NavigationStatus,
+            callback_group=navigation_status_subscription_cb_group,
+            callback=self.navigation_status_subscription_cb,
+            qos_profile=qos_profile_system_default
+        );
+        
+    def ready_to_move_subscription_cb(self, ready_to_move_cb: Bool) -> None:
+        trigger: bool = ready_to_move_cb.data;
+        self.__log.info(message=f"{READY_TO_NAVIGATION_TOPIC_NAME} ready_to_move_cb : {trigger}");
+        
+        if trigger:
             self.__node_list = self.look_up_path_service_request(path_key=self.__path_waiting_place_to_source);
             self.__node_list_size = len(self.__node_list);
+            self.register_navigation_service_request( path_key=self.__path_waiting_place_to_source);
             self.route_to_pose_send_goal();
         else:
-            self.__log.error(message=f"{READY_TO_NAVIGATION_TOPIC_NAME} Unknown trigger");
             return;
     
-    def navigation_status_publish(self, current_status: int, from_node: str, to_node: str) -> None:
-        status: Status = Status();
-        status.drive_status = current_status;
-        status.from_node = from_node;
-        status.to_node = to_node;
+    def register_navigation_service_request(self, path_key: str) -> None:
+        register_navigation_request: RegisterNavigation.Request = RegisterNavigation.Request();
+        register_navigation_request.path_key = path_key;
         
-        self.__navigation_status_publisher.publish(msg=status);
+        is_register_navigation_service_server_ready: bool = self.__register_navigation_service_client.wait_for_service(timeout_sec=0.75);
+        
+        if is_register_navigation_service_server_ready:
+            navigation_response: RegisterNavigation.Response = self.__register_navigation_service_client.call(request=register_navigation_request);
+            
+            result: bool = navigation_response.result;
+            
+            if result:
+                self.__log.info(message=f"/{TASK_MANAGER_NODE_NAME}/register/navigation register request suceeded");
+            else:
+                self.__log.error(message=f"/{TASK_MANAGER_NODE_NAME}/register/navigation register request failed...");
+                return;
+        else:
+            return;
+    
+    def navigation_status_subscription_cb(self, navigation_status: NavigationStatus) -> None:
+        self.__navigation_status = navigation_status;
+        pass;
 
     def route_to_pose_send_goal(self) -> None:
         goal: RouteToPose.Goal = RouteToPose.Goal();
@@ -186,11 +227,7 @@ class NavigationProcessor:
     def route_to_pose_feedback_cb(self, feedback_msg: RouteToPose.Impl.FeedbackMessage) -> None:
         feedback: RouteToPose.Feedback = feedback_msg.feedback;
         self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} feedback cb\n{ros_message_dumps(message=feedback)}");
-
-        global to_source_flag;
-        global to_dest_flag;
-        global returning_flag;
-
+        
         status_code: int = feedback.status_code;
 
         if status_code == 1001:  # 출발
@@ -203,19 +240,20 @@ class NavigationProcessor:
                             f"Drive Status : {self.__drive_status}\n\t"
                             f"Drive Current: {self.__drive_current}");
 
-            if to_source_flag is True and to_dest_flag is False and returning_flag is False:
+            if self.__navigation_status.path_source == "waiting" and self.__navigation_status.path_goal == "source":
                 if self.__route_to_pose_goal_index == 0:
                     """
                     대기 장소 -> 상차지(출발지) 주행 출발 시
                     """
                     self.__mission_processor.notify_mission_status_publish(status="Started");
                     self.__log.info(message=f"==================================== Started ====================================");
-            elif to_dest_flag is True and to_source_flag is False and returning_flag is False:
+            elif self.__navigation_status.path_source == "source" and self.__navigation_status.path_goal == "goal":
                 if self.__route_to_pose_goal_index == 0:
                     """
                     상차지(출발지) -> 하차지 주행 출발 시
                     """
                     self.__mission_processor.notify_mission_status_publish(status="OnProgress");
+                    self.__log.info(message=f"==================================== OnProgress ====================================");
             else:
                 return;
         elif status_code == 5001:  # 취소
@@ -232,22 +270,22 @@ class NavigationProcessor:
         else:
             self.__log.error(message=f"{ROUTE_TO_POSE_ACTION_NAME} Goal failed[{self.__route_to_pose_goal_index}]");
 
-        global to_source_flag;
-        global to_dest_flag;
-        global returning_flag;
-
         result_code: int = result.result;
 
         if result_code == 1001:  # 도착
             self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} Result Last Drive Status\n\t"
                             f"Drive Status : {self.__drive_status}\n\t"
                             f"Drive Current: {self.__drive_current}");
-            if to_source_flag is True and to_dest_flag is False and returning_flag is False:
+            if self.__navigation_status.path_source == "waiting" and self.__navigation_status.path_goal == "source":
                 """
                 대기 장소 -> 상차지(출발지) 주행 도착 시
                 """
                 is_source_arrived: bool = (self.__route_to_pose_goal_index + 1 == self.__path_response_list_size - 1);
                 if is_source_arrived:
+                    self.__node_list = self.look_up_path_service_request(path_key=self.__path_source_to_goal);
+                    self.__node_list_size = len(self.__node_list);
+                    self.register_navigation_service_request(path_key=self.__path_source_to_goal);
+                    
                     self.__drive_status = DRIVE_STATUS_DRIVE_FINISHED;
                     current_node_list: list[route.Node] = self.__path_response.path.node_list;
                     self.__drive_current = (
@@ -267,12 +305,16 @@ class NavigationProcessor:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
                     self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} To Source will proceed Next Goal [{self.__route_to_pose_goal_index}]");
                     self.route_to_pose_send_goal();
-            elif to_dest_flag is True and to_source_flag is False and returning_flag is False:
+            elif self.__navigation_status.path_source == "source" and self.__navigation_status.path_goal == "goal":
                 """
                 상차지(출발지) -> 하차지 주행 도착 시
                 """
                 is_dest_arrived: bool = (self.__route_to_pose_goal_index + 1 == self.__path_response_list_size - 1);
                 if is_dest_arrived:
+                    self.__node_list = self.look_up_path_service_request(path_key=self.__path_goal_to_waiting_place);
+                    self.__node_list_size = len(self.__node_list);
+                    self.register_navigation_service_request(path_key=self.__path_goal_to_waiting_place);
+                    
                     self.__drive_status = DRIVE_STATUS_DRIVE_FINISHED;
                     current_node_list: list[route.Node] = self.__path_response.path.node_list;
                     self.__drive_current = (
@@ -292,12 +334,14 @@ class NavigationProcessor:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
                     self.__log.info(message=f"{ROUTE_TO_POSE_ACTION_NAME} To Dest will proceed Next Goal [{self.__route_to_pose_goal_index}]");
                     self.route_to_pose_send_goal();
-            elif returning_flag is True and to_source_flag is False and to_dest_flag is False:
+            elif self.__navigation_status.path_source == "goal" and self.__navigation_status.path_goal == "waiting":
                 """
                 상차지(출발지) -> 하차지 주행 도착 시
                 """
                 is_returning_finished: bool = (self.__route_to_pose_goal_index + 1 == self.__path_response_list_size - 1);
                 if is_returning_finished:
+                    self.register_navigation_service_request(path_key="");
+                    
                     self.__route_to_pose_goal_index = 0;
                     self.__path_response = None;
                     self.__drive_status = DRIVE_STATUS_WAIT;

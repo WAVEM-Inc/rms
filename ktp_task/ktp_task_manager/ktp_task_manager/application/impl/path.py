@@ -1,5 +1,4 @@
 import json;
-from ktp_task_controller.ktp_task_controller.internal.constants import NAVIGATION_STATUS_TOPIC_NAME
 import rclpy.action as rclpy_action;
 from rclpy.action.client import ClientGoalHandle;
 from rclpy.node import Node;
@@ -30,6 +29,7 @@ from ktp_data_msgs.msg import GraphList;
 from ktp_data_msgs.msg import ControlReportDataGraphList;
 from ktp_data_msgs.msg import ObstacleDetect;
 from std_msgs.msg import String;
+from std_msgs.msg import Bool;
 from path_graph_msgs.srv import Path;
 from path_graph_msgs.srv import Graph;
 from sensor_msgs.msg import NavSatFix;
@@ -60,9 +60,17 @@ class PathProcessor:
         self.__node: Node = node;
         self.__log: RcutilsLogger = self.__node.get_logger();
         
-        self.__path_waiting_place_to_source: str | Any = self.__node.get_parameter(name="path_waiting_place_to_source").get_parameter_value().string_value;
-        self.__path_source_to_goal: str | Any = self.__node.get_parameter(name="path_source_to_goal").get_parameter_value().string_value;
-        self.__path_goal_to_waiting_place : str | Any = self.__node.get_parameter(name="path_goal_to_waiting_place").get_parameter_value().string_value;
+        device_id_parameter: str = self.__node.get_parameter(name="device_id").get_parameter_value().string_value;
+        map_id_parameter: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
+        
+        path_waiting_place_to_source_parameter: str | Any = self.__node.get_parameter(name="path_waiting_place_to_source").get_parameter_value().string_value;
+        self.__path_waiting_place_to_source: str = f"{device_id_parameter}{path_waiting_place_to_source_parameter}";
+        
+        path_source_to_goal_parmater: str | Any = self.__node.get_parameter(name="path_source_to_goal").get_parameter_value().string_value;
+        self.__path_source_to_goal: str = f"{device_id_parameter}{path_source_to_goal_parmater}";
+        
+        path_goal_to_waiting_place_parameter: str | Any = self.__node.get_parameter(name="path_goal_to_waiting_place").get_parameter_value().string_value;
+        self.__path_goal_to_waiting_place: str = f"{device_id_parameter}{path_goal_to_waiting_place_parameter}";
         
         self.__path_list: list[route.Path] = [];
         self.__ublox_fix: NavSatFix = None;
@@ -98,15 +106,6 @@ class PathProcessor:
             topic=READY_TO_NAVIGATION_TOPIC_NAME,
             msg_type=Status,
             callback_group=ready_to_move_publisher_cb_group,
-            qos_profile=qos_profile_system_default
-        );
-        
-        navigation_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
-        self.__navigation_status_subscription: Subscription = self.__node.create_subscription(
-            topic=NAVIGATION_STATUS_TOPIC_NAME,
-            msg_type=Status,
-            callback_group=navigation_status_subscription_cb_group,
-            callback=self.navigation_status_subscription_cb,
             qos_profile=qos_profile_system_default
         );
         
@@ -192,13 +191,14 @@ class PathProcessor:
                         self.__log.info(message=f"{CONVERT_TASK_TO_PATH_SERVICE_NAME} conversion succeeded");
                         response.result = True;
                         
-                        ready_to_move_trigger: Status = Status();
-                        ready_to_move_trigger.drive_status = NAVIGATION_STATUS_READY_TO_MOVE;
+                        ready_to_move_trigger: Bool = Bool();
+                        ready_to_move_trigger = True;
                         self.__ready_to_move_publisher.publish(msg=ready_to_move_trigger);
                 else:
-                    self.__log.error(message=f"");
+                    self.__log.error(message=f"{CONVERT_TASK_TO_PATH_SERVICE_NAME} service server is not ready...");
                     response.result = False;
         else:
+            self.__log.error(message=f"{CONVERT_TASK_TO_PATH_SERVICE_NAME} ublox_fix is None...");
             response.result = False;
         
         return response;
@@ -229,7 +229,7 @@ class PathProcessor:
         return response;
         
     def path_graph_path_service_request(self, path_request: Path.Request) -> route.Path:
-        self.__log.info(message=f"{PATH_GRAPH_PATH_SERVICE_NAME} To Source Path Request is ready\n{ros_message_dumps(message=path_request)}");
+        self.__log.info(message=f"{PATH_GRAPH_PATH_SERVICE_NAME} Path Request is ready\n{ros_message_dumps(message=path_request)}");
 
         is_path_graph_path_service_server_ready: bool = self.__path_graph_path_service_client.wait_for_service(timeout_sec=1.0);
 
@@ -242,9 +242,6 @@ class PathProcessor:
         else:
             self.__log.error(message=f"{PATH_GRAPH_PATH_SERVICE_NAME} service server is not ready...");
             return;
-        
-    def navigation_status_subscription_cb(self, status: Status) -> None:
-        drive_status: int = status.drive_status;
             
     def ublox_fix_subscription_cb(self, ublox_fix_cb: NavSatFix) -> None:
         self.__ublox_fix = ublox_fix_cb;
