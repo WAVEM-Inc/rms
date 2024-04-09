@@ -3,19 +3,9 @@ import './ResponseComponent.css';
 
 interface ResponseComponentProps {
     responseData: any;
-    onErrorStatusClick: () => void;
-    onObstacleStatusClick: () => void;
-    onCooperativeStartClick: () => void;
-    onCooperativeStopClick: () => void;
 }
 
-const ResponseComponent: React.FC<ResponseComponentProps> = ({
-    responseData,
-    onErrorStatusClick,
-    onObstacleStatusClick,
-    onCooperativeStartClick,
-    onCooperativeStopClick
-}: ResponseComponentProps) => {
+const ResponseComponent: React.FC<ResponseComponentProps> = ({ responseData }: ResponseComponentProps) => {
     const [rbtStatusExpanded, setRbtStatusExpanded] = useState<boolean>(false);
     const [serviceStatusExpanded, setServiceStatusExpanded] = useState<boolean>(false);
     const [errorReportExpanded, setErrorReportExpanded] = useState<boolean>(false);
@@ -23,7 +13,6 @@ const ResponseComponent: React.FC<ResponseComponentProps> = ({
     const [graphListExpanded, setGraphListExpanded] = useState<boolean>(false);
     const [obstacleDetectExpanded, setObstacleDetectExpanded] = useState<boolean>(false);
     const [lidarSignalExpanded, setLidarSignalExpanded] = useState<boolean>(false);
-    const [dummyPublishExapnded, setDummyPublishExpanded] = useState<boolean>(false);
 
     const [rbtStatus, setRbtStatus] = useState<string>("");
     const [serviceStatus, setServiceStatus] = useState<string>("");
@@ -44,25 +33,21 @@ const ResponseComponent: React.FC<ResponseComponentProps> = ({
     const toggleErrorReport = () => {
         setErrorReportExpanded(!errorReportExpanded);
     }
-    
+
     const toggleControlReport = () => {
         setControlReportExpanded(!controlReportExpanded);
     }
-    
+
     const toggleGraphList = () => {
         setGraphListExpanded(!graphListExpanded);
     }
-    
+
     const toggleObstacleDetect = () => {
         setObstacleDetectExpanded(!obstacleDetectExpanded);
     }
-    
+
     const toggleLidarSignal = () => {
         setLidarSignalExpanded(!lidarSignalExpanded);
-    }
-
-    const toggleDummyPublish = () => {
-        setDummyPublishExpanded(!dummyPublishExapnded);
     }
 
     useEffect(() => {
@@ -76,71 +61,60 @@ const ResponseComponent: React.FC<ResponseComponentProps> = ({
     }, [responseData]);
 
     return (
-        <div>
-            <div className="response_callback_grid_container">
-                <div className={`grid_item rbt_status ${rbtStatusExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleRbtStatus}>
-                    <div className={"grid_item_title"}>rbt_status</div>
-                    <div className="grid_item_data_container">
-                        <div className="grid_item_data">
-                            <pre>{rbtStatus}</pre>
-                        </div>
+        <div className="response_callback_grid_container">
+            <div className={`grid_item rbt_status ${rbtStatusExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleRbtStatus}>
+                <div className={"grid_item_title"}>rbt_status</div>
+                <div className="grid_item_data_container">
+                    <div className="grid_item_data">
+                        <pre>{rbtStatus}</pre>
                     </div>
                 </div>
-                <div className={`grid_item service_status ${serviceStatusExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleServiceStatus}>
-                    <div className={"grid_item_title"}>service_status</div>
-                    <div className="grid_item_data_container">
-                        <div className="grid_item_data">
-                            <pre>{serviceStatus}</pre>
-                        </div>
+            </div>
+            <div className={`grid_item service_status ${serviceStatusExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleServiceStatus}>
+                <div className={"grid_item_title"}>service_status</div>
+                <div className="grid_item_data_container">
+                    <div className="grid_item_data">
+                        <pre>{serviceStatus}</pre>
                     </div>
                 </div>
-                <div className={`grid_item error_report ${errorReportExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleErrorReport}>
-                    <div className={"grid_item_title"}>error_report</div>
-                    <div className="grid_item_data_container">
-                        <div className="grid_item_data">
-                            <pre>{errorReport}</pre>
-                        </div>
+            </div>
+            <div className={`grid_item error_report ${errorReportExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleErrorReport}>
+                <div className={"grid_item_title"}>error_report</div>
+                <div className="grid_item_data_container">
+                    <div className="grid_item_data">
+                        <pre>{errorReport}</pre>
                     </div>
                 </div>
-                <div className={`grid_item control_report ${controlReportExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleControlReport}>
-                    <div className={"grid_item_title"}>control_report</div>
-                    <div className="grid_item_data_container">
-                        <div className="grid_item_data">
-                            <pre>{controlReport}</pre>
-                        </div>
+            </div>
+            <div className={`grid_item control_report ${controlReportExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleControlReport}>
+                <div className={"grid_item_title"}>control_report</div>
+                <div className="grid_item_data_container">
+                    <div className="grid_item_data">
+                        <pre>{controlReport}</pre>
                     </div>
                 </div>
-                <div className={`grid_item graph_list ${graphListExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleGraphList}>
-                    <div className={"grid_item_title"}>graph_list</div>
-                    <div className="grid_item_data_container">
-                        <div className="grid_item_data">
-                            <pre>{graphList}</pre>
-                        </div>
+            </div>
+            <div className={`grid_item graph_list ${graphListExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleGraphList}>
+                <div className={"grid_item_title"}>graph_list</div>
+                <div className="grid_item_data_container">
+                    <div className="grid_item_data">
+                        <pre>{graphList}</pre>
                     </div>
                 </div>
-                <div className={`grid_item obstacle_detect ${obstacleDetectExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleObstacleDetect}>
-                    <div className={"grid_item_title"}>obstacle_detect</div>
-                    <div className="grid_item_data_container">
-                        <div className="grid_item_data">
-                            <pre>{obstacleDetect}</pre>
-                        </div>
+            </div>
+            <div className={`grid_item obstacle_detect ${obstacleDetectExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleObstacleDetect}>
+                <div className={"grid_item_title"}>obstacle_detect</div>
+                <div className="grid_item_data_container">
+                    <div className="grid_item_data">
+                        <pre>{obstacleDetect}</pre>
                     </div>
                 </div>
-                <div className={`grid_item lidar_signal ${lidarSignalExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleLidarSignal}>
-                    <div className={"grid_item_title"}>lidar_signal</div>
-                    <div className="grid_item_data_container">
-                        <div className="grid_item_data">
-                            <pre>{lidarSignal}</pre>
-                        </div>
-                    </div>
-                </div>
-                <div className={`grid_item dummy_publish`} onClick={toggleDummyPublish}>
-                    <div className="grid_item_title">가상 데이터 발행</div>
-                    <div className="grid_item_data_container dummy_publish_btn_container">
-                        <button onClick={onErrorStatusClick}>Error Status</button>
-                        <button onClick={onObstacleStatusClick}>Obstacle Status</button>
-                        <button className={"btn_cooperative_start"} onClick={onCooperativeStartClick}>Cooperative Start</button>
-                        <button className={"btn_cooperative_stop"} onClick={onCooperativeStopClick}>Cooperative Stop</button>
+            </div>
+            <div className={`grid_item lidar_signal ${lidarSignalExpanded ? 'expanded' : 'collapsed'}`} onClick={toggleLidarSignal}>
+                <div className={"grid_item_title"}>lidar_signal</div>
+                <div className="grid_item_data_container">
+                    <div className="grid_item_data">
+                        <pre>{lidarSignal}</pre>
                     </div>
                 </div>
             </div>

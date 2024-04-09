@@ -1,12 +1,33 @@
 .response_callback_grid_container {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
     gap: 20px;
-    border-bottom: 2px solid #ccc;
+    border: 2px solid #ccc;
     padding: 20px;
-    height: 750px;
     overflow: auto;
+    width: 1470px;
+    height: 850px;
+}
+
+@media all and (max-width: 1920px) {
+    .response_callback_grid_container {
+        width: 1600px;
+    }
+}
+
+@media all and (min-width: 1921px) and (max-width: 2560px) {
+    .response_callback_grid_container {
+        width: calc(2560px - 320px);
+        height: 1080px;
+    }
+}
+
+@media all and (min-width: 2561px) {
+    .response_callback_grid_container {
+        width: 100%;
+        height: 100%;
+    }
 }
 
 .grid_item {
@@ -107,32 +128,4 @@
 
 .grid_item.dummy_publish.expanded {
     height: auto;
-}
-
-.dummy_publish_btn_container {
-    margin-top: 15%;
-    display: flex;
-    flex-direction: column;
-    padding: 30px;
-    align-items: center;
-}
-
-.dummy_publish_btn_container button {
-    border-radius: 50%;
-    width: 200px;
-    height: 100px;
-    margin-bottom: 40px;
-    font-size: 20px;
-}
-
-.btn_cooperative_start {
-    background-color: green;
-}
-
-.btn_cooperative_stop {
-    background-color: red;
-}
-
-.dummy_publish_btn_container button:hover {
-    background-color: #ccc;
 }

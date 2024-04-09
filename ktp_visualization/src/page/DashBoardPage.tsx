@@ -86,7 +86,7 @@ export default function DashboardPage() {
         console.info(`${requiredRequestTopicList[1]} publish with : ${missionJSONStringified}`);
         mqttClient!.publish(requiredRequestTopicList[1], missionJSONStringified);
     }
-    
+
     const onDetectedObjectClick = (): void => {
         const detecteObjectJSONStringified: string = JSON.stringify(errorStatusJSON);
         console.info(`${requiredRequestTopicList[2]} publish with : ${detecteObjectJSONStringified}`);
@@ -134,43 +134,43 @@ export default function DashboardPage() {
 
     const handleResponseMQTTCallback = (mqttClient: MqttClient): void => {
         mqttClient.client.on("message", (topic: string, payload: Buffer, packet: IPublishPacket) => {
-            if (topic == requiredResponseTopicList[0]) {
+            if (topic === requiredResponseTopicList[0]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     rbt_status: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic === requiredResponseTopicList[1]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     service_status: newData
                 }));
-            } else if (topic == requiredResponseTopicList[2]) {
+            } else if (topic === requiredResponseTopicList[2]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     error_report: newData
                 }));
-            } else if (topic == requiredResponseTopicList[3]) {
+            } else if (topic === requiredResponseTopicList[3]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     control_report: newData
                 }));
-            } else if (topic == requiredResponseTopicList[4]) {
+            } else if (topic === requiredResponseTopicList[4]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     graph_list: newData
                 }));
-            } else if (topic == requiredResponseTopicList[5]) {
+            } else if (topic === requiredResponseTopicList[5]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     obstacle_detect: newData
                 }));
-            } else if (topic == requiredResponseTopicList[6]) {
+            } else if (topic === requiredResponseTopicList[6]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
@@ -190,24 +190,28 @@ export default function DashboardPage() {
 
     return (
         <div className="App">
-            <div className="top_component_container">
-                <TopComponents />
-            </div>
-            <div className="response_component_container">
-                <ResponseComponent
-                responseData={responseData}
-                onErrorStatusClick={onErrorStatusClick}
-                onObstacleStatusClick={onObstacleStatusClick}
-                onCooperativeStartClick={onCooperativeStartClick}
-                onCooperativeStopClick={onCooperativeStopClick} />
-            </div>
-            <div className="request_component_container">
-                <RequestComponent 
-                onControlGraphSyncClick={onControlGraphSyncClick}
-                onControlMoveToDestClick={onControlMoveToDestClick}
-                onControlMsCompleteClick={onControlMsCompleteClick}
-                onMissionClick={onMissionClick} 
-                onDetectedObjectClick={onDetectedObjectClick} />
+            <div className="dash_board_container">
+                <div className="top_component_container">
+                    <TopComponents />
+                </div>
+                <div className="main_container">
+                    <div className="request_component_container">
+                        <RequestComponent
+                            onControlGraphSyncClick={onControlGraphSyncClick}
+                            onControlMoveToDestClick={onControlMoveToDestClick}
+                            onControlMsCompleteClick={onControlMsCompleteClick}
+                            onMissionClick={onMissionClick}
+                            onDetectedObjectClick={onDetectedObjectClick}
+                            onErrorStatusClick={onErrorStatusClick}
+                            onObstacleStatusClick={onObstacleStatusClick}
+                            onCooperativeStartClick={onCooperativeStartClick}
+                            onCooperativeStopClick={onCooperativeStopClick} />
+                    </div>
+                    <div className="response_component_container">
+                        <ResponseComponent
+                            responseData={responseData} />
+                    </div>
+                </div>
             </div>
         </div>
     );
