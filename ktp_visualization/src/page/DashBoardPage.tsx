@@ -49,9 +49,9 @@ export default function DashboardPage() {
     const onRequestClick = (json: any): void => {
         const newJSON: any = filterJSON(json);
 
-        if (newJSON.data.request_time != undefined) {
+        if (newJSON.data.request_time !== undefined) {
             newJSON.data.request_time = getCurrentTime();
-        } else if (newJSON.data.create_time != undefined) {
+        } else if (newJSON.data.create_time !== undefined) {
             newJSON.data.create_time = getCurrentTime();
         }
         
@@ -121,43 +121,43 @@ export default function DashboardPage() {
 
     const handleResponseMQTTCallback = (mqttClient: MqttClient): void => {
         mqttClient.client.on("message", (topic: string, payload: Buffer, packet: IPublishPacket) => {
-            if (topic == requiredResponseTopicList[0]) {
+            if (topic === requiredResponseTopicList[0]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     rbt_status: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic === requiredResponseTopicList[1]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     service_status: newData
                 }));
-            } else if (topic == requiredResponseTopicList[2]) {
+            } else if (topic === requiredResponseTopicList[2]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     error_report: newData
                 }));
-            } else if (topic == requiredResponseTopicList[3]) {
+            } else if (topic === requiredResponseTopicList[3]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     control_report: newData
                 }));
-            } else if (topic == requiredResponseTopicList[4]) {
+            } else if (topic === requiredResponseTopicList[4]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     graph_list: newData
                 }));
-            } else if (topic == requiredResponseTopicList[5]) {
+            } else if (topic === requiredResponseTopicList[5]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     obstacle_detect: newData
                 }));
-            } else if (topic == requiredResponseTopicList[6]) {
+            } else if (topic === requiredResponseTopicList[6]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
