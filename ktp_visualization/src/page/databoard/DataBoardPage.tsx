@@ -1,21 +1,21 @@
 import { IPublishPacket } from "mqtt/*";
 import { useEffect, useState } from "react";
-import MqttClient from "../api/mqttClient";
-import * as controlGraphSyncJSON from "../assets/json/control_graphsync.json";
-import * as controlMoveToDestJSON from "../assets/json/control_movetodest.json";
-import * as controlMsCompleteJSON from "../assets/json/control_mscomplete.json";
-import * as cooperativeStartJSON from "../assets/json/cooperative_start.json";
-import * as cooperativeStopJSON from "../assets/json/cooperative_stop.json";
-import * as errorStatusJSON from "../assets/json/error_status.json";
-import * as missionJSON from "../assets/json/mission.json";
-import * as obstacleStatusJSON from "../assets/json/obstacle_status.json";
-import RequestComponent from "../components/request/RequestComponent";
-import ResponseComponent from "../components/response/ResponseComponent";
-import TopComponents from "../components/top/TopComponent";
-import { KTP_DEV_ID, getCurrentTime } from "../utils/Utils";
-import './DashBoardPage.css';
+import MqttClient from "../../api/mqttClient";
+import * as controlGraphSyncJSON from "../../assets/json/control_graphsync.json";
+import * as controlMoveToDestJSON from "../../assets/json/control_movetodest.json";
+import * as controlMsCompleteJSON from "../../assets/json/control_mscomplete.json";
+import * as cooperativeStartJSON from "../../assets/json/cooperative_start.json";
+import * as cooperativeStopJSON from "../../assets/json/cooperative_stop.json";
+import * as errorStatusJSON from "../../assets/json/error_status.json";
+import * as missionJSON from "../../assets/json/mission.json";
+import * as obstacleStatusJSON from "../../assets/json/obstacle_status.json";
+import RequestComponent from "../../components/request/RequestComponent";
+import ResponseComponent from "../../components/response/ResponseComponent";
+import TopComponents from "../../components/top/TopComponent";
+import { KTP_DEV_ID, getCurrentTime } from "../../utils/Utils";
+import './DataBoardPage.css';
 
-export default function DashboardPage() {
+export default function DataBoardPage() {
     const [mqttClient, setMqttClient] = useState<MqttClient | undefined>();
     const [responseData, setResponseData] = useState<any>({});
 
@@ -189,28 +189,26 @@ export default function DashboardPage() {
     }, []);
 
     return (
-        <div className="App">
-            <div className="dash_board_container">
-                <div className="top_component_container">
-                    <TopComponents />
+        <div className="data_board_container">
+            <div className="top_component_container">
+                <TopComponents />
+            </div>
+            <div className="main_container">
+                <div className="request_component_container">
+                    <RequestComponent
+                        onControlGraphSyncClick={onControlGraphSyncClick}
+                        onControlMoveToDestClick={onControlMoveToDestClick}
+                        onControlMsCompleteClick={onControlMsCompleteClick}
+                        onMissionClick={onMissionClick}
+                        onDetectedObjectClick={onDetectedObjectClick}
+                        onErrorStatusClick={onErrorStatusClick}
+                        onObstacleStatusClick={onObstacleStatusClick}
+                        onCooperativeStartClick={onCooperativeStartClick}
+                        onCooperativeStopClick={onCooperativeStopClick} />
                 </div>
-                <div className="main_container">
-                    <div className="request_component_container">
-                        <RequestComponent
-                            onControlGraphSyncClick={onControlGraphSyncClick}
-                            onControlMoveToDestClick={onControlMoveToDestClick}
-                            onControlMsCompleteClick={onControlMsCompleteClick}
-                            onMissionClick={onMissionClick}
-                            onDetectedObjectClick={onDetectedObjectClick}
-                            onErrorStatusClick={onErrorStatusClick}
-                            onObstacleStatusClick={onObstacleStatusClick}
-                            onCooperativeStartClick={onCooperativeStartClick}
-                            onCooperativeStopClick={onCooperativeStopClick} />
-                    </div>
-                    <div className="response_component_container">
-                        <ResponseComponent
-                            responseData={responseData} />
-                    </div>
+                <div className="response_component_container">
+                    <ResponseComponent
+                        responseData={responseData} />
                 </div>
             </div>
         </div>

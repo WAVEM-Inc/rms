@@ -2,17 +2,18 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    gap: 20px;
-    border: 2px solid #ccc;
-    padding: 20px;
+    gap: 5px;
+    /* border: 2px solid #ccc; */
     overflow: auto;
-    width: 1470px;
-    height: 850px;
+    width: 1455px;
+    height: 870px;
+    justify-content: center;
+    align-items: center;
 }
 
 @media all and (max-width: 1920px) {
     .response_callback_grid_container {
-        width: 1600px;
+        width: 1455px;
     }
 }
 
