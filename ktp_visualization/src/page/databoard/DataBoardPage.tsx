@@ -193,23 +193,9 @@ export default function DataBoardPage() {
             <div className="top_component_container">
                 <TopComponents />
             </div>
-            <div className="main_container">
-                <div className="request_component_container">
-                    <RequestComponent
-                        onControlGraphSyncClick={onControlGraphSyncClick}
-                        onControlMoveToDestClick={onControlMoveToDestClick}
-                        onControlMsCompleteClick={onControlMsCompleteClick}
-                        onMissionClick={onMissionClick}
-                        onDetectedObjectClick={onDetectedObjectClick}
-                        onErrorStatusClick={onErrorStatusClick}
-                        onObstacleStatusClick={onObstacleStatusClick}
-                        onCooperativeStartClick={onCooperativeStartClick}
-                        onCooperativeStopClick={onCooperativeStopClick} />
-                </div>
-                <div className="response_component_container">
-                    <ResponseComponent
-                        responseData={responseData} />
-                </div>
+            <div className="response_component_container">
+                <ResponseComponent
+                    responseData={responseData} />
             </div>
         </div>
     );

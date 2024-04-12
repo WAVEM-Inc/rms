@@ -15,6 +15,8 @@ from ktp_data_msgs.msg import ControlReport;
 from ktp_data_msgs.msg import GraphList;
 from ktp_data_msgs.msg import ObstacleDetect;
 from ktp_data_msgs.msg import LiDARSignal;
+from route_msgs.msg import Path;
+from sensor_msgs.msg import NavSatFix;
 from ktp_dummy_interface.application.mqtt import Client;
 from ktp_dummy_interface.application.mqtt import filter_empty_values;
 from typing import Dict;
@@ -28,6 +30,8 @@ MQTT_CONTROL_REPORT_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/control_repor
 MQTT_GRAPH_LIST_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/graph_list";
 MQTT_OBSTACLE_DETECT_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/obstacle_detect";
 MQTT_LIDAR_SIGNAL_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/lidar_signal";
+MQTT_PATH_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/path";
+MQTT_GPS_RESPONSE_TOPIC: str = "/rms/ktp/dummy/response/gps";
 
 RBT_STATUS_TOPIC_NAME: str = "/rms/ktp/data/rbt_status";
 SERVICE_STATUS_TOPIC_NAME: str = "/rms/ktp/data/service_status";
@@ -36,6 +40,8 @@ CONTROL_REPORT_TOPIC_NAME: str = "/rms/ktp/data/control_report";
 GRAPH_LIST_TOPIC_NAME: str = "/rms/ktp/data/graph_list";
 OBSTACLE_DETECT_TOPIC_NAME: str = "/rms/ktp/data/obstacle_detect";
 LIDAR_SIGNAL_TOPIC_NAME: str = "/rms/ktp/data/lidar_signal";
+PATH_TOPIC_NAME: str = "/rms/ktp/task/notify/path";
+UBLOX_FIX_TOPIC_NAME: str = "/sensor/ublox/fix";
 
 
 class ResponseBridge:
@@ -107,6 +113,24 @@ class ResponseBridge:
             callback_group=lidar_signal_subscription_cb_group,
             callback=self.lidar_signal_subscription_cb
         );
+        
+        path_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__path_subscription: Subscription = self.__node.create_subscription(
+            topic=PATH_TOPIC_NAME,
+            msg_type=Path,
+            qos_profile=qos_profile_system_default,
+            callback_group=path_subscription_cb_group,
+            callback=self.path_subscription_cb
+        );
+        
+        ublox_fix_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__ublox_fix_subscription: Subscription = self.__node.create_subscription(
+            topic=UBLOX_FIX_TOPIC_NAME,
+            msg_type=NavSatFix,
+            qos_profile=qos_profile_system_default,
+            callback_group=ublox_fix_subscription_cb_group,
+            callback=self.ublox_fix_subscription_cb
+        );
 
     def rbt_status_subscription_cb(self, rbt_status_cb: Status) -> None:
         try:
@@ -176,6 +200,26 @@ class ResponseBridge:
             self.__mqtt_client.publish(topic=MQTT_LIDAR_SIGNAL_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
         except message_conversion.NonexistentFieldException as nefe:
             self.__log.error(f"{MQTT_LIDAR_SIGNAL_RESPONSE_TOPIC} : {nefe}");
+            return;
+    
+    def path_subscription_cb(self, path_cb: Path) -> None:
+        try:
+            properties: Any = message_conversion.extract_values(inst=path_cb);
+            properties_filtered: Any = filter_empty_values(properties);
+            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
+            self.__mqtt_client.publish(topic=MQTT_PATH_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
+        except message_conversion.NonexistentFieldException as nefe:
+            self.__log.error(f"{MQTT_PATH_RESPONSE_TOPIC} : {nefe}");
+            return;
+        
+    def ublox_fix_subscription_cb(self, ublox_fix_cb: NavSatFix) -> None:
+        try:
+            properties: Any = message_conversion.extract_values(inst=ublox_fix_cb);
+            properties_filtered: Any = filter_empty_values(properties);
+            properties_filtered: str = json.dumps({k: v for k, v in properties_filtered.items() if v is not None});
+            self.__mqtt_client.publish(topic=MQTT_GPS_RESPONSE_TOPIC, payload=properties_filtered, qos=0);
+        except message_conversion.NonexistentFieldException as nefe:
+            self.__log.error(f"{MQTT_GPS_RESPONSE_TOPIC} : {nefe}");
             return;
 
 

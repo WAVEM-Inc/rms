@@ -1,55 +1,81 @@
 import { useEffect, useRef, useState } from "react";
 import "./MapComponents.css";
-import {
-    RenderAfterNavermapsLoaded,
-    NaverMap,
-    Marker,
-    Polyline,
-    Polygon,
-} from 'react-naver-maps';
 
-const MapComponent = () => {
+interface MapComponentProps {
+    pathData: any;
+    gpsData: any;
+}
+
+const MapComponent = ({ pathData, gpsData }: MapComponentProps) => {
     const { naver } = window;
     const mapRef: React.MutableRefObject<null> = useRef(null);
+    let map: naver.maps.Map;
+
+    let pathMarkerArray: Array<naver.maps.Marker> = [];
+
+    const addPathMarker = (node: any): any => {
+        console.info(`position lat : ${node.position.latitude}, lon : ${node.position.longitude}`);
+
+        const marker: naver.maps.Marker = new naver.maps.Marker({
+            position: new naver.maps.LatLng(node.position.latitude, node.position.longitude),
+            // position: new naver.maps.LatLng(37.3060542, 127.2399165),
+            map: map,
+            title: node.node_id
+        });
+
+        return marker;
+    }
 
     useEffect(() => {
         if (mapRef.current && naver) {
-            const map: naver.maps.Map = new naver.maps.Map(mapRef.current, {
-                center: new naver.maps.LatLng(37.3060542, 127.2399165),
+            map = new naver.maps.Map(mapRef.current, {
+                // center: new naver.maps.LatLng(37.3060542, 127.2399165),
+                center: new naver.maps.LatLng(36.1137155, 128.3676005),
                 mapTypeId: naver.maps.MapTypeId.HYBRID,
-                zoom: 20
+                zoom: 19
             });
 
-            const marker1: naver.maps.Marker = new naver.maps.Marker({
-                position: new naver.maps.LatLng(37.3060542, 127.2399165),
-                map: map,
-                title: "TEST1"
-            });
+            // if (mapRef.current && naver && gpsData) {
+            //     const marker: naver.maps.Marker = new naver.maps.Marker({
+            //         position: new naver.maps.LatLng(gpsData.latitude, gpsData.longitude),
+            //         // position: new naver.maps.LatLng(37.3060542, 127.2399165),
+            //         map: map,
+            //         title: "Current"
+            //     });
+            // }
 
-            const marker2: naver.maps.Marker = new naver.maps.Marker({
-                position: new naver.maps.LatLng(37.3061042, 127.2399165),
-                map: map,
-                title: "TEST2"
-            });
+            if (mapRef.current && naver && pathData) {
+                const nodeList: Array<any> = pathData.node_list;
 
-            naver.maps.Event.addListener(marker1, "click", () => {
-                console.info(`marker : ${marker1.getTitle()}`);
-                console.info(`marker 1 : ${marker1.getPosition().x}`);
-            });
+                for (const node of nodeList) {
+                    console.info(`Node : ${JSON.stringify(node)}`);
+                    const marker: naver.maps.Marker = addPathMarker(node);
+                    pathMarkerArray.push(marker);
+                }
 
-            const polyline: naver.maps.Polyline = new naver.maps.Polyline({
-                map: map,
-                path: [
-                    marker1.getPosition(),
-                    marker2.getPosition()
-                ]
-            });
+                let path: Array<any> = [];
+                for (const pathMarker of pathMarkerArray) {
+                    path.push(pathMarker.getPosition());
+                }
+
+                const polyline: naver.maps.Polyline = new naver.maps.Polyline({
+                    map: map,
+                    path: path
+                });
+            }
         }
-    }, []);
+    }, [naver, pathData]);
+
+    useEffect(() => {
+        console.info(`gps : ${JSON.stringify(gpsData)}`);
+    }, [gpsData]);
+
 
     return (
         <div className="map_components">
-            <div ref={mapRef} id="map" style={{ width: "1400px", height: "800px" }} />
+            <div className="map_container">
+                <div ref={mapRef} id="map" />
+            </div>
         </div>
     );
 };
