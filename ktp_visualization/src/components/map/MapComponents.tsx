@@ -9,8 +9,9 @@ interface MapComponentProps {
 const MapComponent = ({ pathData, gpsData }: MapComponentProps) => {
     const { naver } = window;
     const mapRef: React.MutableRefObject<null> = useRef(null);
-    let map: naver.maps.Map;
+    let map: naver.maps.Map | null = null;
 
+    let gpsMarkerArray: Array<naver.maps.Marker> = [];
     let pathMarkerArray: Array<naver.maps.Marker> = [];
 
     const addPathMarker = (node: any): any => {
@@ -26,25 +27,47 @@ const MapComponent = ({ pathData, gpsData }: MapComponentProps) => {
         return marker;
     }
 
+    const [currentGps, setCurrentGps] = useState<any>({
+        latitude: 0.0,
+        longitude: 0.0
+    });
+
     useEffect(() => {
-        if (mapRef.current && naver) {
-            map = new naver.maps.Map(mapRef.current, {
+        console.info(`gps : ${JSON.stringify(gpsData)}`);
+
+        if (gpsData) {
+            setCurrentGps({
+                latitude: gpsData.latitude,
+                longitude: gpsData.longitude
+            });
+        }
+    }, [gpsData]);
+
+    useEffect(() => {
+        if (mapRef.current && naver && map == null) {
+            const mapOpts: any = {
                 // center: new naver.maps.LatLng(37.3060542, 127.2399165),
                 center: new naver.maps.LatLng(36.1137155, 128.3676005),
                 mapTypeId: naver.maps.MapTypeId.HYBRID,
                 zoom: 19
-            });
+            }
+            map = new naver.maps.Map(mapRef.current, mapOpts);
+        }
+        
+        if (mapRef.current && naver) {
+            if (currentGps) {
+                const newMarker: naver.maps.Marker = new naver.maps.Marker({
+                    position: new naver.maps.LatLng(currentGps.latitude, currentGps.longitude),
+                    map: map,
+                    title: ""
+                });
 
-            // if (mapRef.current && naver && gpsData) {
-            //     const marker: naver.maps.Marker = new naver.maps.Marker({
-            //         position: new naver.maps.LatLng(gpsData.latitude, gpsData.longitude),
-            //         // position: new naver.maps.LatLng(37.3060542, 127.2399165),
-            //         map: map,
-            //         title: "Current"
-            //     });
-            // }
+                if (newMarker.getMap()) {
+                    return;
+                }
+            }
 
-            if (mapRef.current && naver && pathData) {
+            if (pathData) {
                 const nodeList: Array<any> = pathData.node_list;
 
                 for (const node of nodeList) {
@@ -64,17 +87,17 @@ const MapComponent = ({ pathData, gpsData }: MapComponentProps) => {
                 });
             }
         }
-    }, [naver, pathData]);
-
-    useEffect(() => {
-        console.info(`gps : ${JSON.stringify(gpsData)}`);
-    }, [gpsData]);
-
+    }, [naver, currentGps, pathData]);
 
     return (
-        <div className="map_components">
-            <div className="map_container">
-                <div ref={mapRef} id="map" />
+        <div className={"map_components"}>
+            <div className={"map_container"}>
+                <div ref={mapRef} id={"map"} />
+                <div className={"gps_data_container"}>
+                    longitude : {currentGps.longitude}
+                    <br></br>
+                    latitude : {currentGps.latitude}
+                </div>
             </div>
         </div>
     );

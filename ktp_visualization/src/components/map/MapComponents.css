@@ -1,5 +1,20 @@
+.map_container {
+    display: flex;
+    justify-content: space-between;
+    width: 1920px;
+    height: 800px;
+    border-bottom: 2px solid #ccc;
+}
+
 #map {
     width: 1600px;
-    height: 800px;
-    border-radius: 20px;
+    height: 100%;
+}
+
+.gps_data_container {
+    margin: 0 auto;
+    align-items: center;
+    width: 320px;
+    height: 100px;
+    border-bottom: 2px solid #ccc;
 }
