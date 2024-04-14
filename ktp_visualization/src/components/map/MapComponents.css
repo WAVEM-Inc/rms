@@ -1,8 +1,8 @@
 .map_container {
     display: flex;
     justify-content: space-between;
-    width: 1920px;
-    height: 800px;
+    width: 1870px;
+    height: 750px;
     border-bottom: 2px solid #ccc;
 }
 
