@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import "./MapComponents.css";
-import * as currSVG from "../../assets/img/location-dot-solid.svg";
 
 interface MapComponentProps {
     pathData: any;
@@ -71,10 +70,21 @@ const MapComponent = ({ pathData, gpsData }: MapComponentProps) => {
             customControl.setMap(map);
 
             naver.maps.Event.addDOMListener(customControl.getElement(), "click", function () {
-                map!.setCenter(blueSpaceCoord);
+                if (currentMode === "KEC") {
+                    setCurrentMode("BlueSpace");
+                    map!.setCenter(blueSpaceCoord);
+                }
+                else if (currentMode === "BlueSpace") {
+                    setCurrentMode("KEC");
+                    map!.setCenter(kecCoord);
+                }
             });
         });
     }
+
+    useEffect(() => {
+
+    }, [currentMode]);
     
     const addPathMarker = (node: any): any => {
         console.info(`position lat : ${node.position.latitude}, lon : ${node.position.longitude}`);
