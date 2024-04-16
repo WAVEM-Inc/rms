@@ -21,10 +21,11 @@ const MapComponent = ({ pathData, gpsData }: MapComponentProps) => {
 
     const [currentMode, setCurrentMode] = useState<string>("KEC");
 
-    const initializeMap = (): void => {
-        const kecCoord: naver.maps.LatLng = new naver.maps.LatLng(36.1137155, 128.3676005);
-        const blueSpaceCoord: naver.maps.LatLng = new naver.maps.LatLng(37.3060542, 127.2399165);
+    const wkValveCoord: naver.maps.LatLng = new naver.maps.LatLng(35.157851, 128.858111);
+    const blueSpaceCoord: naver.maps.LatLng = new naver.maps.LatLng(37.3060542, 127.2399165);
+    const kecCoord: naver.maps.LatLng = new naver.maps.LatLng(36.1137155, 128.3676005);
 
+    const initializeMap = (): void => {
         const openStreetMapType: naver.maps.ImageMapType = new naver.maps.ImageMapType({
             name: "OSM",
             minZoom: 0,
@@ -44,7 +45,6 @@ const MapComponent = ({ pathData, gpsData }: MapComponentProps) => {
         });
 
         const mapOpts: any = {
-            // center: new naver.maps.LatLng(37.3060542, 127.2399165),
             center: kecCoord,
             mapTypeId: naver.maps.MapTypeId.HYBRID,
             zoom: 19,
@@ -61,37 +61,55 @@ const MapComponent = ({ pathData, gpsData }: MapComponentProps) => {
         map = new naver.maps.Map(mapRef.current, mapOpts);
         map!.mapTypes.set("osm", openStreetMapType);
 
-        let moveToBlueSpace: string = `<button href="#" id="btn_mylct" class="btn_mylct"><span class="spr_trff spr_ico_mylct">${currentMode}</span></button>`;
         naver.maps.Event.once(map, 'init', function () {
-            const customControl: naver.maps.CustomControl = new naver.maps.CustomControl(moveToBlueSpace, {
+            const controlHtml: string =
+            `
+            <div style="position: absolute; z-index: 100; margin: 0px; padding: 0px; pointer-events: none; top: 0px;">
+                <div style="border: 0px; margin: 0px; padding: 0px; pointer-events: none; float: left;"">
+                    <div style="position: relative; z-index: 69; margin: 10px; pointer-events: auto;">
+                        <ul class="move_btn_ul">
+                            <li class="move_btn_li"><button class="move_btn">부산 원광밸브</button></li>
+                            <li class="move_btn_li"><button class="move_btn">용인 블루스페이스</button></li>
+                            <li class="move_btn_li"><button class="move_btn">KEC 구미</button></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            `;
+            const moveControls: naver.maps.CustomControl = new naver.maps.CustomControl(controlHtml, {
                 position: naver.maps.Position.TOP_LEFT
             });
+            moveControls.setMap(map);
 
-            customControl.setMap(map);
+            naver.maps.Event.addDOMListener(moveControls.getElement(), 'click', function (e: Event) {
+                const target: HTMLElement = e.target as HTMLElement;
+                const locationName: string = target.textContent || "";
 
-            naver.maps.Event.addDOMListener(customControl.getElement(), "click", function () {
-                if (currentMode === "KEC") {
-                    setCurrentMode("BlueSpace");
-                    map!.setCenter(blueSpaceCoord);
-                }
-                else if (currentMode === "BlueSpace") {
-                    setCurrentMode("KEC");
-                    map!.setCenter(kecCoord);
+                switch (locationName.trim()) {
+                    case "부산 원광밸브":
+                        setCurrentMode("WkValve");
+                        map!.setCenter(wkValveCoord);
+                        break;
+                    case "용인 블루스페이스":
+                        setCurrentMode("BlueSpace");
+                        map!.setCenter(blueSpaceCoord);
+                        break;
+                    case "KEC 구미":
+                        setCurrentMode("KEC");
+                        map!.setCenter(kecCoord);
+                        break;
+                    default:
+                        break;
                 }
             });
         });
     }
 
-    useEffect(() => {
-
-    }, [currentMode]);
-    
     const addPathMarker = (node: any): any => {
         console.info(`position lat : ${node.position.latitude}, lon : ${node.position.longitude}`);
 
         const marker: naver.maps.Marker = new naver.maps.Marker({
             position: new naver.maps.LatLng(node.position.latitude, node.position.longitude),
-            // position: new naver.maps.LatLng(37.3060542, 127.2399165),
             map: map,
             title: node.node_id
         });

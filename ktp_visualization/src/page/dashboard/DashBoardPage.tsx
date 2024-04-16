@@ -28,7 +28,8 @@ export default function DashBoardPage() {
         `${requestTopicFormat}/detected_object`,
         `${requestTopicFormat}/error_status`,
         `${requestTopicFormat}/obstacle/status`,
-        `${requestTopicFormat}/obstacle/cooperative`
+        `${requestTopicFormat}/obstacle/cooperative`,
+        `${requestTopicFormat}/can/emergency`
     ];
 
     const filterJSON = (json: any): any => {
@@ -114,6 +115,16 @@ export default function DashBoardPage() {
         mqttClient!.publish(requiredRequestTopicList[5], obstacleCooperativeJSONStringified);
     }
 
+    const onCanEmergencyClick = (): void => {
+        const newJSON: any = {
+            stop: true
+        };
+
+        const canEmergencyJSONStringified: string = JSON.stringify(newJSON);
+        console.info(`${requiredRequestTopicList[6]} publish with : ${canEmergencyJSONStringified}`);
+        mqttClient!.publish(requiredRequestTopicList[6], canEmergencyJSONStringified);
+    }
+
     const handleResponseMQTTCallback = (mqttClient: MqttClient): void => {
         mqttClient.client.on("message", (topic: string, payload: Buffer, packet: IPublishPacket) => {
             if (topic === "/rms/ktp/dummy/response/path") {
@@ -152,7 +163,8 @@ export default function DashBoardPage() {
                     onErrorStatusClick={onErrorStatusClick}
                     onObstacleStatusClick={onObstacleStatusClick}
                     onCooperativeStartClick={onCooperativeStartClick}
-                    onCooperativeStopClick={onCooperativeStopClick} />
+                    onCooperativeStopClick={onCooperativeStopClick}
+                    onCanEmergencyClick={onCanEmergencyClick} />
             </div>
         </div>
     );
