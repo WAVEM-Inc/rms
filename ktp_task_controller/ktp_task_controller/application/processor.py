@@ -763,9 +763,9 @@ class Processor:
         obstacle_detect.create_time = get_current_time();
         obstacle_detect.event_type = "STOP";
         obstacle_detect.object_id = obstacle_status_cb.obstacle_id;
-        obstacle_detect.event_reason_code = "cooperative_detect";
 
         if obstacle_status_cb.obstacle_status == 2:
+            obstacle_detect.event_reason_code = "cooperative_detect";
             obstacle_detect.is_cooperative = True;
         else:
             obstacle_detect.is_cooperative = False;
