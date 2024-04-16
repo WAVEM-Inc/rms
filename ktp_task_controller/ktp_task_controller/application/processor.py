@@ -764,10 +764,19 @@ class Processor:
         obstacle_detect.event_type = "STOP";
         obstacle_detect.object_id = obstacle_status_cb.obstacle_id;
 
-        if obstacle_status_cb.obstacle_status == 2:
+        obstacle_status: int = obstacle_status_cb.obstacle_status;
+        
+        if obstacle_status == 0:
+            obstacle_detect.event_reason_code = "ahead_detect";
+            obstacle_detect.is_cooperative = False;
+        elif obstacle_status_cb.obstacle_status == 1:
+            obstacle_detect.event_reason_code = "ambient_detect";
+            obstacle_detect.is_cooperative = False;
+        elif obstacle_status_cb.obstacle_status == 2:
             obstacle_detect.event_reason_code = "cooperative_detect";
             obstacle_detect.is_cooperative = True;
         else:
+            obstacle_detect.event_reason_code = "";
             obstacle_detect.is_cooperative = False;
 
         self.__obstacle_detect_publisher.publish(msg=obstacle_detect);
