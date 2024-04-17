@@ -1,6 +1,6 @@
 /ktp_dummy_interface:
   ros__parameters:
-    host: "192.168.56.1"
+    host: "192.168.0.219"
     port: 8883
     client_id: "wavem1234"
     client_keep_alive: 60
