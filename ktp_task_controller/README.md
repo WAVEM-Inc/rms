@@ -7,10 +7,12 @@
   - [Environment](#1-environment)
   - [SetUp Installation](#2-setup-installation)
     - [Prerequisites](#2-1-prerequisites)
-  - [Clone & Build Project](#2-clone--build-project)
-    - [Clone Project](#2-1-clone-project)
-    - [Build Project](#2-2-build-project)
-  - [Launch Check](#3-build-check)
+      - [Install rosbridge_library](#2-1-1-install-rosbridge-library)
+      - [Install pip requirements](#2-1-2-install-pip-requirements)
+  - [Clone & Build Project](#3-clone--build-project)
+    - [Clone Project](#3-1-clone-project)
+    - [Build Project](#3-2-build-project)
+  - [Launch Check](#4-build-check)
 
 
 ## 1. Environment
@@ -30,21 +32,38 @@ Before installing, please ensure the following software is installed and configu
 - [ROS2](https://index.ros.org/doc/ros2/Installation/) version required humble-hawksbill -
   **INSTALL [ROS2 humble-hawksbill](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html)**
 
-## 2. Clone & Build Project
+- [rosbridge_suite](https://github.com/RobotWebTools/rosbridge_suite) version required humble-hawksbill -
+  **INSTALLL [rosbridge_suite](https://github.com/RobotWebTools/rosbridge_suite)**
 
-### 2-1. Clone Project
+- [python3](https://www.python.org/downloads/) version required over than 3.0 - 
+  **INSTALL [python3](https://www.python.org/downloads/)**
+
+### 2-1-1. Install rosbridge-library
+```bash
+sudo apt-get install ros-humble-rosbridge-library
+```
+
+### 2-1-2. Install pip requirements
+```bash
+cd ~/kec_ws/src/rms/ktp_dummy_interface/
+pip install -r pip_requirement.txt
+```
+
+## 3. Clone & Build Project
+
+### 3-1. Clone Project
 ```bash
 cd ~/kec_ws/src/rms/
 git clone https://github.com/WAVEM-Inc/rms.git
 ```
 
-### 2-2. Build Project
+### 3-2. Build Project
 ```bash
 cd ~/kec_ws/src/rms/
 colcon build --packages-select ktp_task_controller
 ```
 
-## 3. Launch Check
+## 4. Launch Check
 ```bash
 source ~/kec_ws/src/rms/install/setup.bash
 ros2 launch ktp_task_controller ktp_task_controller.launch.py

@@ -8,6 +8,12 @@ const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
+declare global {
+  interface Window {
+    naver: any;
+  }
+}
+
 root.render(
   <BrowserRouter>
     <App />

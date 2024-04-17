@@ -1,18 +1,21 @@
 import { IPublishPacket } from "mqtt/*";
 import { useEffect, useState } from "react";
-import MqttClient from "../api/mqttClient";
-import * as controlGraphSyncJSON from "../assets/json/control_graphsync.json";
-import * as controlMoveToDestJSON from "../assets/json/control_movetodest.json";
-import * as controlMsCompleteJSON from "../assets/json/control_movetodest.json";
-import * as detectedObjectJSON from "../assets/json/detected_object.json";
-import * as missionJSON from "../assets/json/mission.json";
-import RequestComponent from "../components/request/RequestComponent";
-import ResponseComponent from "../components/response/ResponseComponent";
-import TopComponents from "../components/top/TopComponent";
-import './DashBoardPage.css';
-import { getCurrentTime } from "../utils/Utils";
+import MqttClient from "../../api/mqttClient";
+import * as controlGraphSyncJSON from "../../assets/json/control_graphsync.json";
+import * as controlMoveToDestJSON from "../../assets/json/control_movetodest.json";
+import * as controlMsCompleteJSON from "../../assets/json/control_mscomplete.json";
+import * as cooperativeStartJSON from "../../assets/json/cooperative_start.json";
+import * as cooperativeStopJSON from "../../assets/json/cooperative_stop.json";
+import * as errorStatusJSON from "../../assets/json/error_status.json";
+import * as missionJSON from "../../assets/json/mission.json";
+import * as obstacleStatusJSON from "../../assets/json/obstacle_status.json";
+import RequestComponent from "../../components/request/RequestComponent";
+import ResponseComponent from "../../components/response/ResponseComponent";
+import TopComponents from "../../components/top/TopComponent";
+import { KTP_DEV_ID, getCurrentTime } from "../../utils/Utils";
+import './DataBoardPage.css';
 
-export default function DashboardPage() {
+export default function DataBoardPage() {
     const [mqttClient, setMqttClient] = useState<MqttClient | undefined>();
     const [responseData, setResponseData] = useState<any>({});
 
@@ -33,7 +36,10 @@ export default function DashboardPage() {
     const requiredRequestTopicList: Array<string> = [
         `${requestTopicFormat}/control`,
         `${requestTopicFormat}/mission`,
-        `${requestTopicFormat}/detected_object`
+        `${requestTopicFormat}/detected_object`,
+        `${requestTopicFormat}/error_status`,
+        `${requestTopicFormat}/obstacle/status`,
+        `${requestTopicFormat}/obstacle/cooperative`
     ];
 
     const filterJSON = (json: any): any => {
@@ -45,6 +51,7 @@ export default function DashboardPage() {
     const onControlGraphSyncClick = (): void => {
         const newJSON: any = filterJSON(controlGraphSyncJSON);
         newJSON.request_time = getCurrentTime();
+        newJSON.control_id = `c${KTP_DEV_ID}${newJSON.request_time}`;
 
         const controlGraphSyncJSONStringified: string = JSON.stringify(newJSON);
         console.info(`${requiredRequestTopicList[0]}[GrapySync] publish with : ${controlGraphSyncJSONStringified}`);
@@ -54,6 +61,7 @@ export default function DashboardPage() {
     const onControlMoveToDestClick = (): void => {
         const newJSON: any = filterJSON(controlMoveToDestJSON);
         newJSON.request_time = getCurrentTime();
+        newJSON.control_id = `c${KTP_DEV_ID}${newJSON.request_time}`;
 
         const controlMoveToDestJSONStringified: string = JSON.stringify(newJSON);
         console.info(`${requiredRequestTopicList[0]}[MoveToDest] publish with : ${controlMoveToDestJSONStringified}`);
@@ -63,6 +71,7 @@ export default function DashboardPage() {
     const onControlMsCompleteClick = (): void => {
         const newJSON: any = filterJSON(controlMsCompleteJSON);
         newJSON.request_time = getCurrentTime();
+        newJSON.control_id = `c${KTP_DEV_ID}${newJSON.request_time}`;
 
         const controlMsCompleteJSONStringified: string = JSON.stringify(newJSON);
         console.info(`${requiredRequestTopicList[0]}[MsComplete] publish with : ${controlMsCompleteJSONStringified}`);
@@ -77,14 +86,43 @@ export default function DashboardPage() {
         console.info(`${requiredRequestTopicList[1]} publish with : ${missionJSONStringified}`);
         mqttClient!.publish(requiredRequestTopicList[1], missionJSONStringified);
     }
-    
-    const onDetectedObjectClick = (): void => {
-        const newJSON: any = filterJSON(detectedObjectJSON);
-        newJSON.request_time = getCurrentTime();
 
-        const detecteObjectJSONStringified: string = JSON.stringify(newJSON);
+    const onDetectedObjectClick = (): void => {
+        const detecteObjectJSONStringified: string = JSON.stringify(errorStatusJSON);
         console.info(`${requiredRequestTopicList[2]} publish with : ${detecteObjectJSONStringified}`);
         mqttClient!.publish(requiredRequestTopicList[2], detecteObjectJSONStringified);
+    }
+
+    const onErrorStatusClick = (): void => {
+        const newJSON: any = filterJSON(errorStatusJSON);
+
+        const errorStatusJSONStringified: string = JSON.stringify(newJSON);
+        console.info(`${requiredRequestTopicList[3]} publish with : ${errorStatusJSONStringified}`);
+        mqttClient!.publish(requiredRequestTopicList[3], errorStatusJSONStringified);
+    }
+
+    const onObstacleStatusClick = (): void => {
+        const newJSON: any = filterJSON(obstacleStatusJSON);
+
+        const obstacleStatusJSONStringified: string = JSON.stringify(newJSON);
+        console.info(`${requiredRequestTopicList[4]} publish with : ${obstacleStatusJSONStringified}`);
+        mqttClient!.publish(requiredRequestTopicList[4], obstacleStatusJSONStringified);
+    }
+
+    const onCooperativeStartClick = (): void => {
+        const newJSON: any = filterJSON(cooperativeStartJSON);
+
+        const obstacleCooperativeJSONStringified: string = JSON.stringify(newJSON);
+        console.info(`${requiredRequestTopicList[5]} publish with : ${obstacleCooperativeJSONStringified}`);
+        mqttClient!.publish(requiredRequestTopicList[5], obstacleCooperativeJSONStringified);
+    }
+
+    const onCooperativeStopClick = (): void => {
+        const newJSON: any = filterJSON(cooperativeStopJSON);
+
+        const obstacleCooperativeJSONStringified: string = JSON.stringify(newJSON);
+        console.info(`${requiredRequestTopicList[5]} publish with : ${obstacleCooperativeJSONStringified}`);
+        mqttClient!.publish(requiredRequestTopicList[5], obstacleCooperativeJSONStringified);
     }
 
     const setUpResponseMQTTConnections = (mqttClient: MqttClient): void => {
@@ -96,43 +134,43 @@ export default function DashboardPage() {
 
     const handleResponseMQTTCallback = (mqttClient: MqttClient): void => {
         mqttClient.client.on("message", (topic: string, payload: Buffer, packet: IPublishPacket) => {
-            if (topic == requiredResponseTopicList[0]) {
+            if (topic === requiredResponseTopicList[0]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     rbt_status: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic === requiredResponseTopicList[1]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     service_status: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic === requiredResponseTopicList[2]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     error_report: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic === requiredResponseTopicList[3]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     control_report: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic === requiredResponseTopicList[4]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     graph_list: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic === requiredResponseTopicList[5]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
                     obstacle_detect: newData
                 }));
-            } else if (topic == requiredResponseTopicList[1]) {
+            } else if (topic === requiredResponseTopicList[6]) {
                 const newData: any = JSON.parse(payload.toString());
                 setResponseData((prevData: any) => ({
                     ...prevData,
@@ -151,20 +189,13 @@ export default function DashboardPage() {
     }, []);
 
     return (
-        <div className="App">
+        <div className="data_board_container">
             <div className="top_component_container">
                 <TopComponents />
             </div>
             <div className="response_component_container">
-                <ResponseComponent responseData={responseData} />
-            </div>
-            <div className="request_component_container">
-                <RequestComponent 
-                onControlGraphSyncClick={onControlGraphSyncClick}
-                onControlMoveToDestClick={onControlMoveToDestClick}
-                onControlMsCompleteClick={onControlMsCompleteClick}
-                onMissionClick={onMissionClick} 
-                onDetectedObjectClick={onDetectedObjectClick} />
+                <ResponseComponent
+                    responseData={responseData} />
             </div>
         </div>
     );

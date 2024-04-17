@@ -5,6 +5,7 @@
 
 #include "manager/request/control/control_manager.hxx"
 #include "manager/request/mission/mission_manager.hxx"
+#include "manager/request/detected_object/detected_object_manager.hxx"
 
 
 #define DEFAULT_QOS 10
@@ -23,6 +24,7 @@ namespace ktp
 
             ktp::data::ControlManager::SharedPtr control_manager_;
             ktp::data::MissionManager::SharedPtr mission_manager_;
+            ktp::data::DetectedObjectManager::SharedPtr detected_object_manager_;
 
         public:
             explicit RequestManager(rclcpp::Node::SharedPtr node);

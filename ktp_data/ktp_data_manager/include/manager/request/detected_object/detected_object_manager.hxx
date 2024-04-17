@@ -5,7 +5,8 @@
 
 #include <ktp_data_msgs/msg/detected_object.hpp>
 
-#define DEFAULT_QOS 10
+#define DEFAULT_QOS 0
+
 #define DETECTED_OBJECT_FROM_ITF_TOPIC "/rms/ktp/itf/detected_object"
 #define OBJECT_DETECT_TO_STATE_OBSTACLE_TOPIC "/drive/object_detect"
 
@@ -27,7 +28,6 @@ namespace ktp
 
             rclcpp::CallbackGroup::SharedPtr object_detect_to_state_obstacle_publisher_cb_group_;
             rclcpp::Publisher<ktp_data_msgs::msg::DetectedObject>::SharedPtr object_detect_to_state_obstacle_publisher_;
-            void object_detect_to_state_obstacle_publish(const ktp_data_msgs::msg::DetectedObject::SharedPtr detected_object);
 
         public:
             explicit DetectedObjectManager(rclcpp::Node::SharedPtr node);

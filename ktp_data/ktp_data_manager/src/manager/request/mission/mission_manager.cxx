@@ -3,7 +3,6 @@
 ktp::data::MissionManager::MissionManager(rclcpp::Node::SharedPtr node)
     : node_(node)
 {
-
     this->assign_mission_from_itf_service_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     this->assign_mission_from_itf_service_ = this->node_->create_service<ktp_data_msgs::srv::AssignMission>(
         ASSIGN_MISSION_FROM_ITF_SERVICE_NAME,
@@ -16,6 +15,8 @@ ktp::data::MissionManager::MissionManager(rclcpp::Node::SharedPtr node)
         ASSIGN_MISSION_TO_TASK_CTRL_SERVICE_NAME,
         rmw_qos_profile_services_default,
         this->assign_mission_client_cb_group_);
+
+    RCLCPP_INFO(this->node_->get_logger(), "=============== Request MissionManager initialized ===============");
 }
 
 ktp::data::MissionManager::~MissionManager()

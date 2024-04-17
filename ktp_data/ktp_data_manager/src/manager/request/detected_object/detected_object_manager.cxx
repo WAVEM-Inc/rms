@@ -19,6 +19,8 @@ ktp::data::DetectedObjectManager::DetectedObjectManager(rclcpp::Node::SharedPtr 
         OBJECT_DETECT_TO_STATE_OBSTACLE_TOPIC,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         object_detect_to_state_obstacle_publisher_opts);
+
+    RCLCPP_INFO(this->node_->get_logger(), "=============== Request DetectedObjectManager initialized ===============");
 }
 
 ktp::data::DetectedObjectManager::~DetectedObjectManager()
@@ -27,10 +29,5 @@ ktp::data::DetectedObjectManager::~DetectedObjectManager()
 
 void ktp::data::DetectedObjectManager::detected_object_from_itf_subscription_cb(const ktp_data_msgs::msg::DetectedObject::SharedPtr detected_object_cb)
 {
-    this->object_detect_to_state_obstacle_publish(detected_object_cb);
-}
-
-void ktp::data::DetectedObjectManager::object_detect_to_state_obstacle_publish(const ktp_data_msgs::msg::DetectedObject::SharedPtr detected_object)
-{
-    this->object_detect_to_state_obstacle_publisher_->publish(*(detected_object));
+    this->object_detect_to_state_obstacle_publisher_->publish(*(detected_object_cb));
 }

@@ -19,6 +19,8 @@ ktp::data::LiDARSignalManager::LiDARSignalManager(rclcpp::Node::SharedPtr node)
         LIDAR_SIGNAL_TO_ITF_TOPIC,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         lidar_signal_to_itf_publisher_opts);
+
+    RCLCPP_INFO(this->node_->get_logger(), "=============== Response LiDARSignalManager initialized ===============");
 }
 
 ktp::data::LiDARSignalManager::~LiDARSignalManager()
@@ -29,7 +31,7 @@ void ktp::data::LiDARSignalManager::obstacle_cooperative_subscription_cb(const s
 {
     const std::string &obstacle_cooperative_flag = obstacle_cooperative_cb->data;
 
-    RCLCPP_INFO(this->node_->get_logger(), "LiDAR Signal obstacle_cooperative_flag : [%s]", obstacle_cooperative_flag);
+    RCLCPP_INFO(this->node_->get_logger(), "LiDAR Signal obstacle_cooperative_flag : [%s]", obstacle_cooperative_flag.c_str());
     this->lidar_signal_to_itf_publish(obstacle_cooperative_flag);
 }
 

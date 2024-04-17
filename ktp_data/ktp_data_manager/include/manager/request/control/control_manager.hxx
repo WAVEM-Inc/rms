@@ -34,9 +34,6 @@ namespace ktp
             rclcpp::Node::SharedPtr node_;
             bool mission_in_progress_flag_ = false;
 
-            ktp::data::GraphListManager::SharedPtr graph_list_manager_;
-            ktp::data::ControlReportManager::SharedPtr control_report_manager_;
-
             rclcpp::CallbackGroup::SharedPtr assign_control_from_itf_service_cb_group_;
             rclcpp::Service<ktp_data_msgs::srv::AssignControl>::SharedPtr assign_control_from_itf_service_;
             void assign_control_from_itf_service_cb(

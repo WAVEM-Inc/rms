@@ -14,6 +14,7 @@ from typing import Any;
 from std_msgs.msg import String;
 from ktp_data_msgs.msg import Mission;
 from ktp_data_msgs.srv import AssignMission;
+from ktp_interface.tcp.application.service import mission_callback_flag;
 
 
 DATA_MANAGER_NODE_NAME: str = "ktp_data_manager";
@@ -35,12 +36,12 @@ class MissionManager:
 
     def deliver_mission_callback_json(self, mission_callback_json: Any) -> None:
         try:
+            self.__node.get_logger().info(
+                f"Mission Callback From KTP : {json.dumps(obj=mission_callback_json, indent=4)}");
             mission: Mission = message_conversion.populate_instance(msg=mission_callback_json, inst=Mission());
-            self.__node.get_logger().info(f"Mission Callback From KTP : {json.dumps(obj=message_conversion.extract_values(inst=mission), indent=4)}");
             self.__assign_mission_request(mission=mission);
-
         except message_conversion.NonexistentFieldException as nefe:
-            self.__log.error(f"{mqtt_topic} : {nefe}");
+            self.__node.get_logger().error(f"Mission Callback : {nefe}");
             return;
 
     def __assign_mission_request(self, mission: Mission) -> None:

@@ -10,6 +10,8 @@ ktp::data::ResponseManager::ResponseManager(rclcpp::Node::SharedPtr node)
     this->graph_list_manager_ = std::make_shared<ktp::data::GraphListManager>(this->node_);
     this->obstacle_detect_manager_ = std::make_shared<ktp::data::ObstacleDetectManager>(this->node_);
     this->lidar_signal_manager_ = std::make_shared<ktp::data::LiDARSignalManager>(this->node_);
+
+    RCLCPP_INFO(this->node_->get_logger(), "=============== Response Manager initialized ===============");
 }
 
 ktp::data::ResponseManager::~ResponseManager()

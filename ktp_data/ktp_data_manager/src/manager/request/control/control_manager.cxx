@@ -3,9 +3,6 @@
 ktp::data::ControlManager::ControlManager(rclcpp::Node::SharedPtr node)
     : node_(node)
 {
-    this->graph_list_manager_ = std::make_shared<ktp::data::GraphListManager>(this->node_);
-    this->control_report_manager_ = std::make_shared<ktp::data::ControlReportManager>(this->node_);
-
     this->assign_control_from_itf_service_cb_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     this->assign_control_from_itf_service_ = this->node_->create_service<ktp_data_msgs::srv::AssignControl>(
         ASSIGN_CONTROL_FROM_ITF_SERVICE_NAME,
@@ -18,6 +15,8 @@ ktp::data::ControlManager::ControlManager(rclcpp::Node::SharedPtr node)
         ASSIGN_CONTROL_TO_TASK_CTRL_SERVICE_NAME,
         rmw_qos_profile_services_default,
         this->assign_control_to_task_ctrl_service_client_cb_group_);
+
+    RCLCPP_INFO(this->node_->get_logger(), "=============== Request ControlManager initialized ===============");
 }
 
 ktp::data::ControlManager::~ControlManager()

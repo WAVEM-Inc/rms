@@ -19,6 +19,8 @@ ktp::data::ErrorReportManager::ErrorReportManager(rclcpp::Node::SharedPtr node)
         ERROR_REPORT_TO_ITF_TOPIC,
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         error_report_publisher_opts);
+    
+    RCLCPP_INFO(this->node_->get_logger(), "=============== Response ErrorReportManager initialized ===============");
 }
 
 ktp::data::ErrorReportManager::~ErrorReportManager()

@@ -28,6 +28,7 @@ from ktp_data_msgs.srv import AssignControl;
 from ktp_data_msgs.msg import GraphList;
 from ktp_data_msgs.msg import ControlReportData;
 from ktp_data_msgs.msg import ControlReportDataGraphList;
+from ktp_data_msgs.msg import ObstacleDetect;
 from std_msgs.msg import String;
 from path_graph_msgs.srv import Path;
 from path_graph_msgs.srv import Graph;
@@ -35,6 +36,7 @@ from sensor_msgs.msg import NavSatFix;
 from route_msgs.action import RouteToPose;
 from action_msgs.msg import GoalStatus;
 import route_msgs.msg as route;
+import obstacle_msgs.msg as obstacle;
 from typing import Any;
 from typing import Tuple;
 from ktp_task_controller.utils import ros_message_dumps;
@@ -51,8 +53,11 @@ NOTIFY_NAVIGATION_STATUS_TOPIC_NAME: str = "/rms/ktp/task/notify/navigation/stat
 ERROR_REPORT_TOPIC_NAME: str = "/rms/ktp/data/notify/error/status";
 ASSIGN_CONTROL_SERVICE_NAME: str = f"/{NODE_NAME}/assign/control";
 NOTIFY_CONTROL_REPORT_TOPIC_NAME: str = "/rms/ktp/task/notify/control/report";
+NOTIFY_OBSTACLE_DETECT_TOPIC_NAME: str = "/rms/ktp/task/notify/obstacle_detect";
 PATH_GRAPH_GRAPH_SERVICE_NAME: str = "/path_graph_msgs/graph";
 GRAPH_LIST_TOPIC: str = "/rms/ktp/task/notify/graph_list";
+DRIVE_OBSTACLE_TOPIC: str = "/drive/obstacle/event";
+NOTIFY_PATH_TOPIC: str = "/rms/ktp/task/notify/path";
 
 CONTROL_CODE_STOP: str = "stop";
 CONTROL_CODE_RELEASE: str = "release";
@@ -97,6 +102,7 @@ DRIVE_STATUS_DRIVE_FAILED: int = 5;
 DRIVE_STATUS_MISSION_IMPOSSIBLE: int = 14;
 
 KTP_DEVICE_ID: str = "KECDSEMITB001";
+MAP_ID: str = "966";
 
 
 class Processor:
@@ -212,6 +218,31 @@ class Processor:
             qos_profile=qos_profile_system_default
         );
 
+        obstacle_status_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__obstacle_status_subscription: Subscription = self.__node.create_subscription(
+            topic=DRIVE_OBSTACLE_TOPIC,
+            msg_type=obstacle.Status,
+            qos_profile=qos_profile_system_default,
+            callback_group=obstacle_status_subscription_cb_group,
+            callback=self.obstacle_status_subscription_cb
+        );
+
+        obstacle_detect_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__obstacle_detect_publisher: Publisher = self.__node.create_publisher(
+            topic=NOTIFY_OBSTACLE_DETECT_TOPIC_NAME,
+            msg_type=ObstacleDetect,
+            qos_profile=qos_profile_system_default,
+            callback_group=obstacle_detect_publisher_cb_group
+        );
+        
+        notify_path_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__notify_path_publisher: Publisher = self.__node.create_publisher(
+            topic=NOTIFY_PATH_TOPIC,
+            msg_type=route.Path,
+            qos_profile=qos_profile_system_default,
+            callback_group=notify_path_publisher_cb_group  
+        );
+
     def assign_mission_service_cb(self, request: AssignMission.Request, response: AssignMission.Response) -> AssignMission.Response:
         request_mission_json: str = ros_message_dumps(message=request.mission);
         self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} request\n{request_mission_json}");
@@ -230,6 +261,7 @@ class Processor:
                 request_mission_json = "";
                 self.__mission = None;
                 response.result = False;
+                self.error_report_publish(error_code="451");
             else:
                 self.command_navigation_with_path();
                 response.result = True;
@@ -259,6 +291,7 @@ class Processor:
                 set_to_source_flag(flag=False);
                 set_to_dest_flag(flag=True);
                 set_returning_flag(flag=False);
+                self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} To Dest Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
                 self.command_navigation_with_path();
                 self.control_report_publish(control=control, control_type="control",response_code=201);
                 response.result = True;
@@ -271,6 +304,7 @@ class Processor:
                 set_to_source_flag(flag=False);
                 set_to_dest_flag(flag=False);
                 set_returning_flag(flag=True);
+                self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} Return Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
                 self.command_navigation_with_path();
                 self.control_report_publish(control=control, control_type="control", response_code=201);
                 response.result = True;
@@ -280,6 +314,7 @@ class Processor:
             if graph_sync_result is not None:
                 try:
                     graph_list: GraphList = message_conversion.populate_instance(msg=json.loads(graph_sync_result.graph_list), inst=GraphList());
+                    graph_list.send_id = control.control_id;
                     self.__log.info(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} Graph List\n{ros_message_dumps(message=graph_list)}");
                     self.__graph_list_publisher.publish(msg=graph_list);
                     control_report_data: dict = {
@@ -309,11 +344,7 @@ class Processor:
             if control_type == "control":
                 control_report.control_type = control_type;
             elif control_type == "graph":
-                control_report.control_type = "";
-
-                control_report_data_graph_list: list[ControlReportDataGraphList] = [];
-                control_report_data_graph_list.append(message_conversion.populate_instance(msg=control_data, inst=ControlReportDataGraphList()));
-                control_report.data.graph_list = control_report_data_graph_list;
+                control_report.control_type = "control";
 
             self.__control_report_publisher.publish(msg=control_report);
         except TypeError as te:
@@ -374,6 +405,13 @@ class Processor:
 
                     self.__log.info(
                         f"{PATH_GRAPH_PATH_SERVICE_NAME} To Source Path response : {ros_message_dumps(message=to_source_request_response)}, size : {self.__path_response_list_size}");
+                    
+                    current_node_list: list[route.Node] = self.__path_response.path.node_list;
+                    self.__drive_current = (
+                        current_node_list[self.__route_to_pose_goal_index].node_id,
+                        current_node_list[self.__path_response_list_size - 1].node_id);
+                    
+                    self.notify_path_publish();
 
                     """
                     #######################################
@@ -418,6 +456,13 @@ class Processor:
 
                     self.__log.info(
                         f"{PATH_GRAPH_PATH_SERVICE_NAME} To Dest Path response : {ros_message_dumps(message=to_dest_path_response)}, size : {self.__path_response_list_size}");
+                    
+                    current_node_list: list[route.Node] = self.__path_response.path.node_list;
+                    self.__drive_current = (
+                        current_node_list[self.__route_to_pose_goal_index].node_id,
+                        current_node_list[self.__path_response_list_size - 1].node_id);
+                    
+                    self.notify_path_publish();
 
                     """
                     #######################################
@@ -459,6 +504,13 @@ class Processor:
 
                     self.__log.info(
                         f"{PATH_GRAPH_PATH_SERVICE_NAME} Returning Path response : {ros_message_dumps(message=returning_path_response)}, size : {self.__path_response_list_size}");
+                    
+                    current_node_list: list[route.Node] = self.__path_response.path.node_list;
+                    self.__drive_current = (
+                        current_node_list[self.__route_to_pose_goal_index].node_id,
+                        current_node_list[self.__path_response_list_size - 1].node_id);
+                    
+                    self.notify_path_publish();
 
                     """
                     #######################################
@@ -524,13 +576,6 @@ class Processor:
         if status_code == 1001:  # 출발
             # 정상 주행 중 : 1
             self.__drive_status = DRIVE_STATUS_ON_DRIVE;
-            current_node_list: list[route.Node] = self.__path_response.path.node_list;
-            self.__drive_current = (
-                current_node_list[self.__route_to_pose_goal_index].node_id,
-                current_node_list[self.__route_to_pose_goal_index + 1].node_id);
-            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Feedback Current Drive Status\n\t"
-                            f"Drive Status : {self.__drive_status}\n\t"
-                            f"Drive Current: {self.__drive_current}");
 
             if to_source_flag is True and to_dest_flag is False and returning_flag is False:
                 if self.__route_to_pose_goal_index == 0:
@@ -578,10 +623,6 @@ class Processor:
                 is_source_arrived: bool = (self.__route_to_pose_goal_index + 1 == self.__path_response_list_size - 1);
                 if is_source_arrived:
                     self.__drive_status = DRIVE_STATUS_DRIVE_FINISHED;
-                    current_node_list: list[route.Node] = self.__path_response.path.node_list;
-                    self.__drive_current = (
-                        current_node_list[self.__route_to_pose_goal_index].node_id,
-                        current_node_list[self.__route_to_pose_goal_index + 1].node_id);
 
                     self.__route_to_pose_goal_index = 0;
                     self.notify_mission_status_publish(status="SourceArrived");
@@ -590,6 +631,8 @@ class Processor:
                     returning_flag = False;
 
                     self.__log.info(f"==================================== Source Arrived ====================================");
+                    self.__log.info(f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
+                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tdrive_current : {self.__drive_current}");
                 else:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
                     self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} To Source will proceed Next Goal [{self.__route_to_pose_goal_index}]");
@@ -601,10 +644,6 @@ class Processor:
                 is_dest_arrived: bool = (self.__route_to_pose_goal_index + 1 == self.__path_response_list_size - 1);
                 if is_dest_arrived:
                     self.__drive_status = DRIVE_STATUS_DRIVE_FINISHED;
-                    current_node_list: list[route.Node] = self.__path_response.path.node_list;
-                    self.__drive_current = (
-                        current_node_list[self.__route_to_pose_goal_index].node_id,
-                        current_node_list[self.__route_to_pose_goal_index + 1].node_id);
 
                     self.__route_to_pose_goal_index = 0;
                     self.notify_mission_status_publish(status="DestArrived");
@@ -613,6 +652,8 @@ class Processor:
                     returning_flag = False;
 
                     self.__log.info(f"==================================== Dest Arrived ====================================");
+                    self.__log.info(f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
+                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tdrive_current : {self.__drive_current}");
                 else:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
                     self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} To Dest will proceed Next Goal [{self.__route_to_pose_goal_index}]");
@@ -623,17 +664,19 @@ class Processor:
                 """
                 is_returning_finished: bool = (self.__route_to_pose_goal_index + 1 == self.__path_response_list_size - 1);
                 if is_returning_finished:
-                    self.__drive_status = DRIVE_STATUS_WAIT;
-                    self.__drive_current = ("", "");
-
                     self.__route_to_pose_goal_index = 0;
                     self.__path_response = None;
+                    self.__drive_status = DRIVE_STATUS_WAIT;
+                    self.__drive_current = ("", "");
                     self.__path_response_list_size = 0;
                     self.__mission = None;
                     to_source_flag = False;
                     to_dest_flag = False;
                     returning_flag = False;
+
                     self.__log.info(f"==================================== Returning Finished ====================================");
+                    self.__log.info(f"Flags\n\tto_source : {to_source_flag}\n\tto_dest : {to_dest_flag}\n\treturning : {returning_flag}");
+                    self.__log.info(f"Drive\n\tdrive_status : {self.__drive_status}\n\tdrive_current : {self.__drive_current}");
                 else:
                     self.__route_to_pose_goal_index = self.__route_to_pose_goal_index + 1;
                     self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Returning will proceed Next Goal [{self.__route_to_pose_goal_index}]");
@@ -662,6 +705,7 @@ class Processor:
         service_status_task_data.map_id = mission_task_data.map_id;
         service_status_task_data.source = mission_task_data.source;
         service_status_task_data.goal = mission_task_data.goal;
+        service_status_task_data.lock_status = "0";
 
         service_status.task = [service_status_task];
         service_status_task.task_data = service_status_task_data;
@@ -673,7 +717,11 @@ class Processor:
     def notify_navigation_status_publish(self) -> None:
         status: Status = Status();
 
-        status.map_id = self.__path_response.map_id;
+        # if self.__path_response is not None:
+        #     status.map_id = self.__path_response.map_id;
+        # else:
+        #     status.map_id = "";
+        status.map_id = MAP_ID;
         status.drive_status = self.__drive_status;
 
         status.from_node = self.__drive_current[0];
@@ -684,6 +732,10 @@ class Processor:
     def notify_mission_timer_cb(self) -> None:
         if self.__path_response is not None:
             self.notify_navigation_status_publish();
+        elif self.__path_response is None:
+            self.notify_navigation_status_publish();
+        else:
+            return;
 
     def graph_sync_request(self) -> Graph.Response | None:
         graph_request: Graph.Request = Graph.Request();
@@ -700,6 +752,42 @@ class Processor:
         else:
             self.__log.error(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} Service Server is Not Ready...");
             return None;
+
+    def error_report_publish(self, error_code: str) -> None:
+        std_string: String = String();
+        std_string.data = error_code;
+        self.__error_report_publisher.publish(msg=std_string);
+
+    def obstacle_status_subscription_cb(self, obstacle_status_cb: obstacle.Status) -> None:
+        obstacle_detect: ObstacleDetect = ObstacleDetect();
+        obstacle_detect.create_time = get_current_time();
+        obstacle_detect.event_type = "STOP";
+        obstacle_detect.object_id = obstacle_status_cb.obstacle_id;
+
+        obstacle_status: int = obstacle_status_cb.obstacle_status;
+        
+        if obstacle_status == 0:
+            obstacle_detect.event_reason_code = "ahead_detect";
+            obstacle_detect.is_cooperative = False;
+        elif obstacle_status_cb.obstacle_status == 1:
+            obstacle_detect.event_reason_code = "ambient_detect";
+            obstacle_detect.is_cooperative = False;
+        elif obstacle_status_cb.obstacle_status == 2:
+            obstacle_detect.event_reason_code = "cooperative_detect";
+            obstacle_detect.is_cooperative = True;
+        else:
+            obstacle_detect.event_reason_code = "";
+            obstacle_detect.is_cooperative = False;
+
+        self.__obstacle_detect_publisher.publish(msg=obstacle_detect);
+        
+    def notify_path_publish(self) -> None:
+        if self.__path_response is not None:
+            route_path: route.Path = self.__path_response.path;
+            
+            self.__notify_path_publisher.publish(msg=route_path);
+        else:
+            return;
 
 
 __all__ = ["Processor", "set_to_source_flag", "set_to_dest_flag", "set_returning_flag"];

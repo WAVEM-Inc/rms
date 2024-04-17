@@ -79,6 +79,8 @@ ktp::data::RobotStatusManager::RobotStatusManager(const rclcpp::Node::SharedPtr 
         rclcpp::QoS(rclcpp::KeepLast(DEFAULT_QOS)),
         std::bind(&ktp::data::RobotStatusManager::robot_navigation_status_from_task_ctrl_cb, this, _1),
         robot_navigation_status_from_task_ctrl_subscription_opts);
+
+    RCLCPP_INFO(this->node_->get_logger(), "=============== Response RbtStatusManager initialized ===============");
 }
 
 ktp::data::RobotStatusManager::~RobotStatusManager()

@@ -12,6 +12,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
 from rosbridge_library.internal import message_conversion;
 
 from ktp_interface.tcp.application.service import tcp_send_resource;
+from ktp_data_msgs.msg import GraphList;
 
 from std_msgs.msg import String;
 
@@ -27,17 +28,17 @@ class GraphListManager:
 
         graph_list_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__graph_list_subscription: Subscription = self.__node.create_subscription(
-            msg_type=String,
+            msg_type=GraphList,
             topic=GRAPH_LIST_FROM_MGR_TOPIC_NAME,
             callback_group=graph_list_subscription_cb_group,
             callback=self.__graph_list_subscription_cb,
             qos_profile=qos_profile_system_default
         );
 
-    def __graph_list_subscription_cb(self, graph_list_cb: String) -> None:
+    def __graph_list_subscription_cb(self, graph_list_cb: GraphList) -> None:
         try:
-            deserialized_graph_list: Any = json.loads(graph_list_cb.data);
-            self.__node.get_logger().info(f"deserialized_graph_list : {json.dumps(deserialized_graph_list, indent=4)}");
+            deserialized_graph_list: Any = message_conversion.extract_values(graph_list_cb);
+            self.__node.get_logger().info(f"deserialized_graph_list : {deserialized_graph_list}");
 
             rc: int = tcp_send_resource(resource_id=KTP_TCP_RESOURCE_ID, properties=deserialized_graph_list);
             if rc < 0:
