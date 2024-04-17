@@ -103,7 +103,7 @@ void ktp::data::RobotStatusManager::battery_state_subscription_cb(const sensor_m
     double battery = 0.0;
     if (this->battery_state_cb_ != nullptr)
     {
-        battery = this->battery_state_cb_->percentage;
+        battery = this->battery_state_cb_->voltage;
 
         if (battery < 0 || battery > 100)
         {
@@ -292,7 +292,7 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     // RCLCPP_INFO(this->node_->get_logger(), "RobotStatusManager percentage battery_cb_flag : [%d]", this->battery_cb_flag_);
     if (this->battery_cb_flag_)
     {
-        rbt_status->set__battery(this->battery_state_cb_->percentage);
+        rbt_status->set__battery(this->battery_state_cb_->voltage);
     } else
     {
         rbt_status->set__battery(DEFAULT_DOUBLE);
@@ -389,7 +389,7 @@ ktp_data_msgs::msg::Status ktp::data::RobotStatusManager::build_robot_status()
     if (this->battery_cb_flag_)
     {
         const bool &is_charging = this->battery_state_cb_->present;
-        rbt_status->set__charge(is_charging);
+        rbt_status->set__charge(!is_charging);
     }
     else
     {
