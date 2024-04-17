@@ -406,19 +406,12 @@ class Processor:
                     self.__log.info(
                         f"{PATH_GRAPH_PATH_SERVICE_NAME} To Source Path response : {ros_message_dumps(message=to_source_request_response)}, size : {self.__path_response_list_size}");
                     
-                    current_node_list: list[route.Node] = self.__path_response.path.node_list;
-                    self.__drive_current = (
-                        current_node_list[self.__route_to_pose_goal_index].node_id,
-                        current_node_list[self.__path_response_list_size - 1].node_id);
-                    
-                    self.notify_path_publish();
-
                     """
                     #######################################
                     대기 장소 -> 상차지(출발지) 주행 첫 번째 Goal 송신
                     #######################################
                     """
-                    self.route_to_pose_send_goal();
+                    self.command_path();
                 else:
                     self.__log.error(f"{PATH_GRAPH_PATH_SERVICE_NAME} is not ready...");
                     return;
@@ -457,19 +450,12 @@ class Processor:
                     self.__log.info(
                         f"{PATH_GRAPH_PATH_SERVICE_NAME} To Dest Path response : {ros_message_dumps(message=to_dest_path_response)}, size : {self.__path_response_list_size}");
                     
-                    current_node_list: list[route.Node] = self.__path_response.path.node_list;
-                    self.__drive_current = (
-                        current_node_list[self.__route_to_pose_goal_index].node_id,
-                        current_node_list[self.__path_response_list_size - 1].node_id);
-                    
-                    self.notify_path_publish();
-
                     """
                     #######################################
                     상차지(출발지) -> 하차지 주행 첫 번째 Goal 송신
                     #######################################
                     """
-                    self.route_to_pose_send_goal();
+                    self.command_path();
             elif returning_flag is True and to_source_flag is False and to_dest_flag is False:
                 if self.__mission is None:
                     self.__log.error(f"{PATH_GRAPH_PATH_SERVICE_NAME} Return Mission is None...");
@@ -505,19 +491,12 @@ class Processor:
                     self.__log.info(
                         f"{PATH_GRAPH_PATH_SERVICE_NAME} Returning Path response : {ros_message_dumps(message=returning_path_response)}, size : {self.__path_response_list_size}");
                     
-                    current_node_list: list[route.Node] = self.__path_response.path.node_list;
-                    self.__drive_current = (
-                        current_node_list[self.__route_to_pose_goal_index].node_id,
-                        current_node_list[self.__path_response_list_size - 1].node_id);
-                    
-                    self.notify_path_publish();
-
                     """
                     #######################################
                     하차지 -> 상차지(출발지) 주행 첫 번째 Goal 송신
                     #######################################
                     """
-                    self.route_to_pose_send_goal();
+                    self.command_path();
             else:
                 self.__log.error(f"{PATH_GRAPH_PATH_SERVICE_NAME} Unknown Flag");
                 return;
@@ -590,6 +569,7 @@ class Processor:
                     상차지(출발지) -> 하차지 주행 출발 시
                     """
                     self.notify_mission_status_publish(status="OnProgress");
+                    self.__log.info(f"==================================== OnProgress ====================================");
             else:
                 return;
         elif status_code == 5001:  # 취소
@@ -788,6 +768,34 @@ class Processor:
             self.__notify_path_publisher.publish(msg=route_path);
         else:
             return;
+        
+    def mission_flush(self) -> None:
+        self.__route_to_pose_goal_index = 0;
+        self.__path_response = None;
+        self.__drive_status = DRIVE_STATUS_WAIT;
+        self.__drive_current = ("", "");
+        self.__path_response_list_size = 0;
+        self.__mission = None;
+        to_source_flag = False;
+        to_dest_flag = False;
+        returning_flag = False;
 
+    def command_path(self) -> None:
+        try:
+            if self.__path_response_list_size == 0:
+                self.__log.error(f"{PATH_GRAPH_PATH_SERVICE_NAME} Returning Path response node_list is empty...");
+                self.mission_flush();
+                return;
+                        
+            current_node_list: list[route.Node] = self.__path_response.path.node_list;
+            self.__drive_current = (
+                current_node_list[self.__route_to_pose_goal_index].node_id,
+                current_node_list[self.__path_response_list_size - 1].node_id);
+                        
+            self.notify_path_publish();
+            self.route_to_pose_send_goal();
+        except IndexError as idxe:
+            self.__log.info(f"{PATH_GRAPH_PATH_SERVICE_NAME} : {idxe}");
+    
 
 __all__ = ["Processor", "set_to_source_flag", "set_to_dest_flag", "set_returning_flag"];
