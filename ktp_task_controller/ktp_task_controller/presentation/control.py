@@ -1,5 +1,6 @@
 import json;
 from rclpy.node import Node;
+from rclpy.client import Client;
 from rclpy.service import Service;
 from rclpy.publisher import Publisher;
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
@@ -77,6 +78,14 @@ class ControlController:
             msg_type=GraphList,
             callback_group=graph_list_publisher_cb_group,
             qos_profile=qos_profile_system_default
+        );
+        
+        graph_sync_service_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__graph_sync_client: Client = self.__node.create_client(
+            srv_name=PATH_GRAPH_GRAPH_SERVICE_NAME,
+            srv_type=Graph,
+            callback_group=graph_sync_service_client_cb_group,
+            qos_profile=qos_profile_services_default
         );
         
     def assign_control_service_cb(self, request: AssignControl.Request, response: AssignControl.Response) -> AssignControl.Response:
@@ -247,10 +256,10 @@ class ControlController:
         graph_request: Graph.Request = Graph.Request();
         graph_request.send_id = f"{self.__dev_id}{get_current_time()}";
 
-        is_path_graph_graph_service_server_ready: bool = self.__path_graph_graph_service_client.wait_for_service(timeout_sec=0.8);
+        is_path_graph_graph_service_server_ready: bool = self.__graph_sync_client.wait_for_service(timeout_sec=0.8);
 
         if is_path_graph_graph_service_server_ready:
-            graph_response: Graph.Response = self.__path_graph_graph_service_client.call(request=graph_request);
+            graph_response: Graph.Response = self.__graph_sync_client.call(request=graph_request);
 
             self.__log.info(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} Graph Response\n{ros_message_dumps(message=graph_response)}");
 
