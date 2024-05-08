@@ -1,5 +1,4 @@
 import rclpy;
-
 from rclpy.node import Node;
 from rclpy.executors import MultiThreadedExecutor;
 from rclpy.exceptions import ROSInterruptException;
@@ -22,7 +21,8 @@ def main(args=None) -> None:
     rclpy.shutdown();
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main();
 
-__all__ = ["main"];
+
+__all__: list[str] = ["main"];

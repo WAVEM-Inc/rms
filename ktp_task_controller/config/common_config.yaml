@@ -1,0 +1,4 @@
+/ktp_task_controller:
+  ros__parameters:
+    dev_id: "KECDSEMITB001"
+    map_id: "220"

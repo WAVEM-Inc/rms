@@ -1,5 +1,5 @@
 from rclpy.node import Node;
-from ktp_task_controller.application.processor import Processor;
+from ktp_task_controller.presentation.processor import Processor;
 
 NODE_NAME: str = "ktp_task_controller";
 
@@ -11,7 +11,7 @@ class KTPTaskController(Node):
 
         self.get_logger().info(f"{NODE_NAME} created");
 
-        self.__processor: Processor = Processor(node=self);
+        processor: Processor = Processor(node=self);
 
 
-__all__ = ["KTPTaskController"];
+__all__: list[str] = ["KTPTaskController"];

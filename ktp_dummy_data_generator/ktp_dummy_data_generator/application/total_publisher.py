@@ -101,8 +101,11 @@ class DummyTotalPublisher:
     
     def ublox_fix_publish(self) -> None:
         nav_sat_fix: NavSatFix = NavSatFix();
-        nav_sat_fix.longitude = 128.3673833;
-        nav_sat_fix.latitude = 36.113787;
+        # nav_sat_fix.longitude = 128.3673833;
+        # nav_sat_fix.latitude = 36.113787;
+        
+        nav_sat_fix.longitude = 127.240207;
+        nav_sat_fix.latitude = 37.306067;
         
         self.__ublox_fix_publisher.publish(msg=nav_sat_fix);
     
