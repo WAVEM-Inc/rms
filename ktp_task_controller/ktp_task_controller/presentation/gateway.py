@@ -6,7 +6,7 @@ from ktp_task_controller.application.obstacle import ObstacleService;
 from ktp_task_controller.presentation.mission import MissionController;
 from ktp_task_controller.presentation.control import ControlController;
 
-class Processor:
+class GateWay:
 
     def __init__(self, node: Node) -> None:
         self.__node: Node = node;
@@ -31,4 +31,4 @@ class Processor:
             self.__node.declare_parameter(name=key, value=value);
 
 
-__all__: list[str] = ["Processor"];
+__all__: list[str] = ["GateWay"];
