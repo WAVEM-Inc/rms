@@ -9,7 +9,7 @@ def generate_launch_description() -> LaunchDescription:
 
     package_name: str = "ktp_task_controller";
     package_shared_directory: str = get_package_share_directory(package_name);
-    parameters: list[str] = [os.path.join(package_shared_directory, "config", "common_config.yaml")]
+    parameters: list[str] = [os.path.join(package_shared_directory, "config", "common_config.yaml")];
 
     converter_node: Node = Node(
         package=package_name,
