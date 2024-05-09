@@ -80,7 +80,8 @@ class MissionController:
                     response.result = False;
                     return;
             else:
-                self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response is None");                            
+                self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response is None");
+                self.__route_service.goal_flush();
                 response.result = False;
                 
         return response;

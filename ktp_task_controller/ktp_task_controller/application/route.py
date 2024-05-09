@@ -22,6 +22,7 @@ from ktp_task_controller.domain.flags import get_returning_flag;
 from ktp_task_controller.domain.flags import set_to_source_flag;
 from ktp_task_controller.domain.flags import set_to_dest_flag;
 from ktp_task_controller.domain.flags import set_returning_flag;
+from ktp_task_controller.domain.flags import get_driving_flag;
 from ktp_task_controller.domain.flags import set_driving_flag;
 from ktp_task_controller.domain.mission import set_mission;
 from ktp_task_controller.domain.status import set_driving_status;
@@ -90,6 +91,7 @@ class RouteService:
         set_returning_flag(flag=False);
         set_driving_flag(flag=False);
         set_driving_status(driving_status=DRIVE_STATUS_WAIT);
+        self.__log.info("====================== Goal Flushed ======================");
         
     def send_goal(self, path_response: Path.Response) -> None:
         try:            
@@ -271,6 +273,11 @@ class RouteService:
             return;
         
     def __cancel_cb(self, future) -> None:
+        if get_driving_flag() is True:
+            self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} is on Driving");
+            return;
+        else:
+            self.goal_flush();
         cancel_response = future.result();
         if len(cancel_response.goals_canceling) > 0:
             self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal successfully canceled");
@@ -281,7 +288,6 @@ class RouteService:
         try:
             future: Future = self.__goal_handle.cancel_goal_async();
             future.add_done_callback(self.__cancel_cb);
-            self.goal_flush();
             self.__log.info(f"{ROUTE_TO_POSE_GOAL_CANCEL_TOPIC_NAME} goal cancelled");
         except AttributeError as ate:
             self.__log.error(f"{ROUTE_TO_POSE_GOAL_CANCEL_TOPIC_NAME} : {ate}");

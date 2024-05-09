@@ -36,8 +36,6 @@ class PathService:
         else:
             return;
         
-        
-        
         self.__notify_path_publisher: Publisher = None;
         if self.__notify_path_publisher == None:
             notify_path_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
