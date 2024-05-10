@@ -2,9 +2,8 @@ import json;
 from rosbridge_library.internal import message_conversion;
 from datetime import datetime;
 from pyproj import Proj;
-from math import radians, sin, cos, sqrt, atan2;
+from math import sqrt;
 from typing import Any;
-from typing import Tuple;
 
 
 def ros_message_dumps(message: Any) -> str:
