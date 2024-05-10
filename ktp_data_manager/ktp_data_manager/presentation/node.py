@@ -6,6 +6,9 @@ from ktp_data_manager.presentation.control_report import ControlReportController
 from ktp_data_manager.presentation.control import ControlController;
 from ktp_data_manager.presentation.mission import MissionController;
 from ktp_data_manager.presentation.graph_list import GraphListController;
+from ktp_data_manager.presentation.detected_object import DetectedObjectController;
+from ktp_data_manager.presentation.obstacle_detect import ObstacleDetectController;
+from ktp_data_manager.presentation.lidar_signal import LiDARSignalController;
 
 
 NODE_NAME: str = "ktp_data_manager";
@@ -26,6 +29,9 @@ class KTPDataManager(Node):
         ControlController(node=self);
         MissionController(node=self);
         GraphListController(node=self);
+        DetectedObjectController(node=self);
+        ObstacleDetectController(node=self);
+        LiDARSignalController(node=self);
 
     def declare_common_parameters(self) -> None:
         parameters_dict: dict = {

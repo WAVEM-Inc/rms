@@ -14,7 +14,6 @@ ERROR_REPORT_TO_ITF_RATE: float = 0.7;
 ERROR_REPORT_TO_ITF_TOPIC: str = "/rms/ktp/data/error_report";
 
 
-
 class ErrorReportController:
     
     def __init__(self, node: Node) -> None:
@@ -44,5 +43,6 @@ class ErrorReportController:
             self.__error_report_service.error_report = None;
         else:
             return;
+
 
 __all__: list[str] = ["ErrorReportController"];

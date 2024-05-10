@@ -1,6 +1,4 @@
 from rclpy.node import Node;
-from rclpy.impl.rcutils_logger import RcutilsLogger;
-from rclpy.publisher import Publisher;
 from rclpy.subscription import Subscription;
 from rclpy.qos import qos_profile_system_default;
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
