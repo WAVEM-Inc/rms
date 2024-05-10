@@ -105,7 +105,7 @@ class RbtStatusService:
             battery_voltage = battery_state_cb.voltage;
             
         self.__rbt_status.battery = battery_state_cb.voltage;
-        self.__rbt_status.charge = not battery_state_cb.present;
+        self.__rbt_status.charge = battery_state_cb.present;
     
     def velocity_status_subscription_cb(self, velocity_status_cb: VelocityStatus) -> None:
         self.__rbt_status.speed = abs(velocity_status_cb.current_velocity);

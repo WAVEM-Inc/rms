@@ -16,6 +16,8 @@ from typing import Any;
 from ktp_task_controller.application.error import ErrorService;
 from ktp_task_controller.application.status import StatusService;
 from ktp_task_controller.utils import ros_message_dumps;
+from ktp_task_controller.utils import convert_latlon_to_utm;
+from ktp_task_controller.utils import distance_between;
 from ktp_task_controller.domain.flags import get_to_source_flag;
 from ktp_task_controller.domain.flags import get_to_dest_flag;
 from ktp_task_controller.domain.flags import get_returning_flag;
@@ -26,6 +28,7 @@ from ktp_task_controller.domain.flags import get_driving_flag;
 from ktp_task_controller.domain.flags import set_driving_flag;
 from ktp_task_controller.domain.mission import set_mission;
 from ktp_task_controller.domain.status import set_driving_status;
+from ktp_task_controller.domain.gps import get_gps;
 
 
 ROUTE_TO_POSE_ACTION_NAME: str = "/route_to_pose";
@@ -94,42 +97,40 @@ class RouteService:
         self.__log.info("====================== Goal Flushed ======================");
         
     def send_goal(self, path_response: Path.Response) -> None:
-        try:            
-            goal: RouteToPose.Goal = RouteToPose.Goal();
+        goal: RouteToPose.Goal = RouteToPose.Goal();
 
-            self.__goal_list = path_response.path.node_list;
-            self.__goal_list_size = len(self.__goal_list);
+        self.__goal_list = path_response.path.node_list;
+        self.__goal_list_size = len(self.__goal_list);
 
-            start_node: route.Node = self.__goal_list[self.__goal_index];
-            goal.start_node = start_node;
-
-            end_node: route.Node = self.__goal_list[self.__goal_index + 1];
-            goal.end_node = end_node;
-
-            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Send Goal[{self.__goal_index} / {self.__goal_list_size - 1}]\n{ros_message_dumps(message=goal)}");
-
-            if self.__route_to_pose_action_client.wait_for_server(timeout_sec=0.75):
-                self.__send_goal_future = self.__route_to_pose_action_client.send_goal_async(goal=goal, feedback_callback=self.__feeback_cb);
-                self.__send_goal_future.add_done_callback(callback=self.__goal_response_cb);
-            else:
-                self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} is not ready...");
-                self.__error_service.error_report_publish(error_code="999");
-                self.goal_flush();
-        except Exception as e:
-            self.__log.error(f"Sending Goal {e}");
-            self.__error_service.error_report_publish(error_code="999");
-            self.goal_flush();
-            return;
+        start_node: route.Node = self.__goal_list[self.__goal_index];
+        goal.start_node = start_node;
+        
+        end_node: route.Node = self.__goal_list[self.__goal_index + 1];
+        goal.end_node = end_node;
+        
+        self._send_goal(goal=goal);
         
     def __send_goal(self) -> None:
-        try:
-            goal: RouteToPose.Goal = RouteToPose.Goal();
+        goal: RouteToPose.Goal = RouteToPose.Goal();
         
-            start_node: route.Node = self.__goal_list[self.__goal_index];
-            goal.start_node = start_node;
+        start_node: route.Node = self.__goal_list[self.__goal_index];
+        goal.start_node = start_node;
 
-            end_node: route.Node = self.__goal_list[self.__goal_index + 1];
-            goal.end_node = end_node;
+        end_node: route.Node = self.__goal_list[self.__goal_index + 1];
+        goal.end_node = end_node;
+        
+        self._send_goal(goal=goal);
+        
+    def _send_goal(self, goal: RouteToPose.Goal) -> None:
+        try:            
+            is_goal_validate: bool = self.check_goal(start_node_position=goal.start_node.position);
+            
+            if not is_goal_validate:
+                self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} Send Goal goal is invalidate. aborting...");
+                self.__error_service.error_report_publish(error_code="450");
+                self.__status_service.notify_mission_status_publish(status="Failed");
+                self.goal_flush();
+                return;
 
             self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Send Goal[{self.__goal_index} / {self.__goal_list_size - 1}]\n{ros_message_dumps(message=goal)}");
 
@@ -145,11 +146,30 @@ class RouteService:
             self.__error_service.error_report_publish(error_code="999");
             self.goal_flush();
             return;
+    
+    def check_goal(self, start_node_position: route.Position) -> bool:
+        lon: float = start_node_position.longitude;
+        lat: float = start_node_position.latitude;
         
+        y1, x1 = convert_latlon_to_utm(latitude=get_gps().latitude, longitude=get_gps().longitude);
+        y2, x2 = convert_latlon_to_utm(latitude=lat, longitude=lon);
+        
+        dist: float = distance_between(y1, x1, y2, x2);
+        self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} check goal distance : {dist}");
+        
+        if dist > 4.0:
+            self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} check goal gps is invalidate");
+            return False;
+        else:
+            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} check goal gps is validate");
+            return True;
+    
     def __goal_response_cb(self, future: Future) -> None:
         goal_handle: ClientGoalHandle = future.result();
+        
         if not goal_handle.accepted:
             self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal rejected");
+            self.__error_service.error_report_publish(error_code="201");
             return;
 
         self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal accepted");
