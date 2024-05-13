@@ -13,7 +13,7 @@ from ktp_task_controller.utils import ros_message_dumps;
 from ktp_task_controller.application.path import PathService;
 from ktp_task_controller.application.route import RouteService;
 from ktp_task_controller.domain.flags import set_to_source_flag;
-from ktp_task_controller.domain.flags import set_to_dest_flag;
+from ktp_task_controller.domain.flags import set_to_goal_flag;
 from ktp_task_controller.domain.flags import set_returning_flag;
 from ktp_task_controller.domain.flags import get_driving_flag;
 from ktp_task_controller.domain.mission import get_mission;
@@ -54,7 +54,7 @@ class MissionController:
             mission = message_conversion.populate_instance(json.loads(request_mission_json), Mission());
 
             set_to_source_flag(flag=True);
-            set_to_dest_flag(flag=False);
+            set_to_goal_flag(flag=False);
             set_returning_flag(flag=False);
             set_mission(mission=mission);
             
