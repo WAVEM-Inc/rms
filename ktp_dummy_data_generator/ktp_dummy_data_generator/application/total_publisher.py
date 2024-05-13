@@ -23,6 +23,7 @@ class DummyTotalPublisher:
     
     def __init__(self, node: Node) -> None:
         self.__node: Node = node;
+        self.__count: float = 0.0;
         
         main_timer_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__main_timer: Timer = self.__node.create_timer(
@@ -96,6 +97,13 @@ class DummyTotalPublisher:
     def velocity_state_publish(self) -> None:
         velocity_state: VelocityStatus = VelocityStatus();
         velocity_state.current_velocity = 12.0;
+        self.__count = self.__count + 1.0;
+        velocity_state.distance = self.__count;
+        
+        if self.__count == 50.0:
+            self.__count = 0.0;
+        else:
+            pass;
         
         self.__velocity_state_publisher.publish(msg=velocity_state);
     
@@ -104,8 +112,8 @@ class DummyTotalPublisher:
         # nav_sat_fix.longitude = 128.3673833;
         # nav_sat_fix.latitude = 36.113787;
         
-        nav_sat_fix.longitude = 127.240207;
-        nav_sat_fix.latitude = 37.306067;
+        nav_sat_fix.longitude = 127.2401102;
+        nav_sat_fix.latitude = 37.3060542;
         
         self.__ublox_fix_publisher.publish(msg=nav_sat_fix);
     
