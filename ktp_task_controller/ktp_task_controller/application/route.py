@@ -157,7 +157,7 @@ class RouteService:
         dist: float = distance_between(y1, x1, y2, x2);
         self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} check goal distance : {dist}");
         
-        if dist > 4.0:
+        if dist > 2.0:
             self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} check goal gps is invalidate");
             return False;
         else:
