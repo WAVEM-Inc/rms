@@ -154,6 +154,8 @@ class ControlController:
                     
                 return response;
         elif control_code == CONTROL_CODE_MS_COMPLETE:
+            self.__route_service.end_mission();
+                    
             control_data: Any = message_conversion.extract_values(inst=control.control_data);
             is_return: bool = control_data["is_return"];
             self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} MSCOMPLETE is_return : {is_return}");
