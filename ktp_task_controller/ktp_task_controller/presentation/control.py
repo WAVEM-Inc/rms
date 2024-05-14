@@ -20,12 +20,6 @@ from ktp_task_controller.application.path import PathService;
 from ktp_task_controller.application.route import RouteService;
 from ktp_task_controller.utils import ros_message_dumps;
 from ktp_task_controller.utils import get_current_time;
-from ktp_task_controller.domain.flags import get_to_source_flag;
-from ktp_task_controller.domain.flags import get_to_goal_flag;
-from ktp_task_controller.domain.flags import get_returning_flag;
-from ktp_task_controller.domain.flags import set_to_source_flag;
-from ktp_task_controller.domain.flags import set_to_goal_flag;
-from ktp_task_controller.domain.flags import set_returning_flag;
 from ktp_task_controller.domain.flags import get_driving_flag;
 from ktp_task_controller.domain.mission import get_mission;
 from typing import Any;
@@ -50,9 +44,11 @@ class ControlController:
         self.__node: Node = node;
         self.__log: RcutilsLogger = self.__node.get_logger();
         
-        self.__dev_id: str = self.__node.get_parameter(name="dev_id").get_parameter_value().string_value;
-        self.__error_service: ErrorService = ErrorService(node=self.__node);
+        self.__param_dev_id: str = self.__node.get_parameter(name="dev_id").get_parameter_value().string_value;
+        self.__param_map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
+        self.__param_initial_node: str = self.__node.get_parameter(name="initial_node").get_parameter_value().string_value;
         
+        self.__error_service: ErrorService = ErrorService(node=self.__node);
         self.__path_service: PathService = PathService(node=self.__node);
         self.__route_service: RouteService = RouteService(node=self.__node);
         
@@ -104,34 +100,70 @@ class ControlController:
         elif control_code == CONTROL_MS_CANCEL:
             pass;
         elif control_code == CONTROL_CODE_MOVE_TO_DEST:
-            if get_to_source_flag() is True or get_returning_flag() is True:
-                self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Robot is Moving To Source");
+            """
+            Source -> Goal
+            - start_node : task.task_data.source
+            - end_node : task.task_data.goal
+            """
+            path_request: Path.Request = Path.Request();
+
+            mission: Mission = get_mission();
+            if mission != None:
+                path_request.start_node = mission.task[0].task_data.source;
+                path_request.end_node = mission.task[0].task_data.goal[0];
+                path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
+                    
+                if path_response != None:
+                    self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response\n{ros_message_dumps(message=path_response)}");
+                        
+                    if get_driving_flag() != True:
+                        self.__route_service.send_goal(path_response=path_response);
+                        response.result = True;
+                        self.control_report_publish(control=control, control_type="control", response_code=201);
+                    else:
+                        self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} is already driving");
+                        response.result = False;
+                        self.control_report_publish(control=control, control_type="control", response_code=400);
+                        self.__error_service.error_report_publish(error_code="999");
+                else:
+                    self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response is None");
+                    self.control_report_publish(control=control, control_type="control", response_code=400);
+                    self.__error_service.error_report_publish(error_code="999");
+                    response.result = False;
+            else:
+                self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} mission is None");
                 self.control_report_publish(control=control, control_type="control", response_code=400);
                 self.__error_service.error_report_publish(error_code="999");
                 response.result = False;
-            else:
-                set_to_source_flag(flag=False);
-                set_to_goal_flag(flag=True);
-                set_returning_flag(flag=False);
-                self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} To Dest Flags\n\tto_source : {get_to_source_flag()}\n\tto_dest : {get_to_goal_flag()}\n\treturning : {get_returning_flag()}");
-                
+                    
+            return response;
+        elif control_code == CONTROL_CODE_MS_COMPLETE:
+            self.__route_service.end_mission();
+                    
+            control_data: Any = message_conversion.extract_values(inst=control.control_data);
+            is_return: bool = control_data["is_return"];
+            self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} MSCOMPLETE is_return : {is_return}");
+            
+            if is_return:
                 """
-                상차지(출발지) -> 하차지
-                - position : 현재 GPS
-                - start_node : task.task_data.source
-                - end_node : task.task_data.goal
+                Goal -> 대기 장소
+                - start_node : task.task_data.goal
+                - end_node : initial_node_id
                 """
                 path_request: Path.Request = Path.Request();
 
                 mission: Mission = get_mission();
                 if mission != None:
-                    path_request.start_node = mission.task[0].task_data.source;
-                    path_request.end_node = mission.task[0].task_data.goal[0];
-                    path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
+                    initial_node_id: str = f"NO-{self.__param_map_id}-{self.__param_initial_node}";
                     
+                    path_request.start_node = mission.task[0].task_data.goal[0];
+                    path_request.end_node = initial_node_id;
+                    
+                    path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
+                        
                     if path_response != None:
                         self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response\n{ros_message_dumps(message=path_response)}");
-                        
+                            
                         if get_driving_flag() != True:
                             self.__route_service.send_goal(path_response=path_response);
                             response.result = True;
@@ -142,73 +174,19 @@ class ControlController:
                             self.control_report_publish(control=control, control_type="control", response_code=400);
                             self.__error_service.error_report_publish(error_code="999");
                     else:
-                        self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response is None");
+                        self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response is None");                            
+                        response.result = False;
                         self.control_report_publish(control=control, control_type="control", response_code=400);
                         self.__error_service.error_report_publish(error_code="999");
-                        response.result = False;
                 else:
                     self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} mission is None");
                     self.control_report_publish(control=control, control_type="control", response_code=400);
                     self.__error_service.error_report_publish(error_code="999");
                     response.result = False;
-                    
-                return response;
-        elif control_code == CONTROL_CODE_MS_COMPLETE:
-            self.__route_service.end_mission();
-                    
-            control_data: Any = message_conversion.extract_values(inst=control.control_data);
-            is_return: bool = control_data["is_return"];
-            self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} MSCOMPLETE is_return : {is_return}");
-            
-            if is_return:
-                if get_to_goal_flag() is True or get_to_source_flag() is True:
-                    self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Robot is Moving To Dest");
-                    self.control_report_publish(control=control, control_type="control", response_code=400);
-                    self.__error_service.error_report_publish(error_code="999");
-                    response.result = False;
-                else:
-                    set_to_source_flag(flag=False);
-                    set_to_goal_flag(flag=False);
-                    set_returning_flag(flag=True);
-                    self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} Return Flags\n\tto_source : {get_to_source_flag()}\n\tto_dest : {get_to_goal_flag()}\n\treturning : {get_returning_flag()}");
-                    
-                    """
-                    하차지 -> 대기 장소
-                    - position : 현재 GPS
-                    - start_node : task.task_data.goal
-                    - end_node : null
-                    """
-                    path_request: Path.Request = Path.Request();
-
-                    mission: Mission = get_mission();
-                    if mission != None:
-                        path_request.start_node = mission.task[0].task_data.goal[0];
-                        path_request.end_node = "";
-                        path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
-                        
-                        if path_response != None:
-                            self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response\n{ros_message_dumps(message=path_response)}");
-                            
-                            if get_driving_flag() != True:
-                                self.__route_service.send_goal(path_response=path_response);
-                                response.result = True;
-                                self.control_report_publish(control=control, control_type="control", response_code=201);
-                            else:
-                                self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} is already driving");
-                                response.result = False;
-                                self.control_report_publish(control=control, control_type="control", response_code=400);
-                                self.__error_service.error_report_publish(error_code="999");
-                        else:
-                            self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response is None");                            
-                            response.result = False;
-                            self.control_report_publish(control=control, control_type="control", response_code=400);
-                            self.__error_service.error_report_publish(error_code="999");
-                    else:
-                        self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} mission is None");
-                        self.control_report_publish(control=control, control_type="control", response_code=400);
-                        self.__error_service.error_report_publish(error_code="999");
-                        response.result = False;
             else:
+                """
+                대기 장소 미복귀
+                """
                 self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} MSCOMPLETE No Return");
                 self.__route_service.process_no_return();
                 
@@ -272,7 +250,7 @@ class ControlController:
     
     def graph_sync_request(self) -> Graph.Response | None:
         graph_request: Graph.Request = Graph.Request();
-        graph_request.send_id = f"{self.__dev_id}{get_current_time()}";
+        graph_request.send_id = f"{self.__param_dev_id}{get_current_time()}";
 
         is_path_graph_graph_service_server_ready: bool = self.__graph_sync_client.wait_for_service(timeout_sec=0.8);
 

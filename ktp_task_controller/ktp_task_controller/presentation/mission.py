@@ -11,13 +11,10 @@ from ktp_data_msgs.msg import MissionTask;
 from ktp_data_msgs.srv import AssignMission;
 from path_graph_msgs.srv import Path;
 from ktp_task_controller.utils import ros_message_dumps;
-from ktp_task_controller.utils import get_path_file;
+from ktp_task_controller.application.error import ErrorService;
 from ktp_task_controller.application.path import PathService;
 from ktp_task_controller.application.route import RouteService;
 from ktp_task_controller.application.status import StatusService;
-from ktp_task_controller.domain.flags import set_to_source_flag;
-from ktp_task_controller.domain.flags import set_to_goal_flag;
-from ktp_task_controller.domain.flags import set_returning_flag;
 from ktp_task_controller.domain.flags import get_driving_flag;
 from ktp_task_controller.domain.mission import get_mission;
 from ktp_task_controller.domain.mission import set_mission;
@@ -38,6 +35,7 @@ class MissionController:
         self.__param_map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
         self.__param_initial_node: str = self.__node.get_parameter(name="initial_node").get_parameter_value().string_value;
         
+        self.__error_service: ErrorService = ErrorService(node=self.__node);
         self.__path_service: PathService = PathService(node=self.__node);
         self.__route_service: RouteService = RouteService(node=self.__node);
         self.__status_service: StatusService = StatusService(node=self.__node);
@@ -69,17 +67,18 @@ class MissionController:
                         
             source_node_id: str = mission_task.task_data.source;
             goal_node_id: str = mission_task.task_data.goal[0];
-            last_arrived_node_id_is_source: bool = get_last_arrived_node_id() == source_node_id;
-            self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} mission_assignment",
-                            f"\n\tsource_node_id : {source_node_id}",
-                            f"\n\tlast_arrived_node_id : {get_last_arrived_node_id()}",
+            last_arrived_node_id: str = f"NO-{self.__param_map_id}-{get_last_arrived_node_id()}";
+            last_arrived_node_id_is_source: bool = last_arrived_node_id == source_node_id;
+            self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} mission_assignment"
+                            f"\n\tsource_node_id : {source_node_id}"
+                            f"\n\tlast_arrived_node_id : {get_last_arrived_node_id()}"
                             f"\n\tlast_arrived_node_id_is_source : {last_arrived_node_id_is_source}");
             
             self.__route_service.start_mission();
             self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Sleep For Assign Mission");
             time.sleep(1.2);
             
-            is_mission_returning_task: bool = mission_task.task_data.task_code == "returning";
+            is_mission_returning_task: bool = mission_task.task_code == "returning";
             
             if last_arrived_node_id_is_source:
                 path_request.start_node = source_node_id;
@@ -91,20 +90,19 @@ class MissionController:
                 else:
                     self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");
                     pass;
-            else:
-                initial_node_id: str = f"NO-{self.__param_map_id}-{self.__param_initial_node}";
-                
+            else:                
                 if not is_mission_returning_task:
-                    path_request.start_node = initial_node_id;
+                    self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Wait To Source");
+                    path_request.start_node = f"NO-{self.__param_map_id}-{get_last_arrived_node_id()}";
                     path_request.end_node = source_node_id;
                 else:
                     self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");
-                    path_request.start_node = get_last_arrived_node_id();
-                    path_request.end_node = initial_node_id;
+                    path_request.start_node = source_node_id;
+                    path_request.end_node = goal_node_id;
             
             path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
             
-            if path_response != None:
+            if path_response != None or len(path_response.path.node_list) != 0:
                 self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response\n{ros_message_dumps(message=path_response)}");
                 
                 if get_driving_flag() != True:
@@ -116,7 +114,10 @@ class MissionController:
                     return;
             else:
                 self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response is None");
+                self.__error_service.error_report_publish(error_code="201");
+                self.__status_service.notify_mission_status_publish(status="Failed");
                 self.__route_service.goal_flush();
+                self.__route_service.mission_flush();
                 response.result = False;
                 
         return response;
