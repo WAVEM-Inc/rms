@@ -1,3 +1,4 @@
+import os;
 import json;
 from rosbridge_library.internal import message_conversion;
 from datetime import datetime;
@@ -24,6 +25,6 @@ def convert_latlon_to_utm(latitude: float, longitude: float) -> Any:
 
 def distance_between(x1: float, y1: float, x2: float, y2: float) -> float:
     return sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-
+        
 
 __all__: list[str] = ["utils"];

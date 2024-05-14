@@ -26,7 +26,10 @@ class KTPTaskController(Node):
     def declare_common_parameters(self) -> None:
         parameters_dict: dict = {
             "dev_id": "",
-            "map_id": ""
+            "map_id": "",
+            "initial_node": "",
+            "goal_validation_limit": 0.0,
+            "current_path_file": ""
         };
 
         for key, value in parameters_dict.items():

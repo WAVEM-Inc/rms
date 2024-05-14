@@ -13,7 +13,8 @@ from route_msgs.action import RouteToPose;
 from action_msgs.msg import GoalStatus;
 import route_msgs.msg as route;
 from std_msgs.msg import String;
-from robot_status_msgs.msg import VelocityStatus;
+from sensor_msgs.msg import NavSatFix;
+from geometry_msgs.msg import PoseStamped;
 from typing import Any;
 from ktp_task_controller.application.error import ErrorService;
 from ktp_task_controller.application.status import StatusService;
@@ -32,11 +33,13 @@ from ktp_task_controller.domain.mission import set_mission;
 from ktp_task_controller.domain.status import set_driving_status;
 from ktp_task_controller.domain.status import set_mission_total_distance;
 from ktp_task_controller.domain.gps import get_gps;
+from ktp_task_controller.domain.mission import get_mission;
+from ktp_task_controller.domain.status import set_last_arrived_node_id;
 
 
 ROUTE_TO_POSE_ACTION_NAME: str = "/route_to_pose";
 ROUTE_TO_POSE_GOAL_CANCEL_TOPIC_NAME: str = "/rms/ktp/task/goal/cancel";
-VELOCITY_STATE_TOPIC_NAME: str = "/drive/velocity/state";
+ODOM_EULAR_TOPIC_NAME: str = "/drive/odom/eular";
 
 DRIVE_STATUS_WAIT: int = 0;
 DRIVE_STATUS_ON_DRIVE: int = 1;
@@ -52,12 +55,19 @@ class RouteService:
     def __init__(self, node: Node) -> None:
         self.__node: Node = node;
         self.__log: RcutilsLogger = self.__node.get_logger();
+        
+        self.__param_initial_node: str = self.__node.get_parameter(name="initial_node").get_parameter_value().string_value;
+        set_last_arrived_node_id(last_arrived_node_id=self.__param_initial_node);
+        self.__param_goal_validation_limit: float = self.__node.get_parameter(name="goal_validation_limit").get_parameter_value().double_value;
+        
         self.__error_service: ErrorService = ErrorService(node=self.__node);
         self.__status_service: StatusService = StatusService(node=self.__node);
-        self.__velocity_state: VelocityStatus = None;
-        self.__mission_start_distance: int = 0;
-        self.__mission_end_distance: int = 0;
         
+        self.__current_distance: float = 0.0;
+        self.__mission_start_distance: float = 0.0;
+        self.__mission_end_distance: float = 0.0;
+        
+        self.__current_goal: RouteToPose.Goal = RouteToPose.Goal();
         self.__send_goal_future: Future = None;
         self.__result_future: Any = None;
         self.__goal_handle: ClientGoalHandle = None;
@@ -107,15 +117,15 @@ class RouteService:
         else:
             return;
         
-        self.__velocity_state_subscription: Subscription = None;
-        if self.__velocity_state_subscription is None:
-            velocity_state_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__odom_eular_subscription: Subscription = None;
+        if self.__odom_eular_subscription is None:
+            odom_eular_subscription_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
             
-            self.__velocity_state_subscription = self.__node.create_subscription(
-                topic=VELOCITY_STATE_TOPIC_NAME,
-                msg_type=VelocityStatus,
-                callback_group=velocity_state_subscription_cb_group,
-                callback=self.velocity_state_subscription_cb,
+            self.__odom_eular_subscription = self.__node.create_subscription(
+                topic=PoseStamped,
+                msg_type=PoseStamped,
+                callback_group=odom_eular_subscription_cb_group,
+                callback=self.odom_eular_subscription_cb,
                 qos_profile=qos_profile_system_default
             );
         else:
@@ -161,23 +171,24 @@ class RouteService:
         
     def _send_goal(self, goal: RouteToPose.Goal) -> None:
         try:
-            # is_goal_validate: bool = self.check_goal(start_node_position=goal.start_node.position);
+            is_goal_validate: bool = self.check_goal(start_node_position=goal.start_node.position);
             
-            # if not is_goal_validate:
-            #     self.__is_goal_odom_to_gps = goal.start_node.driving_option == "odom" and goal.end_node.driving_option == "gps";
+            if not is_goal_validate:
+                self.__is_goal_odom_to_gps = goal.start_node.driving_option == "odom" and goal.end_node.driving_option == "gps";
                 
-            #     if self.__is_goal_odom_to_gps:
-            #         self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Odom to GPS is InValid. Need To Retry");
-            #         self.__is_goal_need_to_retry = True;
-            #         return;
-            #     else:
-            #         self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} Send Goal goal is invalidate. aborting...");
-            #         self.__is_goal_need_to_retry = False;
-            #         self.__error_service.error_report_publish(error_code="450");
-            #         self.__status_service.notify_mission_status_publish(status="Failed");
-            #         self.goal_flush();
-            #         return;
+                if self.__is_goal_odom_to_gps:
+                    self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Odom to GPS is InValid. Need To Retry");
+                    self.__is_goal_need_to_retry = True;
+                    return;
+                else:
+                    self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} Send Goal goal is invalidate. aborting...");
+                    self.__is_goal_need_to_retry = False;
+                    self.__error_service.error_report_publish(error_code="450");
+                    self.__status_service.notify_mission_status_publish(status="Failed");
+                    self.goal_flush();
+                    return;
 
+            self.__current_goal = goal;
             self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Send Goal[{self.__goal_index} / {self.__goal_list_size - 1}]\n{ros_message_dumps(message=goal)}");
 
             if self.__route_to_pose_action_client.wait_for_server(timeout_sec=0.75):
@@ -188,7 +199,7 @@ class RouteService:
                 self.__error_service.error_report_publish(error_code="999");
                 self.goal_flush();
         except Exception as e:
-            self.__log.error(f"Sending Goal {e}");
+            self.__log.error(f"Sending Goal : {e}");
             self.__error_service.error_report_publish(error_code="999");
             self.goal_flush();
             return;
@@ -203,30 +214,40 @@ class RouteService:
         dist: float = distance_between(y1, x1, y2, x2);
         self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} check goal distance : {dist}");
         
-        if dist > 2.0:
+        if dist > self.__param_goal_validation_limit:
             self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} check goal gps is invalidate");
             return False;
         else:
             self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} check goal gps is validate");
             return True;
+        
+    def start_mission(self) -> None:
+        if self.__is_goal_need_to_retry == False:
+            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} started capture mission_distance");
+            self.__mission_start_distance = self.__current_distance;
+            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} mission_start_distance : {self.__mission_start_distance}");
+                            
+            self.__status_service.notify_mission_status_publish(status="Started");
+            self.__log.info(f"==================================== Mission Started ====================================");
+        else:
+            return;
+    
+    def end_mission(self) -> None:
+        self.calculate_mission_total_distance();
+        self.__status_service.notify_mission_status_publish(status="End");
+        self.__log.info(f"==================================== Mission End ====================================");
     
     def process_no_return(self) -> None:
         self.calculate_mission_total_distance();
-        self.__status_service.notify_mission_status_publish(status="End");
         self.goal_flush();
     
     def calculate_mission_total_distance(self) -> None:
         try:
-            if self.__velocity_state is not None:
-                self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} started capture mission_distance");
-                self.__mission_end_distance = self.__velocity_state.distance;
-                mission_total_distance: int = int(abs(self.__mission_end_distance - self.__mission_start_distance) * 1000);
-                self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} mission_total_distance : {mission_total_distance}");
-                set_mission_total_distance(mission_total_distance=mission_total_distance);
-            else:
-                self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} velocity_state is None");
-                self.__error_service.error_report_publish(error_code="999");
-                pass;
+            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} started capture mission_distance");
+            self.__mission_end_distance = self.__current_distance;
+            mission_total_distance: int = int(abs(self.__mission_end_distance - self.__mission_start_distance) * 1000);
+            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} mission_total_distance : {mission_total_distance}");
+            set_mission_total_distance(mission_total_distance=mission_total_distance);
         except AssertionError as ate:
             self.__log.error(f"{ate}");
             return;
@@ -254,39 +275,17 @@ class RouteService:
         if status_code == 1001:
             set_driving_flag(flag=True);
             set_driving_status(driving_status=DRIVE_STATUS_ON_DRIVE);
-        
-            if get_to_source_flag() is True and get_to_goal_flag() is False and get_returning_flag() is False:
+            
+            if self.__current_goal.start_node.node_id == get_mission().task[0].task_data.source:
                 if self.__goal_index == 0:
                     """
-                    대기 장소 -> 상차지(출발지) 주행 출발 시
-                    """
-                    if self.__is_goal_need_to_retry == False:
-                        if self.__velocity_state != None:
-                            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} started capture mission_distance");
-                            self.__mission_start_distance = self.__velocity_state.distance;
-                            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} mission_start_distance : {self.__mission_start_distance}");
-                        else:
-                            self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} velocity_state is None");
-                            self.__error_service.error_report_publish(error_code="999");
-                        self.__status_service.notify_mission_status_publish(status="Started");
-                        self.__log.info(f"==================================== Started ====================================");
-                    else:
-                        return;
-            elif get_to_goal_flag() is True and get_to_source_flag() is False and get_returning_flag() is False:
-                if self.__goal_index == 0:
-                    """
-                    상차지(출발지) -> 하차지 주행 출발 시
+                    Source -> Goal 주행 출발 시
                     """
                     if self.__is_goal_need_to_retry == False:
                         self.__status_service.notify_mission_status_publish(status="OnProgress");
                         self.__log.info(f"==================================== OnProgress ====================================");
                     else:
                         return;
-            elif get_returning_flag() is True and get_to_source_flag() is False and get_to_goal_flag() is False:
-                if self.__goal_index == 0:
-                    self.calculate_mission_total_distance();
-                    self.__status_service.notify_mission_status_publish(status="End");
-                    self.__log.info(f"==================================== End ====================================");
             else:
                 return;
         elif status_code == 5001:
@@ -305,63 +304,56 @@ class RouteService:
         result_code: int = result.result;
 
         if result_code == 1001:
-            if get_to_source_flag() is True and get_to_goal_flag() is False and get_returning_flag() is False:
-                """
-                대기 장소 -> 상차지(출발지) 주행 도착 시
-                """
-                is_source_arrived: bool = (self.__goal_index + 1 == self.__goal_list_size - 1);
-                if is_source_arrived:
-                    set_driving_status(driving_status=DRIVE_STATUS_DRIVE_FINISHED);
-                    self.__goal_index = 0;
-                    self.__status_service.notify_mission_status_publish(status="SourceArrived");
-                    
-                    set_to_source_flag(flag=False);
-                    set_to_goal_flag(flag=True);
-                    set_returning_flag(flag=False);
-                    set_driving_flag(flag=False);
-                    
-                    self.__log.info(f"==================================== Source Arrived ====================================");
-                    self.__log.info(f"Flags\n\tto_source : {get_to_source_flag()}\n\tto_dest : {get_to_goal_flag()}\n\treturning : {get_returning_flag()}");
+            set_last_arrived_node_id(last_arrived_node_id=self.__current_goal.end_node.node_id);
+            is_mission_returning_task: bool = get_mission().task[0].task_data.task_code == "returning";
+            
+            if self.__current_goal.end_node.node_id == get_mission().task[0].task_data.source:
+                if not is_mission_returning_task:
+                    """
+                    대기 장소 -> Source 주행 도착 시
+                    """
+                    is_source_arrived: bool = (self.__goal_index + 1 == self.__goal_list_size - 1);
+                    if is_source_arrived:
+                        set_driving_status(driving_status=DRIVE_STATUS_DRIVE_FINISHED);
+                        self.__goal_index = 0;
+                        
+                        self.__status_service.notify_mission_status_publish(status="SourceArrived");
+                        self.__log.info(f"==================================== Source Arrived ====================================");
+                    else:
+                        self.__goal_index = self.__goal_index + 1;
+                        self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} To Source will proceed Next Goal [{self.__goal_index} / {self.__goal_list_size - 1}]");
+                        self.__send_goal();
+            elif self.__current_goal.end_node.node_id == get_mission().task[0].task_data.goal[0]:
+                if not is_mission_returning_task:
+                    """
+                    Source -> Goal 주행 도착 시
+                    """
+                    is_dest_arrived: bool = (self.__goal_index + 1 == self.__goal_list_size - 1);
+                    if is_dest_arrived:
+                        set_driving_status(driving_status=DRIVE_STATUS_DRIVE_FINISHED);
+                        self.__goal_index = 0;
+                        
+                        self.__status_service.notify_mission_status_publish(status="DestArrived");
+                        self.__log.info(f"==================================== Dest Arrived ====================================");
+                    else:
+                        self.__goal_index = self.__goal_index + 1;
+                        self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} To Dest will proceed Next Goal [{self.__goal_index} / {self.__goal_list_size - 1}]");
+                        self.__send_goal();
                 else:
-                    self.__goal_index = self.__goal_index + 1;
-                    self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} To Source will proceed Next Goal [{self.__goal_index} / {self.__goal_list_size - 1}]");
-                    self.__send_goal();
-            elif get_to_goal_flag() is True and get_to_source_flag() is False and get_returning_flag() is False:
-                """
-                상차지(출발지) -> 하차지 주행 도착 시
-                """
-                is_dest_arrived: bool = (self.__goal_index + 1 == self.__goal_list_size - 1);
-                if is_dest_arrived:
-                    set_driving_status(driving_status=DRIVE_STATUS_DRIVE_FINISHED);
-                    self.__goal_index = 0;
-                    self.__status_service.notify_mission_status_publish(status="DestArrived");
-                    
-                    set_to_source_flag(flag=False);
-                    set_to_goal_flag(flag=False);
-                    set_returning_flag(flag=True);
-                    set_driving_flag(flag=False);
+                    """
+                    Goal -> 대기 장소 주행 도착 시
+                    """
+                    is_returning_finished: bool = (self.__goal_index + 1 == self.__goal_list_size - 1);
+                    if is_returning_finished:
+                        set_driving_status(driving_status=DRIVE_STATUS_WAIT);
+                        self.end_mission();
+                        self.goal_flush();
 
-                    self.__log.info(f"==================================== Dest Arrived ====================================");
-                    self.__log.info(f"Flags\n\tto_source : {get_to_source_flag()}\n\tto_dest : {get_to_goal_flag()}\n\treturning : {get_returning_flag()}");
-                else:
-                    self.__goal_index = self.__goal_index + 1;
-                    self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} To Dest will proceed Next Goal [{self.__goal_index} / {self.__goal_list_size - 1}]");
-                    self.__send_goal();
-            elif get_returning_flag() is True and get_to_source_flag() is False and get_to_goal_flag() is False:
-                """
-                상차지(출발지) -> 하차지 주행 도착 시
-                """
-                is_returning_finished: bool = (self.__goal_index + 1 == self.__goal_list_size - 1);
-                if is_returning_finished:
-                    set_driving_status(driving_status=DRIVE_STATUS_WAIT);
-                    self.goal_flush();
-
-                    self.__log.info(f"==================================== Returning Finished ====================================");
-                    self.__log.info(f"Flags\n\tto_source : {get_to_source_flag()}\n\tto_dest : {get_to_goal_flag()}\n\treturning : {get_returning_flag()}");
-                else:
-                    self.__goal_index = self.__goal_index + 1;
-                    self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Returning will proceed Next Goal [{self.__goal_index} / {self.__goal_list_size - 1}]");
-                    self.__send_goal();
+                        self.__log.info(f"==================================== Returning Finished ====================================");
+                    else:
+                        self.__goal_index = self.__goal_index + 1;
+                        self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Returning will proceed Next Goal [{self.__goal_index} / {self.__goal_list_size - 1}]");
+                        self.__send_goal();
             else:
                 return;
         elif result_code == 2001 or result_code == 2003 or result_code == 2004 or result_code == 3001:
@@ -399,6 +391,7 @@ class RouteService:
             return;
         else:
             self.goal_flush();
+            
         cancel_response = future.result();
         if len(cancel_response.goals_canceling) > 0:
             self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal successfully canceled");
@@ -414,8 +407,8 @@ class RouteService:
             self.__log.error(f"{ROUTE_TO_POSE_GOAL_CANCEL_TOPIC_NAME} : {ate}");
             return;
 
-    def velocity_state_subscription_cb(self, velocity_state_cb: VelocityStatus) -> None:
-        self.__velocity_state = velocity_state_cb;
+    def odom_eular_subscription_cb(self, odom_eular_cb: PoseStamped) -> None:
+        self.__current_distance = odom_eular_cb.pose.position.y;
         
 
 __all__: list[str] = ["RouteService"];
