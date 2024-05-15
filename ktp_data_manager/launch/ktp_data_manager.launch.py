@@ -7,7 +7,7 @@ from ament_index_python.packages import get_package_share_directory;
 def generate_launch_description() -> LaunchDescription:
     ld: LaunchDescription = LaunchDescription();
 
-    package_name: str = "ktp_task_controller";
+    package_name: str = "ktp_data_manager";
     package_shared_directory: str = get_package_share_directory(package_name);
     parameters: list[str] = [os.path.join(package_shared_directory, "config", "common_config.yaml")];
 

@@ -33,8 +33,11 @@ class ControlManager:
 
     def deliver_control_callback_json(self, control_callback_json: Any) -> None:
         try:
-            self.__node.get_logger().info(
-                f"Control Callback From KTP : {json.dumps(obj=control_callback_json, indent=4)}");
+            if "control_data" in control_callback_json:
+                control_callback_json["control_data"]["is_return"] = control_callback_json["control_data"].pop("return");
+            else:
+                pass;
+            self.__node.get_logger().info(f"Control Callback From KTP : {json.dumps(obj=control_callback_json, indent=4)}");
             control: Control = message_conversion.populate_instance(msg=control_callback_json, inst=Control());
             self.__assign_control_request(control=control);
         except message_conversion.NonexistentFieldException as nefe:

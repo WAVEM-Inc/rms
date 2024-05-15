@@ -109,18 +109,8 @@ def set_detected_object_flag(_detected_object_flag: bool) -> None:
 def on_resource_set_request_handler(pktBody, dev_id, resource_id, properties_in_jstr) -> int:
     print("OnResourceSetRequestHandler()-->", dev_id, resource_id, properties_in_jstr)
 
-    # YOUR CONTROL CODE HERE
     properties: Any = json.loads(properties_in_jstr);
     print(json.dumps(properties, indent=4));
-
-    global control;
-    global control_callback_flag;
-
-    global mission;
-    global mission_callback_flag;
-
-    global detected_object;
-    global detected_object_callback_flag;
 
     if resource_id == "rbt_control":
         print("!!! Control !!!");

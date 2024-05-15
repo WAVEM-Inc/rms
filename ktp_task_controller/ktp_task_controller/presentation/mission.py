@@ -1,3 +1,4 @@
+import time;
 import json;
 from rclpy.node import Node;
 from rclpy.service import Service;
@@ -10,14 +11,14 @@ from ktp_data_msgs.msg import MissionTask;
 from ktp_data_msgs.srv import AssignMission;
 from path_graph_msgs.srv import Path;
 from ktp_task_controller.utils import ros_message_dumps;
+from ktp_task_controller.application.error import ErrorService;
 from ktp_task_controller.application.path import PathService;
 from ktp_task_controller.application.route import RouteService;
-from ktp_task_controller.domain.flags import set_to_source_flag;
-from ktp_task_controller.domain.flags import set_to_dest_flag;
-from ktp_task_controller.domain.flags import set_returning_flag;
+from ktp_task_controller.application.status import StatusService;
 from ktp_task_controller.domain.flags import get_driving_flag;
 from ktp_task_controller.domain.mission import get_mission;
 from ktp_task_controller.domain.mission import set_mission;
+from ktp_task_controller.domain.status import get_last_arrived_node_id;
 
 
 NODE_NAME: str = "ktp_task_controller";
@@ -31,8 +32,13 @@ class MissionController:
         self.__node: Node = node;
         self.__log: RcutilsLogger = self.__node.get_logger();
         
+        self.__param_map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
+        self.__param_initial_node: str = self.__node.get_parameter(name="initial_node").get_parameter_value().string_value;
+        
+        self.__error_service: ErrorService = ErrorService(node=self.__node);
         self.__path_service: PathService = PathService(node=self.__node);
         self.__route_service: RouteService = RouteService(node=self.__node);
+        self.__status_service: StatusService = StatusService(node=self.__node);
         
         assign_mission_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__assign_mission_service: Service = self.__node.create_service(
@@ -52,24 +58,51 @@ class MissionController:
             response.result = False;
         else:
             mission = message_conversion.populate_instance(json.loads(request_mission_json), Mission());
-
-            set_to_source_flag(flag=True);
-            set_to_dest_flag(flag=False);
-            set_returning_flag(flag=False);
             set_mission(mission=mission);
             
             mission_task: MissionTask = get_mission().task[0];
             self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Path Request\n{ros_message_dumps(message=mission_task)}");
-
+                        
             path_request: Path.Request = Path.Request();
-            path_request.position.longitude = 0.0;
-            path_request.position.latitude = 0.0;
-
-            path_request.start_node = "";
-            path_request.end_node = mission_task.task_data.source;
+                        
+            source_node_id: str = mission_task.task_data.source;
+            goal_node_id: str = mission_task.task_data.goal[0];
+            last_arrived_node_id: str = f"NO-{self.__param_map_id}-{get_last_arrived_node_id()}";
+            last_arrived_node_id_is_source: bool = last_arrived_node_id == source_node_id;
+            self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} mission_assignment"
+                            f"\n\tsource_node_id : {source_node_id}"
+                            f"\n\tlast_arrived_node_id : {get_last_arrived_node_id()}"
+                            f"\n\tlast_arrived_node_id_is_source : {last_arrived_node_id_is_source}");
+            
+            self.__route_service.start_mission();
+            self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Sleep For Assign Mission");
+            time.sleep(1.2);
+            
+            is_mission_returning_task: bool = mission_task.task_code == "returning";
+            
+            if last_arrived_node_id_is_source:
+                path_request.start_node = source_node_id;
+                path_request.end_node = goal_node_id;
+                
+                if not is_mission_returning_task:
+                    self.__status_service.notify_mission_status_publish(status="SourceArrived");
+                    self.__log.info(f"==================================== Source Arrived ====================================");
+                else:
+                    self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");
+                    pass;
+            else:                
+                if not is_mission_returning_task:
+                    self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Wait To Source");
+                    path_request.start_node = f"NO-{self.__param_map_id}-{get_last_arrived_node_id()}";
+                    path_request.end_node = source_node_id;
+                else:
+                    self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");
+                    path_request.start_node = source_node_id;
+                    path_request.end_node = goal_node_id;
             
             path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
-            if path_response != None:
+            
+            if path_response != None or len(path_response.path.node_list) != 0:
                 self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response\n{ros_message_dumps(message=path_response)}");
                 
                 if get_driving_flag() != True:
@@ -80,7 +113,11 @@ class MissionController:
                     response.result = False;
                     return;
             else:
-                self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response is None");                            
+                self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response is None");
+                self.__error_service.error_report_publish(error_code="201");
+                self.__status_service.notify_mission_status_publish(status="Failed");
+                self.__route_service.goal_flush();
+                self.__route_service.mission_flush();
                 response.result = False;
                 
         return response;

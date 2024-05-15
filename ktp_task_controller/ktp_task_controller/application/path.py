@@ -36,18 +36,6 @@ class PathService:
         else:
             return;
         
-        self.__path_graph_graph_service_client: Client = None;
-        if self.__path_graph_graph_service_client is None:
-            path_graph_graph_service_client_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
-            self.__path_graph_graph_service_client = self.__node.create_client(
-                srv_name=PATH_GRAPH_GRAPH_SERVICE_NAME,
-                srv_type=Graph,
-                callback_group=path_graph_graph_service_client_cb_group,
-                qos_profile=qos_profile_services_default
-            );
-        else:
-            return;
-        
         self.__notify_path_publisher: Publisher = None;
         if self.__notify_path_publisher == None:
             notify_path_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
