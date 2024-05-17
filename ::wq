@@ -1,0 +1,4 @@
+/rcs_mqtt_bridge:
+  ros__parameters:
+    host: "172.16.101.59"
+    port: 1883

@@ -1,0 +1,192 @@
+[
+    {
+      "feedback_type": "",
+      "message_type": "nav_msgs/msg/OccupancyGrid",
+      "name": "/map",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "geometry_msgs/msg/Pose",
+      "name": "/robot_pose",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "sensor_msgs/msg/LaserScan",
+      "name": "/scan",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "tf2_msgs/msg/TFMessage",
+      "name": "/tf",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "tf2_msgs/msg/TFMessage",
+      "name": "/tf_static",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "geometry_msgs/msg/Twist",
+      "name": "/cmd_vel",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "nav_msgs/msg/Odometry",
+      "name": "/odom",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "nav_msgs/msg/Path",
+      "name": "/global_plan",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "nav_msgs/msg/Path",
+      "name": "/local_plan",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "sensor_msgs/msg/BatteryState",
+      "name": "/battery/state",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "sensor_msgs/msg/NavSatFix",
+      "name": "/ublox/fix",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "geometry_msgs/msg/PoseStamped",
+      "name": "/rtt_odom",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "can_msgs/msg/Emergency",
+      "name": "/drive/can/emergency",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "pub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "geometry_msgs/msg/Twist",
+      "name": "/cmd_vel",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "pub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "geometry_msgs/msg/PoseWithCovarianceStamped",
+      "name": "/initialpose",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "pub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "gps_navigation_msgs/msg/GoalWaypointsStamped",
+      "name": "/gps_slam_navigation/waypoints",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "pub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "gps_navigation_msgs/msg/NavigationStatusStamped",
+      "name": "/gps_slam_navigation/status",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "gps_navigation_msgs/msg/NavigationResultStamped",
+      "name": "/gps_slam_navigation/result",
+      "qos": 0,
+      "request_type": "",
+      "response_type": "",
+      "retained": false,
+      "type": "sub"
+    },
+    {
+      "feedback_type": "",
+      "message_type": "nav_msgs/srv/GetMap",
+      "name": "/map_server/map",
+      "qos": 0,
+      "request_type": "nav_msgs/srv/GetMap_Request",
+      "response_type": "nav_msgs/srv/GetMap_Response",
+      "retained": false,
+      "type": "call"
+    }
+  ]
