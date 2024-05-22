@@ -1,3 +1,4 @@
+from datetime import datetime;
 from rclpy.node import Node;
 from rclpy.timer import Timer;
 from rclpy.publisher import Publisher;
@@ -17,6 +18,7 @@ UBLOX_FIX_TOPIC: str = "/sensor/ublox/fix";
 RTT_ODOM_TOPIC: str = "/drive/rtt_odom";
 TEMPERATURE_TOPIC: str = "/sensor/temp/temperature";
 HUMIDITY_TOPIC: str = "/sensor/temp/humidity";
+DRIVE_ODOM_EULAR_TOPIC: str = "/drive/odom/eular";
 
 
 class DummyTotalPublisher:
@@ -80,6 +82,14 @@ class DummyTotalPublisher:
             callback_group=humidity_publisher_cb_group
         );
         
+        drive_odom_eular_publisher_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
+        self.__drive_odom_eular_publisher: Publisher = self.__node.create_publisher(
+            topic=DRIVE_ODOM_EULAR_TOPIC,
+            msg_type=PoseStamped,
+            qos_profile=qos_profile_system_default,
+            callback_group=drive_odom_eular_publisher_cb_group
+        );
+        
     def main_timer_cb(self) -> None:
         self.battery_state_publish();
         self.velocity_state_publish();
@@ -87,6 +97,7 @@ class DummyTotalPublisher:
         self.rtt_odom_publish();
         self.temperature_publish();
         self.humidity_publish();
+        self.drive_odom_eular_publish();
     
     def battery_state_publish(self) -> None:
         battery_state: BatteryState = BatteryState();
@@ -109,11 +120,9 @@ class DummyTotalPublisher:
     
     def ublox_fix_publish(self) -> None:
         nav_sat_fix: NavSatFix = NavSatFix();
-        # nav_sat_fix.longitude = 128.3673833;
-        # nav_sat_fix.latitude = 36.113787;
         
-        nav_sat_fix.longitude = 127.2401102;
-        nav_sat_fix.latitude = 37.3060542;
+        nav_sat_fix.longitude = 128.3690;
+        nav_sat_fix.latitude = 36.11434;
         
         self.__ublox_fix_publisher.publish(msg=nav_sat_fix);
     
@@ -134,6 +143,13 @@ class DummyTotalPublisher:
         humidity.relative_humidity = 12.0;
         
         self.__humidity_publisher.publish(msg=humidity);
+        
+    def drive_odom_eular_publish(self) -> None:
+        pose_stamped: PoseStamped = PoseStamped();
+        pose_stamped.pose.position.y = float(datetime.now().strftime("%M%S"));
+        pose_stamped.pose.orientation.y = 320.0;
+        
+        self.__drive_odom_eular_publisher.publish(msg=pose_stamped);
 
 
 __all__ = ["DummyTotalPublisher"];

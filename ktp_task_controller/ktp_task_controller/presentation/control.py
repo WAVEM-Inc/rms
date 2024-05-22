@@ -188,7 +188,6 @@ class ControlController:
                 대기 장소 미복귀
                 """
                 self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} MSCOMPLETE No Return");
-                self.__route_service.process_no_return();
                 
                 if get_mission() is None:
                     self.control_report_publish(control=control, control_type="control", response_code=400);
@@ -196,6 +195,8 @@ class ControlController:
                 else:
                     self.control_report_publish(control=control, control_type="control", response_code=201);
                     response.result = True;
+                    
+                self.__route_service.process_no_return();
                 
             return response;
         elif control_code == CONTORL_CODE_GRAPH_SYNC:
