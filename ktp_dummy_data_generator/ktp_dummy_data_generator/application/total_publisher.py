@@ -101,7 +101,7 @@ class DummyTotalPublisher:
     
     def battery_state_publish(self) -> None:
         battery_state: BatteryState = BatteryState();
-        battery_state.percentage = 75.0;
+        battery_state.voltage = 75.0;
         
         self.__battery_state_publisher.publish(msg=battery_state);
         

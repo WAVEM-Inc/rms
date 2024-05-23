@@ -133,8 +133,8 @@ class RouteService:
         self.__goal_list.clear();
         self.__goal_list_size = 0;
                     
-        set_driving_flag(flag=False);
-        set_driving_status(driving_status=DRIVE_STATUS_WAIT);
+        # set_driving_flag(flag=False);
+        # set_driving_status(driving_status=DRIVE_STATUS_WAIT);
     
     def mission_flush(self) -> None:
         set_mission(mission=None);
@@ -253,11 +253,15 @@ class RouteService:
         self.calculate_mission_total_distance();
         self.__status_service.notify_mission_status_publish(status="End");
         self.__log.info(f"==================================== Mission End ====================================");
+        self.__mission_start_distance = 0.0;
+        self.__mission_end_distance = 0.0;
     
     def process_no_return(self) -> None:
         self.calculate_mission_total_distance();
         self.goal_flush();
         self.mission_flush();
+        self.__mission_start_distance = 0.0;
+        self.__mission_end_distance = 0.0;
     
     def calculate_mission_total_distance(self) -> None:
         try:
@@ -323,6 +327,7 @@ class RouteService:
 
         if result_code == 1001:
             set_last_arrived_node_id(last_arrived_node_id=self.__current_goal.end_node.node_id);
+            
             is_mission_returning_task: bool = get_mission().task[0].task_code == "returning";
             
             if self.__current_goal.end_node.node_id == get_mission().task[0].task_data.source:
@@ -330,6 +335,7 @@ class RouteService:
                     """
                     대기 장소 -> Source 주행 도착 시
                     """
+                    set_driving_flag(flag=False);
                     set_driving_status(driving_status=DRIVE_STATUS_DRIVE_FINISHED);
                     self.__goal_index = 0;
                         
@@ -344,6 +350,7 @@ class RouteService:
                     """
                     Source -> Goal 주행 도착 시
                     """
+                    set_driving_flag(flag=False);
                     set_driving_status(driving_status=DRIVE_STATUS_DRIVE_FINISHED);
                     self.__goal_index = 0;
                         
@@ -353,13 +360,16 @@ class RouteService:
                     return;
                 else:
                     if self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{self.__param_initial_node}":
+                        set_driving_flag(flag=False);
                         set_driving_status(driving_status=DRIVE_STATUS_WAIT);
-                        self.goal_flush();
-                        self.end_mission();
+                        
+                        self.__goal_index = 0;
                         self.__log.info(f"==================================== Returning Finished ====================================");
+                        self.end_mission();
+                        self.goal_flush();
+                        return;
                     else:
                         pass;
-                    pass;
             else:
                 self.__goal_index = self.__goal_index + 1;
                 self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} RTP will proceed Next Goal [{self.__goal_index} / {self.__goal_list_size - 1}]");

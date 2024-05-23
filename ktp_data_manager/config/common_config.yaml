@@ -1,5 +1,5 @@
 /ktp_data_manager:
   ros__parameters:
     dev_id: "KECDSEMITB001"
-    map_id: "220"
+    map_id: "966"
     firmware_version: "1.0.5.21"
