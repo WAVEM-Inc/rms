@@ -255,6 +255,17 @@ class RouteService:
         self.__log.info(f"==================================== Mission End ====================================");
         self.__mission_start_distance = 0.0;
         self.__mission_end_distance = 0.0;
+        set_mission_total_distance(mission_total_distance=0);
+        
+    def process_return(self) -> None:
+        set_driving_flag(flag=False);
+        set_driving_status(driving_status=DRIVE_STATUS_WAIT);
+                        
+        self.__goal_index = 0;
+        self.__log.info(f"==================================== Returning Finished ====================================");
+        self.end_mission();
+        self.goal_flush();
+        self.mission_flush();
     
     def process_no_return(self) -> None:
         self.calculate_mission_total_distance();
@@ -360,16 +371,13 @@ class RouteService:
                     return;
                 else:
                     if self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{self.__param_initial_node}":
-                        set_driving_flag(flag=False);
-                        set_driving_status(driving_status=DRIVE_STATUS_WAIT);
-                        
-                        self.__goal_index = 0;
-                        self.__log.info(f"==================================== Returning Finished ====================================");
-                        self.end_mission();
-                        self.goal_flush();
+                        self.process_return();
                         return;
                     else:
                         pass;
+            elif self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{self.__param_initial_node}":
+                self.process_return();
+                return;
             else:
                 self.__goal_index = self.__goal_index + 1;
                 self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} RTP will proceed Next Goal [{self.__goal_index} / {self.__goal_list_size - 1}]");

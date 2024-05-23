@@ -67,7 +67,6 @@ class MissionController:
                         
             source_node_id: str = mission_task.task_data.source;
             goal_node_id: str = mission_task.task_data.goal[0];
-            last_arrived_node_id: str = f"NO-{self.__param_map_id}-{get_last_arrived_node_id()}";
             last_arrived_node_id_is_source: bool = get_last_arrived_node_id() == source_node_id;
             self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} mission_assignment"
                             f"\n\tsource_node_id : {source_node_id}"
