@@ -1,18 +1,15 @@
 import json;
-import rclpy;
-
 from rclpy.node import Node;
 from rclpy.client import Client;
 from rclpy.task import Future;
 from rclpy.qos import qos_profile_services_default;
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
 from rosbridge_library.internal import message_conversion;
-
 from ktp_data_msgs.msg import Control;
 from ktp_data_msgs.srv import AssignControl;
 from ktp_interface.tcp.application.service import control_callback_flag;
-
 from typing import Any;
+
 
 DATA_MANAGER_NODE_NAME: str = "ktp_data_manager";
 ASSIGN_CONTROL_SERVICE_NAME: str = f"/{DATA_MANAGER_NODE_NAME}/assign/control";

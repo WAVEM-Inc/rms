@@ -1,17 +1,12 @@
-#-*- coding:utf-8 -*-
-
 from rclpy.node import Node;
 from rclpy.subscription import Subscription;
 from rclpy.qos import qos_profile_system_default;
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
 from rosbridge_library.internal import message_conversion;
-
 from ktp_interface.tcp.application.service import tcp_send_resource;
-
 from ktp_data_msgs.msg import Status;
-from ktp_data_msgs.msg import StatusService;
-
 from typing import Any;
+
 
 RBT_STATUS_FROM_DATA_MGR_TOPIC_NAME: str = "/rms/ktp/data/rbt_status";
 KTP_TCP_RESOURCE_ID: str = "rbt_status";

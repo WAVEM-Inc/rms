@@ -1,15 +1,10 @@
-#-*- coding:utf-8 -*-
-
 from typing import Any;
-
 from rclpy.node import Node;
 from rclpy.subscription import Subscription;
 from rclpy.qos import qos_profile_system_default;
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
 from rosbridge_library.internal import message_conversion;
-
 from ktp_interface.tcp.application.service import tcp_send_resource;
-
 from ktp_data_msgs.msg import ErrorReport;
 
 

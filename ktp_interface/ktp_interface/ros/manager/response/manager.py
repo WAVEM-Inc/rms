@@ -1,7 +1,4 @@
-import rclpy;
-
 from rclpy.node import Node;
-
 from ktp_interface.ros.application.response.rbt_status import RbtStatusManager;
 from ktp_interface.ros.application.response.service_status import ServiceStatusManager;
 from ktp_interface.ros.application.response.error_report import ErrorReportManager;

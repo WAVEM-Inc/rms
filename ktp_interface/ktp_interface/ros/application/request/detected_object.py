@@ -1,14 +1,13 @@
 import json;
-
 from rclpy.node import Node;
 from rclpy.publisher import Publisher;
 from rclpy.qos import qos_profile_system_default;
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
 from rosbridge_library.internal import message_conversion;
 from typing import Any;
-
 from ktp_data_msgs.msg import DetectedObject;
 from ktp_interface.tcp.application.service import detected_object_callback_flag;
+
 
 DETECTED_OBJECT_PUBLISHER_NAME: str = "/rms/ktp/itf/detected_object";
 

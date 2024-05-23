@@ -1,10 +1,7 @@
 import threading;
-
 from rclpy.node import Node;
-
 from ktp_interface.ros.manager.request.manager import RequestManager;
 from ktp_interface.ros.manager.response.manager import ResponseManager;
-
 from ktp_interface.tcp.application.service import tcp_initialize;
 from ktp_interface.tcp.application.service import polling_thread_cb;
 
