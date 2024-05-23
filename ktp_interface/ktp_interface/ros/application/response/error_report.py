@@ -42,4 +42,4 @@ class ErrorReportManager:
             self.__node.get_logger().info(f"Succeeded to Sending Resource to id : {KTP_TCP_RESOURCE_ID}");
 
 
-__all__ = ["ErrorReportManager"];
+__all__: list[str] = ["ErrorReportManager"];

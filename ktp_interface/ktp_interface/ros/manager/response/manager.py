@@ -25,4 +25,4 @@ class ResponseManager:
         self.__lidar_signal_manager: LiDARSignalManager = LiDARSignalManager(node=self.__node);
 
 
-__all__ = ["ResponseManager"];
+__all__: list[str] = ["ResponseManager"];

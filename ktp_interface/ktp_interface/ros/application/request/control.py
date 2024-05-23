@@ -62,4 +62,4 @@ class ControlManager:
 
 
 
-__all__ = ["ControlManager"];
+__all__: list[str] = ["ControlManager"];

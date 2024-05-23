@@ -41,4 +41,4 @@ class DetectedObjectManager:
         self.__detected_object_publisher.publish(msg=detected_object);
 
 
-__all__ = ["DetectedObjectManager"];
+__all__: list[str] = ["DetectedObjectManager"];

@@ -42,4 +42,4 @@ class RbtStatusManager:
             self.__node.get_logger().info(f"Succeeded to Sending Resource to id : {KTP_TCP_RESOURCE_ID}");
 
 
-__all__ = ["RbtStatusManager"];
+__all__: list[str] = ["RbtStatusManager"];

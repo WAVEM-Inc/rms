@@ -25,7 +25,8 @@ def main(args=None) -> None:
     rclpy.shutdown();
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main();
 
-__all__ = ["main"];
+
+__all__ : list[str]= ["main"];
