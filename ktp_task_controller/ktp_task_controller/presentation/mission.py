@@ -68,7 +68,7 @@ class MissionController:
             source_node_id: str = mission_task.task_data.source;
             goal_node_id: str = mission_task.task_data.goal[0];
             last_arrived_node_id: str = f"NO-{self.__param_map_id}-{get_last_arrived_node_id()}";
-            last_arrived_node_id_is_source: bool = last_arrived_node_id == source_node_id;
+            last_arrived_node_id_is_source: bool = get_last_arrived_node_id() == source_node_id;
             self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} mission_assignment"
                             f"\n\tsource_node_id : {source_node_id}"
                             f"\n\tlast_arrived_node_id : {get_last_arrived_node_id()}"
@@ -93,7 +93,7 @@ class MissionController:
             else:                
                 if not is_mission_returning_task:
                     self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Wait To Source");
-                    path_request.start_node = f"NO-{self.__param_map_id}-{get_last_arrived_node_id()}";
+                    path_request.start_node = get_last_arrived_node_id();
                     path_request.end_node = source_node_id;
                 else:
                     self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");

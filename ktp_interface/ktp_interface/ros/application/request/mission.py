@@ -61,4 +61,4 @@ class MissionManager:
             return;
 
 
-__all__ = ["MissionManager"];
+__all__: list[str] = ["MissionManager"];

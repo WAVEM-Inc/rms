@@ -2,15 +2,21 @@
 
 import os;
 import yaml;
+import rclpy;
 import json;
+from rclpy.node import Node;
 from typing import Any;
 from ament_index_python.packages import get_package_share_directory;
 from ktp_interface.tcp.libs.IoTMakersDeviceClient import IoTMakersDeviceClient;
 
+# def create_tcp_node() -> Node:
+#     node: Node = rclpy.create_node(namespace="ktp_interface", node_name="tcp");
+    
+#     return node;
+
+
 im_client: IoTMakersDeviceClient = IoTMakersDeviceClient();
-
 thread_run_flag: bool = False;
-
 tcp_configuration_data: Any = {};
 
 
@@ -113,19 +119,19 @@ def on_resource_set_request_handler(pktBody, dev_id, resource_id, properties_in_
     print(json.dumps(properties, indent=4));
 
     if resource_id == "rbt_control":
-        print("!!! Control !!!");
+        print("=============================== Control Request ===============================");
         set_control_callback_flag(True);
         set_control(properties);
 
         print(f"{resource_id} Callback : {json.dumps(get_control(), indent=4)}");
     elif resource_id == "rbt_mission":
-        print("!!! Mission !!!");
+        print("=============================== Mission Request ===============================");
         set_mission_callback_flag(True);
         set_mission(properties);
 
         print(f"{resource_id} Callback : {json.dumps(get_mission(), indent=4)}");
     elif resource_id == "rbt_detected_object":
-        print("!!! DetectedObject !!!");
+        print("=============================== DetectedObject Request ===============================");
         set_detected_object_flag(True);
         set_detected_object(properties);
 

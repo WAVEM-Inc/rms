@@ -11,7 +11,7 @@ def generate_launch_description() -> LaunchDescription:
     package_shared_directory: str = get_package_share_directory(package_name);
     parameters: list[str] = [os.path.join(package_shared_directory, "config", "common_config.yaml")];
 
-    converter_node: Node = Node(
+    ktp_data_manager: Node = Node(
         package=package_name,
         executable=package_name,
         name=package_name,
@@ -19,6 +19,6 @@ def generate_launch_description() -> LaunchDescription:
         parameters=parameters
     );
 
-    ld.add_action(converter_node)
+    ld.add_action(ktp_data_manager)
 
     return ld;

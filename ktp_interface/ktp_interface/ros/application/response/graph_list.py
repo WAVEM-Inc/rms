@@ -50,4 +50,4 @@ class GraphListManager:
             pass;
 
 
-__all__ = ["GraphListManager"];
+__all__: list[str] = ["GraphListManager"];

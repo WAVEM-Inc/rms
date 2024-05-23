@@ -7,18 +7,17 @@ from ament_index_python.packages import get_package_share_directory;
 def generate_launch_description() -> LaunchDescription:
     ld: LaunchDescription = LaunchDescription();
 
-    package_name: str = "ktp_task_controller";
+    package_name: str = "ktp_interface";
     package_shared_directory: str = get_package_share_directory(package_name);
-    parameters: list[str] = [os.path.join(package_shared_directory, "config", "common_config.yaml")];
 
-    ktp_task_controller: Node = Node(
+    ktp_interface: Node = Node(
         package=package_name,
         executable=package_name,
         name=package_name,
         output="screen",
-        parameters=parameters
+        parameters=[]
     );
 
-    ld.add_action(ktp_task_controller);
+    ld.add_action(ktp_interface);
 
     return ld;

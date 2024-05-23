@@ -51,9 +51,11 @@ class RouteService:
         
         self.__param_map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
         self.__param_initial_node: str = self.__node.get_parameter(name="initial_node").get_parameter_value().string_value;
-        self.__param_goal_validation_limit: float = self.__node.get_parameter(name="goal_validation_limit").get_parameter_value().double_value;
         
-        set_last_arrived_node_id(last_arrived_node_id=self.__param_initial_node);
+        last_arrived_node_id: str = f"NO-{self.__param_map_id}-{self.__param_initial_node}";
+        set_last_arrived_node_id(last_arrived_node_id=last_arrived_node_id);
+        
+        self.__param_goal_validation_limit: float = self.__node.get_parameter(name="goal_validation_limit").get_parameter_value().double_value;
         
         self.__error_service: ErrorService = ErrorService(node=self.__node);
         self.__status_service: StatusService = StatusService(node=self.__node);
@@ -139,29 +141,43 @@ class RouteService:
         self.__log.info("====================== Mission Flushed ======================");
         
     def send_goal(self, path_response: Path.Response) -> None:
-        goal: RouteToPose.Goal = RouteToPose.Goal();
+        try:
+            goal: RouteToPose.Goal = RouteToPose.Goal();
 
-        self.__goal_list = path_response.path.node_list;
-        self.__goal_list_size = len(self.__goal_list);
+            self.__goal_list = path_response.path.node_list;
+            self.__goal_list_size = len(self.__goal_list);
 
-        start_node: route.Node = self.__goal_list[self.__goal_index];
-        goal.start_node = start_node;
-        
-        end_node: route.Node = self.__goal_list[self.__goal_index + 1];
-        goal.end_node = end_node;
-        
-        self._send_goal(goal=goal);
+            start_node: route.Node = self.__goal_list[self.__goal_index];
+            goal.start_node = start_node;
+            
+            end_node: route.Node = self.__goal_list[self.__goal_index + 1];
+            goal.end_node = end_node;
+            
+            self._send_goal(goal=goal);
+        except IndexError as ide:
+            self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} : {ide}");
+            self.__error_service.error_report_publish(error_code="450");
+            self.__status_service.notify_mission_status_publish(status="Failed");
+            self.mission_flush();
+            return;
         
     def __send_goal(self) -> None:
-        goal: RouteToPose.Goal = RouteToPose.Goal();
+        try:
+            goal: RouteToPose.Goal = RouteToPose.Goal();
         
-        start_node: route.Node = self.__goal_list[self.__goal_index];
-        goal.start_node = start_node;
+            start_node: route.Node = self.__goal_list[self.__goal_index];
+            goal.start_node = start_node;
 
-        end_node: route.Node = self.__goal_list[self.__goal_index + 1];
-        goal.end_node = end_node;
-        
-        self._send_goal(goal=goal);
+            end_node: route.Node = self.__goal_list[self.__goal_index + 1];
+            goal.end_node = end_node;
+            
+            self._send_goal(goal=goal);
+        except IndexError as ide:
+            self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} : {ide}");
+            self.__error_service.error_report_publish(error_code="450");
+            self.__status_service.notify_mission_status_publish(status="Failed");
+            self.mission_flush();
+            return;
         
     def _send_goal(self, goal: RouteToPose.Goal) -> None:
         try:
@@ -178,8 +194,8 @@ class RouteService:
             #         else:
             #             self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} Send Goal goal is invalidate. aborting...");
             #             self.__is_goal_need_to_retry = False;
-            #             self.__error_service.error_report_publish(error_code="450");
-            #             self.__status_service.notify_mission_status_publish(status="Failed");
+                        # self.__error_service.error_report_publish(error_code="450");
+                        # self.__status_service.notify_mission_status_publish(status="Failed");
             #             self.goal_flush();
             #             return;
             # else:
@@ -247,7 +263,7 @@ class RouteService:
         try:
             self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} started capture mission_distance");
             self.__mission_end_distance = self.__current_distance;
-            mission_total_distance: int = int(abs(self.__mission_end_distance - self.__mission_start_distance) * 1000);
+            mission_total_distance: int = int(abs(self.__mission_end_distance - self.__mission_start_distance));
             self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} mission_total_distance : {mission_total_distance}");
             set_mission_total_distance(mission_total_distance=mission_total_distance);
         except AssertionError as ate:
@@ -276,8 +292,9 @@ class RouteService:
         if status_code == 1001:
             set_driving_flag(flag=True);
             set_driving_status(driving_status=DRIVE_STATUS_ON_DRIVE);
+            is_mission_returning_task: bool = get_mission().task[0].task_code == "returning";
             
-            if self.__current_goal.start_node.node_id == get_mission().task[0].task_data.source:
+            if self.__current_goal.start_node.node_id == get_mission().task[0].task_data.source and not is_mission_returning_task:
                 if self.__goal_index == 0:
                     """
                     Source -> Goal 주행 출발 시
@@ -335,11 +352,14 @@ class RouteService:
                     self.goal_flush();
                     return;
                 else:
+                    if self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{self.__param_initial_node}":
+                        set_driving_status(driving_status=DRIVE_STATUS_WAIT);
+                        self.goal_flush();
+                        self.end_mission();
+                        self.__log.info(f"==================================== Returning Finished ====================================");
+                    else:
+                        pass;
                     pass;
-            elif self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{self.__param_initial_node}":
-                set_driving_status(driving_status=DRIVE_STATUS_WAIT);
-                self.goal_flush();
-                self.__log.info(f"==================================== Returning Finished ====================================");
             else:
                 self.__goal_index = self.__goal_index + 1;
                 self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} RTP will proceed Next Goal [{self.__goal_index} / {self.__goal_list_size - 1}]");

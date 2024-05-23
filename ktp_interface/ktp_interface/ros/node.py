@@ -7,7 +7,7 @@ from ktp_interface.ros.manager.response.manager import ResponseManager;
 
 from ktp_interface.tcp.application.service import tcp_initialize;
 from ktp_interface.tcp.application.service import polling_thread_cb;
-from ktp_interface.tcp.application.service import thread_run_flag;
+
 
 NODE_NAME: str = "ktp_interface";
 
@@ -31,4 +31,4 @@ class KTPInterface(Node):
         tcp_polling_thread.start();
 
 
-__all__ = ["KTPInterface"];
+__all__: list[str] = ["KTPInterface"];
