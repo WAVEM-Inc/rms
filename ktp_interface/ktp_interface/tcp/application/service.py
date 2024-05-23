@@ -2,15 +2,21 @@
 
 import os;
 import yaml;
+import rclpy;
 import json;
+from rclpy.node import Node;
 from typing import Any;
 from ament_index_python.packages import get_package_share_directory;
 from ktp_interface.tcp.libs.IoTMakersDeviceClient import IoTMakersDeviceClient;
 
+# def create_tcp_node() -> Node:
+#     node: Node = rclpy.create_node(namespace="ktp_interface", node_name="tcp");
+    
+#     return node;
+
+
 im_client: IoTMakersDeviceClient = IoTMakersDeviceClient();
-
 thread_run_flag: bool = False;
-
 tcp_configuration_data: Any = {};
 
 
