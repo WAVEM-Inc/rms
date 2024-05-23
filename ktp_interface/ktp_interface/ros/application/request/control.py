@@ -34,7 +34,10 @@ class ControlManager:
     def deliver_control_callback_json(self, control_callback_json: Any) -> None:
         try:
             if "control_data" in control_callback_json:
-                control_callback_json["control_data"]["is_return"] = control_callback_json["control_data"].pop("return");
+                if "return" in control_callback_json["control_data"]:
+                    control_callback_json["control_data"]["is_return"] = control_callback_json["control_data"].pop("return");
+                else:
+                    pass;
             else:
                 pass;
             self.__node.get_logger().info(f"Control Callback From KTP : {json.dumps(obj=control_callback_json, indent=4)}");
