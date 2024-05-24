@@ -79,7 +79,10 @@ class MissionController:
             
             is_mission_returning_task: bool = mission_task.task_code == "returning";
             
-            if last_arrived_node_id_is_source:
+            if source_node_id == "":
+                path_request.start_node = get_last_arrived_node_id();
+                path_request.end_node = goal_node_id;  
+            elif last_arrived_node_id_is_source:
                 path_request.start_node = source_node_id;
                 path_request.end_node = goal_node_id;
                 
@@ -89,7 +92,7 @@ class MissionController:
                 else:
                     self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");
                     pass;
-            else:                
+            else:
                 if not is_mission_returning_task:
                     self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Wait To Source");
                     path_request.start_node = get_last_arrived_node_id();
