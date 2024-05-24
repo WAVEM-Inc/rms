@@ -268,11 +268,14 @@ class RouteService:
         self.mission_flush();
     
     def process_no_return(self) -> None:
-        self.calculate_mission_total_distance();
+        set_driving_flag(flag=False);
+        set_driving_status(driving_status=DRIVE_STATUS_WAIT);
+                        
+        self.__goal_index = 0;
+        self.__log.info(f"==================================== No Return ====================================");
+        self.end_mission();
         self.goal_flush();
         self.mission_flush();
-        self.__mission_start_distance = 0.0;
-        self.__mission_end_distance = 0.0;
     
     def calculate_mission_total_distance(self) -> None:
         try:
