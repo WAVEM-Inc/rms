@@ -10,11 +10,9 @@ from rclpy.qos import qos_profile_services_default;
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
 from rosbridge_library.internal import message_conversion;
 from rosbridge_library.internal.ros_loader import get_service_class;
-
 from typing import Any;
 from typing import Dict;
-
-from ..mqtt.client import Client;
+from rcs_mqtt_bridge.mqtt.client import Client;
 
 NODE_NAME: str = "rcs_mqtt_bridge";
 

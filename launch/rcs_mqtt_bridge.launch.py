@@ -16,7 +16,7 @@ def generate_launch_description() -> LaunchDescription:
         package=package_name,
         executable=executable_name,
         name=executable_name,
-        arguments=["--ros-args","--enclave","/rcs_mqtt_bridge"],
+        arguments=["--ros-args", "--enclave", "/rcs_mqtt_bridge"],
         output="screen",
         parameters=parameters
     )
