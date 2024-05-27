@@ -30,6 +30,9 @@ class RcsMQTTBridge(Node):
         
         self.__ros_message_init_sub();
         
+        self.__ros_established_topics: list[Any] = [];
+        self.__ros_established_services: list[Any] = [];
+        
     def __declare_mqtt_parameters(self) -> None:
         self.declare_parameter(name="host", value="");
         self.declare_parameter(name="port", value=0);
@@ -97,6 +100,11 @@ class RcsMQTTBridge(Node):
     
     def __create_rcl_subscription(self, topic: str, message_type: str) -> None:
         self.get_logger().info(f"create_rcl_subscription topic : [{topic}], message_type : [{message_type}]");
+        
+        for ros_topic in self.__ros_established_topics:
+            if topic == ros_topic["topic"]:
+                self.get_logger().info(f"{topic} is already established...");
+                return;
 
         def __rcl_subscription_cb(cb_message: Any) -> None:
              mqtt_serialized_message: str = json.dumps(message_conversion.extract_values(cb_message));
@@ -110,14 +118,33 @@ class RcsMQTTBridge(Node):
             callback_group=MutuallyExclusiveCallbackGroup(),
             callback=__rcl_subscription_cb
         );
+        
+        topic_info: Any = {
+            "topic": topic,
+            "message_type": message_type
+        };
+        
+        self.__ros_established_topics.append(topic_info);
     
     def __create_rcl_publisher(self, topic: str, message_type: str) -> None:
+        for ros_topic in self.__ros_established_topics:
+            if topic == ros_topic["topic"]:
+                self.get_logger().info(f"{topic} is already established...");
+                return;
+            
         rcl_publisher: Publisher = self.create_publisher(
             msg_type=self.__extract_ros_message_class(message_type),
             topic=topic,
             qos_profile=qos_profile_system_default,
             callback_group=MutuallyExclusiveCallbackGroup()
         );
+        
+        topic_info: Any = {
+            "topic": topic,
+            "message_type": message_type
+        };
+        
+        self.__ros_established_topics.append(topic_info);
 
         self.get_logger().info(f"create_rcl_publisher topic : [{topic}], message_type : [{message_type}]");
 
@@ -151,12 +178,24 @@ class RcsMQTTBridge(Node):
         self.__mqtt_client.client.message_callback_add(sub=topic, callback=__publisher_mqtt_subscription_cb);
 
     def __create_rcl_service_client(self, service_name: str, service_type: str) -> None:
+        for ros_service in self.__ros_established_services:
+            if service_name == ros_service["service_name"]:
+                self.get_logger().info(f"{service_name} is already established...");
+                return;
+            
         rcl_client: Client = self.create_client(
             srv_type=self.__extract_ros_message_class(service_type),
             srv_name=service_name,
             qos_profile=qos_profile_services_default,
             callback_group=MutuallyExclusiveCallbackGroup()
         );
+        
+        service_info: Any = {
+            "service_name": service_name,
+            "service_type": service_type
+        };
+        
+        self.__ros_established_services.append(service_info);
 
         self.get_logger().info(f"cretae_rcl_service_client name : [{service_name}], service_type : [{service_type}]");
 
