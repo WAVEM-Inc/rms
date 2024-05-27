@@ -40,4 +40,4 @@ class Client:
         self.client.subscribe(topic=topic, qos=0);
 
 
-__all__: list[str] = ["Client"];
+__all__ = ["Client"];
