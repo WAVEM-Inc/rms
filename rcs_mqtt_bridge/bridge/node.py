@@ -127,10 +127,10 @@ class RcsMQTTBridge(Node):
         self.__ros_established_topics.append(topic_info);
     
     def __create_rcl_publisher(self, topic: str, message_type: str) -> None:
-        for ros_topic in self.__ros_established_topics:
-            if topic == ros_topic["topic"]:
-                self.get_logger().info(f"{topic} is already established...");
-                return;
+        # for ros_topic in self.__ros_established_topics:
+        #     if topic == ros_topic["topic"]:
+        #         self.get_logger().info(f"{topic} is already established...");
+        #         return;
             
         rcl_publisher: Publisher = self.create_publisher(
             msg_type=self.__extract_ros_message_class(message_type),
