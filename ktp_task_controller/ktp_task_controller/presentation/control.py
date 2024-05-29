@@ -22,6 +22,7 @@ from ktp_task_controller.utils import ros_message_dumps;
 from ktp_task_controller.utils import get_current_time;
 from ktp_task_controller.domain.flags import get_driving_flag;
 from ktp_task_controller.domain.mission import get_mission;
+from ktp_task_controller.domain.status import set_is_mission_canceled;
 from typing import Any;
 
 
@@ -98,7 +99,10 @@ class ControlController:
         elif control_code == CONTROL_CODE_RELEASE:
             pass;
         elif control_code == CONTROL_MS_CANCEL:
-            pass;
+            """
+            Cancel Mission
+            """
+            set_is_mission_canceled(is_mission_canceled=True);
         elif control_code == CONTROL_CODE_MOVE_TO_DEST:
             """
             Source -> Goal

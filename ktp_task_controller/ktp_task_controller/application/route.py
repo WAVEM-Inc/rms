@@ -18,6 +18,7 @@ from geometry_msgs.msg import PoseStamped;
 from typing import Any;
 from ktp_task_controller.application.error import ErrorService;
 from ktp_task_controller.application.status import StatusService;
+from ktp_task_controller.application.path import PathService;
 from ktp_task_controller.utils import convert_latlon_to_utm;
 from ktp_task_controller.utils import distance_between;
 from ktp_task_controller.domain.flags import get_driving_flag;
@@ -28,6 +29,9 @@ from ktp_task_controller.domain.status import set_mission_total_distance;
 from ktp_task_controller.domain.gps import get_gps;
 from ktp_task_controller.domain.mission import get_mission;
 from ktp_task_controller.domain.status import set_last_arrived_node_id;
+from ktp_task_controller.domain.status import get_is_mission_canceled;
+from ktp_task_controller.domain.status import set_is_mission_canceled;
+from ktp_task_controller.utils import ros_message_dumps;
 
 
 ROUTE_TO_POSE_ACTION_NAME: str = "/route_to_pose";
@@ -59,6 +63,7 @@ class RouteService:
         
         self.__error_service: ErrorService = ErrorService(node=self.__node);
         self.__status_service: StatusService = StatusService(node=self.__node);
+        self.__path_service: PathService = PathService(node=self.__node);
         
         self.__current_distance: float = 0.0;
         self.__mission_start_distance: float = 0.0;
@@ -74,6 +79,7 @@ class RouteService:
         self.__is_goal_odom_to_gps: bool = False;
         self.__is_goal_need_to_retry: bool = False;
         self.__odom_goal_retry_count: int = 0;
+        self.__is_need_to_return: bool = False;
         
         self.__route_to_pose_action_client: ActionClient = None;
         if self.__route_to_pose_action_client is None:
@@ -326,7 +332,7 @@ class RouteService:
                 return;
         elif status_code == 5001:
             set_driving_flag(flag=False);
-            self.__status_service.notify_mission_status_publish(status="Cancelled");
+            set_driving_status(driving_status=DRIVE_STATUS_CANCELLED);
         
     def __result_cb(self, future: Future) -> None:
         result: RouteToPose.Result = future.result().result;
@@ -343,6 +349,18 @@ class RouteService:
             set_last_arrived_node_id(last_arrived_node_id=self.__current_goal.end_node.node_id);
             
             is_mission_returning_task: bool = get_mission().task[0].task_code == "returning";
+            is_return_node_via_mission_cancel: bool = False;
+            
+            if len(self.__current_goal.end_node.detection_range) != 0:
+                if get_is_mission_canceled() is True and self.__current_goal.end_node.detection_range[0].action_code == "stop":
+                    is_return_node_via_mission_cancel = True;
+                    pass;
+                else:
+                    is_return_node_via_mission_cancel = False;
+                    pass;
+            else:
+                is_return_node_via_mission_cancel = False;
+                pass;
             
             if self.__current_goal.end_node.node_id == get_mission().task[0].task_data.source:
                 if not is_mission_returning_task:
@@ -381,6 +399,31 @@ class RouteService:
             elif self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{self.__param_initial_node}":
                 self.process_return();
                 return;
+            elif is_return_node_via_mission_cancel:
+                set_driving_flag(flag=False);
+                set_driving_status(driving_status=DRIVE_STATUS_CANCELLED);
+                
+                self.__status_service.notify_mission_status_publish(status="Cancelled");
+                
+                path_request: Path.Request = Path.Request();
+                path_request.start_node = self.__current_goal.end_node.node_id;
+                path_request.end_node = self.__goal_list[0].node_id;
+
+                path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
+                
+                if path_response != None or len(path_response.path.node_list) != 0:
+                    self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Return Via Mission Canceled Path Response\n{ros_message_dumps(message=path_response)}");
+
+                    if get_driving_flag() != True:
+                        self.goal_flush();
+                        self.send_goal(path_response=path_response);
+                    else:
+                        self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} is already driving");
+                        return;
+                else:
+                    self.__status_service.notify_mission_status_publish(status="Failed");
+                    self.__error_service.error_report_publish(error_code="201");
+                    return;
             else:
                 self.__goal_index = self.__goal_index + 1;
                 self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} RTP will proceed Next Goal [{self.__goal_index} / {self.__goal_list_size - 1}]");
@@ -430,8 +473,7 @@ class RouteService:
         
     def route_to_pose_goal_cancel_subscription(self, goal_cancel_cb: String) -> None:
         try:
-            future: Future = self.__goal_handle.cancel_goal_async();
-            future.add_done_callback(self.__cancel_cb);
+            self.cancel_goal();
             self.__log.info(f"{ROUTE_TO_POSE_GOAL_CANCEL_TOPIC_NAME} goal cancelled");
         except AttributeError as ate:
             self.__log.error(f"{ROUTE_TO_POSE_GOAL_CANCEL_TOPIC_NAME} : {ate}");
@@ -439,6 +481,25 @@ class RouteService:
 
     def odom_eular_subscription_cb(self, odom_eular_cb: PoseStamped) -> None:
         self.__current_distance = odom_eular_cb.pose.position.y;
-        
+    
+    def cancel_goal(self) -> None:
+        try:
+            future: Future = self.__goal_handle.cancel_goal_async();
+            future.add_done_callback(self.__cancel_cb);
+        except Exception as e:
+            self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} : {e}");
+            return;
+    
+    def cancel_mission(self) -> None:
+        try:
+            self.cancel_goal();
+            self.__status_service.notify_mission_status_publish(status="Cancelled");
+            self.goal_flush();
+            self.__goal_handle = None;
+            self.mission_flush();
+        except Exception as e:
+            self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} : {e}");
+            return;
+    
 
 __all__: list[str] = ["RouteService"];
