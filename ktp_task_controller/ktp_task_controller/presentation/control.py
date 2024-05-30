@@ -17,12 +17,14 @@ from path_graph_msgs.srv import Path;
 from path_graph_msgs.srv import Graph;
 from ktp_task_controller.application.error import ErrorService;
 from ktp_task_controller.application.path import PathService;
+from ktp_task_controller.application.status import StatusService;
 from ktp_task_controller.application.route import RouteService;
 from ktp_task_controller.utils import ros_message_dumps;
 from ktp_task_controller.utils import get_current_time;
 from ktp_task_controller.domain.flags import get_driving_flag;
 from ktp_task_controller.domain.mission import get_mission;
 from ktp_task_controller.domain.status import set_is_mission_canceled;
+from ktp_task_controller.domain.status import set_driving_status;
 from typing import Any;
 
 
@@ -37,7 +39,7 @@ CONTROL_MS_CANCEL: str = "mscancel";
 CONTROL_CODE_MOVE_TO_DEST: str = "movetodest";
 CONTROL_CODE_MS_COMPLETE: str = "mscomplete";
 CONTORL_CODE_GRAPH_SYNC: str = "graphsync";
-
+DRIVE_STATUS_CANCELLED: int = 3;
 
 class ControlController:
     
@@ -51,6 +53,7 @@ class ControlController:
         
         self.__error_service: ErrorService = ErrorService(node=self.__node);
         self.__path_service: PathService = PathService(node=self.__node);
+        self.__status_service: StatusService = StatusService(node=self.__node);
         self.__route_service: RouteService = RouteService(node=self.__node);
         
         assign_control_service_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
@@ -103,6 +106,9 @@ class ControlController:
             Cancel Mission
             """
             set_is_mission_canceled(is_mission_canceled=True);
+            set_driving_status(driving_status=DRIVE_STATUS_CANCELLED);
+            self.control_report_publish(control=control, control_type="control", response_code=201);
+            self.__status_service.notify_mission_status_publish(status="Cancelled");
         elif control_code == CONTROL_CODE_MOVE_TO_DEST:
             """
             Source -> Goal
@@ -164,7 +170,7 @@ class ControlController:
                     path_request.end_node = initial_node_id;
                     
                     path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
-                        
+
                     if path_response != None:
                         self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response\n{ros_message_dumps(message=path_response)}");
                             
