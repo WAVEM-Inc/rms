@@ -113,7 +113,6 @@ class MissionController:
                 else:
                     self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} is already driving");
                     response.result = False;
-                    return;
             else:
                 self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response is None");
                 self.__error_service.error_report_publish(error_code="201");
