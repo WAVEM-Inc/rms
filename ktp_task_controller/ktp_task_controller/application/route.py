@@ -215,7 +215,7 @@ class RouteService:
                             f"\n\t ============= {goal.start_node.node_id} -> {goal.end_node.node_id} =============");
 
             if self.__route_to_pose_action_client.wait_for_server(timeout_sec=0.75):
-                self.__send_goal_future = self.__route_to_pose_action_client.send_goal_async(goal=goal, feedback_callback=self.__feeback_cb);
+                self.__send_goal_future = self.__route_to_pose_action_client.send_goal_async(goal=goal, feedback_callback=self.__feedback_cb);
                 self.__send_goal_future.add_done_callback(callback=self.__goal_response_cb);
             else:
                 self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} is not ready...");
@@ -308,14 +308,17 @@ class RouteService:
         self.__result_future = goal_handle.get_result_async();
         self.__result_future.add_done_callback(callback=self.__result_cb);
         
-    def __feeback_cb(self, feedback_msg: RouteToPose.Impl.FeedbackMessage) -> None:
+    def __feedback_cb(self, feedback_msg: RouteToPose.Impl.FeedbackMessage) -> None:
         feedback: RouteToPose.Feedback = feedback_msg.feedback;
         status_code: int = feedback.status_code;
         self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} feedback status_code {status_code}\n");
 
         if status_code == 1001:
             set_driving_flag(flag=True);
-            set_driving_status(driving_status=DRIVE_STATUS_ON_DRIVE);
+            
+            if not get_is_mission_canceled():
+                set_driving_status(driving_status=DRIVE_STATUS_ON_DRIVE);
+                
             is_mission_returning_task: bool = get_mission().task[0].task_code == "returning";
             
             if self.__current_goal.start_node.node_id == get_mission().task[0].task_data.source and not is_mission_returning_task:
@@ -328,6 +331,9 @@ class RouteService:
                         self.__log.info(f"==================================== OnProgress ====================================");
                     else:
                         return;
+            elif get_is_mission_canceled():
+                set_driving_flag(flag=True);
+                set_driving_status(driving_status=DRIVE_STATUS_CANCELLED);
             else:
                 return;
         elif status_code == 5001:
@@ -365,7 +371,7 @@ class RouteService:
                 is_return_node_via_mission_cancel = False;
                 pass;
             
-            if is_end_node_is_mission_source:
+            if is_end_node_is_mission_source and not get_is_mission_canceled():
                 """
                 목적지가 Mission Source 일 경우
                 """
@@ -383,7 +389,7 @@ class RouteService:
                     return;
                 else:
                     pass;
-            elif is_end_node_is_mission_goal:
+            elif is_end_node_is_mission_goal and not get_is_mission_canceled():
                 """
                 목적지가 Mission Source 일 경우
                 """
@@ -405,7 +411,7 @@ class RouteService:
                         return;
                     else:
                         pass;
-            elif is_end_node_is_waiting_area:
+            elif is_end_node_is_waiting_area and not get_is_mission_canceled():
                 """
                 목적지가 대기 장소 일 경우
                 """
@@ -416,7 +422,6 @@ class RouteService:
                 목적지가 임무 취소 후 회차 노드 일 경우
                 """
                 set_driving_flag(flag=False);
-                set_driving_status(driving_status=DRIVE_STATUS_CANCELLED);
                 
                 path_request: Path.Request = Path.Request();
                 path_request.start_node = self.__current_goal.end_node.node_id;
@@ -437,15 +442,22 @@ class RouteService:
                     self.__status_service.notify_mission_status_publish(status="Failed");
                     self.__error_service.error_report_publish(error_code="201");
                     return;
+            elif get_is_mission_canceled() and self.__current_goal.end_node.node_id == self.__goal_list[self.__goal_list_size - 1].node_id:
+                set_driving_flag(flag=False);
+                set_driving_status(driving_status=DRIVE_STATUS_WAIT);
+                set_is_mission_canceled(is_mission_canceled=False);
+                self.goal_flush();
+                self.mission_flush();
+                self.__log.info(f"=============== Cancel Return Finished ===============");
             else:
                 self.__goal_index = self.__goal_index + 1;
                 self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} RTP will proceed Next Goal [{self.__goal_index} / {self.__goal_list_size - 1}]");
                 self.__send_goal();
                 return;
-        elif result_code == 2001 or result_code == 2003 or result_code == 2004 or result_code == 3001:
+        elif result_code == 2001 or result_code == 2003 or result_code == 2004 or result_code == 3001 and not get_is_mission_canceled():
             self.__status_service.notify_mission_status_publish(status="Failed");
             self.__error_service.error_report_publish(error_code="207");
-        elif result_code == 2002:
+        elif result_code == 2002 and not get_is_mission_canceled():
             self.__status_service.notify_mission_status_publish(status="Failed");
             self.__error_service.error_report_publish(error_code="201");
         else:

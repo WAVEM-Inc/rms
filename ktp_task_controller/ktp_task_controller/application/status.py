@@ -91,7 +91,7 @@ class StatusService:
                 service_status.task = [service_status_task];
                 service_status_task.task_data = service_status_task_data;
 
-                self.__log.info(f"{NOTIFY_MISSION_STATUS_TOPIC_NAME} Service Status\n{ros_message_dumps(message=service_status)}");
+                self.__log.info(f"{NOTIFY_MISSION_STATUS_TOPIC_NAME} Service Status : {service_status_task.status}");
                 self.__notify_mission_status_publisher.publish(msg=service_status);
             else:
                 self.__log.info(f"{NOTIFY_MISSION_STATUS_TOPIC_NAME} Service Status Mission Is None");

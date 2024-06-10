@@ -90,87 +90,41 @@ class ControlController:
         );
         
     def assign_control_service_cb(self, request: AssignControl.Request, response: AssignControl.Response) -> AssignControl.Response:
-        request_control_json: str = ros_message_dumps(message=request.control);
-        self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} request\n{request_control_json}");
+        try:
+            request_control_json: str = ros_message_dumps(message=request.control);
+            self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} request\n{request_control_json}");
 
-        control: Control = message_conversion.populate_instance(json.loads(request_control_json), Control());
-        control_code: str = control.control_code;
-        self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} cb control_code : {control_code}");
+            control: Control = message_conversion.populate_instance(json.loads(request_control_json), Control());
+            control_code: str = control.control_code;
+            self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} cb control_code : {control_code}");
 
-        if control_code == CONTROL_CODE_STOP:
-            pass;
-        elif control_code == CONTROL_CODE_RELEASE:
-            pass;
-        elif control_code == CONTROL_MS_CANCEL:
-            """
-            Cancel Mission
-            """
-            set_is_mission_canceled(is_mission_canceled=True);
-            set_driving_status(driving_status=DRIVE_STATUS_CANCELLED);
-            self.control_report_publish(control=control, control_type="control", response_code=201);
-            self.__status_service.notify_mission_status_publish(status="Cancelled");
-        elif control_code == CONTROL_CODE_MOVE_TO_DEST:
-            """
-            Source -> Goal
-            - start_node : task.task_data.source
-            - end_node : task.task_data.goal
-            """
-            path_request: Path.Request = Path.Request();
-
-            mission: Mission = get_mission();
-            if mission != None:
-                path_request.start_node = mission.task[0].task_data.source;
-                path_request.end_node = mission.task[0].task_data.goal[0];
-                path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
-                    
-                if path_response != None:
-                    self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response\n{ros_message_dumps(message=path_response)}");
-                        
-                    if get_driving_flag() != True:
-                        self.__route_service.send_goal(path_response=path_response);
-                        response.result = True;
-                        self.control_report_publish(control=control, control_type="control", response_code=201);
-                    else:
-                        self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} is already driving");
-                        response.result = False;
-                        self.control_report_publish(control=control, control_type="control", response_code=400);
-                        self.__error_service.error_report_publish(error_code="999");
-                else:
-                    self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response is None");
-                    self.control_report_publish(control=control, control_type="control", response_code=400);
-                    self.__error_service.error_report_publish(error_code="999");
-                    response.result = False;
-            else:
-                self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} mission is None");
-                self.control_report_publish(control=control, control_type="control", response_code=400);
-                self.__error_service.error_report_publish(error_code="999");
-                response.result = False;
-                    
-            return response;
-        elif control_code == CONTROL_CODE_MS_COMPLETE:
-            self.__route_service.end_mission();
-                    
-            control_data: Any = message_conversion.extract_values(inst=control.control_data);
-            is_return: bool = control_data["is_return"];
-            self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} MSCOMPLETE is_return : {is_return}");
-            
-            if is_return:
+            if control_code == CONTROL_CODE_STOP:
+                pass;
+            elif control_code == CONTROL_CODE_RELEASE:
+                pass;
+            elif control_code == CONTROL_MS_CANCEL:
                 """
-                Goal -> 대기 장소
-                - start_node : task.task_data.goal
-                - end_node : initial_node_id
+                Cancel Mission
+                """
+                set_is_mission_canceled(is_mission_canceled=True);
+                set_driving_status(driving_status=DRIVE_STATUS_CANCELLED);
+                self.control_report_publish(control=control, control_type="control", response_code=201);
+                self.__status_service.notify_mission_status_publish(status="Cancelled");
+                self.__log.info(f"==================================== Cancelled ====================================");
+            elif control_code == CONTROL_CODE_MOVE_TO_DEST:
+                """
+                Source -> Goal
+                - start_node : task.task_data.source
+                - end_node : task.task_data.goal
                 """
                 path_request: Path.Request = Path.Request();
 
                 mission: Mission = get_mission();
                 if mission != None:
-                    initial_node_id: str = f"NO-{self.__param_map_id}-{self.__param_initial_node}";
-                    
-                    path_request.start_node = mission.task[0].task_data.goal[0];
-                    path_request.end_node = initial_node_id;
-                    
+                    path_request.start_node = mission.task[0].task_data.source;
+                    path_request.end_node = mission.task[0].task_data.goal[0];
                     path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
-
+                        
                     if path_response != None:
                         self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response\n{ros_message_dumps(message=path_response)}");
                             
@@ -184,62 +138,116 @@ class ControlController:
                             self.control_report_publish(control=control, control_type="control", response_code=400);
                             self.__error_service.error_report_publish(error_code="999");
                     else:
-                        self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response is None");                            
-                        response.result = False;
+                        self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response is None");
                         self.control_report_publish(control=control, control_type="control", response_code=400);
                         self.__error_service.error_report_publish(error_code="999");
+                        response.result = False;
                 else:
                     self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} mission is None");
                     self.control_report_publish(control=control, control_type="control", response_code=400);
                     self.__error_service.error_report_publish(error_code="999");
                     response.result = False;
-            else:
-                """
-                대기 장소 미복귀
-                """
-                self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} MSCOMPLETE No Return");
+                        
+                return response;
+            elif control_code == CONTROL_CODE_MS_COMPLETE:
+                self.__route_service.end_mission();
+                        
+                control_data: Any = message_conversion.extract_values(inst=control.control_data);
+                is_return: bool = control_data["is_return"];
+                self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} MSCOMPLETE is_return : {is_return}");
                 
-                if get_mission() is None:
-                    self.control_report_publish(control=control, control_type="control", response_code=400);
-                    response.result = False;
-                else:
-                    self.control_report_publish(control=control, control_type="control", response_code=201);
-                    response.result = True;
-                    
-                self.__route_service.process_no_return();
-                
-            return response;
-        elif control_code == CONTORL_CODE_GRAPH_SYNC:
-            graph_sync_result: Graph.Response = self.graph_sync_request();
+                if is_return:
+                    """
+                    Goal -> 대기 장소
+                    - start_node : task.task_data.goal
+                    - end_node : initial_node_id
+                    """
+                    path_request: Path.Request = Path.Request();
 
-            if graph_sync_result is not None:
-                try:
-                    graph_list: GraphList = message_conversion.populate_instance(msg=json.loads(graph_sync_result.graph_list), inst=GraphList());
-                    graph_list.send_id = control.control_id;
-                    self.__log.info(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} Graph List\n{ros_message_dumps(message=graph_list)}");
-                    self.__graph_list_publisher.publish(msg=graph_list);
-                    control_report_data: dict = {
-                        "map_id": graph_list.graph[0].map_id,
-                        "version": graph_list.graph[0].version
-                    };
-                    self.control_report_publish(control=control, control_type="graph", response_code=201, control_data=control_report_data);
-                    response.result = True;
-                except message_conversion.NonexistentFieldException as nefe:
-                    self.__log.error(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} : {nefe}");
+                    mission: Mission = get_mission();
+                    if mission != None:
+                        initial_node_id: str = f"NO-{self.__param_map_id}-{self.__param_initial_node}";
+                        
+                        path_request.start_node = mission.task[0].task_data.goal[0];
+                        path_request.end_node = initial_node_id;
+                        
+                        path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
+
+                        if path_response != None:
+                            self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response\n{ros_message_dumps(message=path_response)}");
+                                
+                            if get_driving_flag() != True:
+                                self.__route_service.send_goal(path_response=path_response);
+                                response.result = True;
+                                self.control_report_publish(control=control, control_type="control", response_code=201);
+                            else:
+                                self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} is already driving");
+                                response.result = False;
+                                self.control_report_publish(control=control, control_type="control", response_code=400);
+                                self.__error_service.error_report_publish(error_code="999");
+                        else:
+                            self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Path Response is None");                            
+                            response.result = False;
+                            self.control_report_publish(control=control, control_type="control", response_code=400);
+                            self.__error_service.error_report_publish(error_code="999");
+                    else:
+                        self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} mission is None");
+                        self.control_report_publish(control=control, control_type="control", response_code=400);
+                        self.__error_service.error_report_publish(error_code="999");
+                        response.result = False;
+                else:
+                    """
+                    대기 장소 미복귀
+                    """
+                    self.__log.info(f"{ASSIGN_CONTROL_SERVICE_NAME} MSCOMPLETE No Return");
+                    
+                    if get_mission() is None:
+                        self.control_report_publish(control=control, control_type="control", response_code=400);
+                        response.result = False;
+                    else:
+                        self.control_report_publish(control=control, control_type="control", response_code=201);
+                        response.result = True;
+                        
+                    self.__route_service.process_no_return();
+                    
+                return response;
+            elif control_code == CONTORL_CODE_GRAPH_SYNC:
+                graph_sync_result: Graph.Response = self.graph_sync_request();
+
+                if graph_sync_result is not None:
+                    try:
+                        graph_list: GraphList = message_conversion.populate_instance(msg=json.loads(graph_sync_result.graph_list), inst=GraphList());
+                        graph_list.send_id = control.control_id;
+                        self.__log.info(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} Graph List\n{ros_message_dumps(message=graph_list)}");
+                        self.__graph_list_publisher.publish(msg=graph_list);
+                        control_report_data: dict = {
+                            "map_id": graph_list.graph[0].map_id,
+                            "version": graph_list.graph[0].version
+                        };
+                        self.control_report_publish(control=control, control_type="graph", response_code=201, control_data=control_report_data);
+                        response.result = True;
+                    except message_conversion.NonexistentFieldException as nefe:
+                        self.__log.error(f"{PATH_GRAPH_GRAPH_SERVICE_NAME} : {nefe}");
+                        self.control_report_publish(control=control, control_type="graph", response_code=400, control_data=control_report_data);
+                        self.__error_service.error_report_publish(error_code="999");
+                        response.result = False;
+                else:
                     self.control_report_publish(control=control, control_type="graph", response_code=400, control_data=control_report_data);
                     self.__error_service.error_report_publish(error_code="999");
                     response.result = False;
             else:
+                self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Unknown Control Code...");
                 self.control_report_publish(control=control, control_type="graph", response_code=400, control_data=control_report_data);
                 self.__error_service.error_report_publish(error_code="999");
                 response.result = False;
-        else:
-            self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} Unknown Control Code...");
-            self.control_report_publish(control=control, control_type="graph", response_code=400, control_data=control_report_data);
+                
+            return response;
+        except Exception as e:
+            self.__log.error(f"{ASSIGN_CONTROL_SERVICE_NAME} : {e}");
+            self.control_report_publish(control=control, control_type="control", response_code=400);
             self.__error_service.error_report_publish(error_code="999");
             response.result = False;
-            
-        return response;
+            return response;
     
     def control_report_publish(self, control: Control, control_type: str, response_code: int, control_data: dict | None = None) -> None:
         try:
