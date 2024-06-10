@@ -45,7 +45,7 @@ sudo apt-get install ros-humble-rosbridge-library
 
 ### 2-1-2. Install pip requirements
 ```bash
-cd ~/kec_ws/src/rms/ktp_dummy_interface/
+cd ~/kec_ws/src/rms/ktp_interface/
 pip install -r pip_requirement.txt
 ```
 

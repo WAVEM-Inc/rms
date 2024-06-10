@@ -1,8 +1,8 @@
-# ktp_task_controller
+# ktp_data_manager
 - KTP 임무 / 제어 관리 패키지
 
 ## Document
-- [ktp_task_controller](#ktp_task_controller)
+- [ktp_data_manager](#ktp_data_manager)
   - [Document](#document)
   - [Environment](#1-environment)
   - [SetUp Installation](#2-setup-installation)
@@ -45,7 +45,7 @@ sudo apt-get install ros-humble-rosbridge-library
 
 ### 2-1-2. Install pip requirements
 ```bash
-cd ~/kec_ws/src/rms/ktp_task_controller/
+cd ~/kec_ws/src/rms/ktp_data_manager/
 pip install -r pip_requirement.txt
 ```
 
@@ -60,11 +60,11 @@ git clone https://github.com/WAVEM-Inc/rms.git
 ### 3-2. Build Project
 ```bash
 cd ~/kec_ws/src/rms/
-colcon build --packages-select ktp_task_controller
+colcon build --packages-select ktp_data_manager
 ```
 
 ## 4. Launch Check
 ```bash
 source ~/kec_ws/src/rms/install/setup.bash
-ros2 launch ktp_task_controller ktp_task_controller.launch.py
+ros2 launch ktp_data_manager ktp_data_manager.launch.py
 ```
