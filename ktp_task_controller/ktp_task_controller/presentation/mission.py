@@ -50,78 +50,84 @@ class MissionController:
         );
         
     def assign_mission_service_cb(self, request: AssignMission.Request, response: AssignMission.Response) -> AssignMission.Response:
-        request_mission_json: str = ros_message_dumps(message=request.mission);
-        self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} request\n{request_mission_json}");
+        try:
+            request_mission_json: str = ros_message_dumps(message=request.mission);
+            self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} request\n{request_mission_json}");
 
-        if get_mission() is not None:
-            self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Mission has already scheduled...");
-            response.result = False;
-        else:
-            mission = message_conversion.populate_instance(json.loads(request_mission_json), Mission());
-            set_mission(mission=mission);
-            
-            mission_task: MissionTask = get_mission().task[0];
-            self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Path Request\n{ros_message_dumps(message=mission_task)}");
-                        
-            path_request: Path.Request = Path.Request();
-                        
-            source_node_id: str = mission_task.task_data.source;
-            goal_node_id: str = mission_task.task_data.goal[0];
-            last_arrived_node_id_is_source: bool = get_last_arrived_node_id() == source_node_id;
-            self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} mission_assignment"
-                            f"\n\tsource_node_id : {source_node_id}"
-                            f"\n\tlast_arrived_node_id : {get_last_arrived_node_id()}"
-                            f"\n\tlast_arrived_node_id_is_source : {last_arrived_node_id_is_source}");
-            
-            self.__route_service.start_mission();
-            self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Sleep For Assign Mission");
-            time.sleep(1.2);
-            
-            is_mission_returning_task: bool = mission_task.task_code == "returning";
-            
-            if source_node_id == "":
-                path_request.start_node = get_last_arrived_node_id();
-                path_request.end_node = goal_node_id;  
-            elif last_arrived_node_id_is_source:
-                path_request.start_node = source_node_id;
-                path_request.end_node = goal_node_id;
-                
-                if not is_mission_returning_task:
-                    self.__status_service.notify_mission_status_publish(status="SourceArrived");
-                    self.__log.info(f"==================================== Source Arrived ====================================");
-                else:
-                    self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");
-                    pass;
+            if get_mission() is not None:
+                self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Mission has already scheduled...");
+                response.result = False;
             else:
-                if not is_mission_returning_task:
-                    self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Wait To Source");
+                mission = message_conversion.populate_instance(json.loads(request_mission_json), Mission());
+                set_mission(mission=mission);
+                
+                mission_task: MissionTask = get_mission().task[0];
+                self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Path Request\n{ros_message_dumps(message=mission_task)}");
+                            
+                path_request: Path.Request = Path.Request();
+                            
+                source_node_id: str = mission_task.task_data.source;
+                goal_node_id: str = mission_task.task_data.goal[0];
+                last_arrived_node_id_is_source: bool = get_last_arrived_node_id() == source_node_id;
+                self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} mission_assignment"
+                                f"\n\tsource_node_id : {source_node_id}"
+                                f"\n\tlast_arrived_node_id : {get_last_arrived_node_id()}"
+                                f"\n\tlast_arrived_node_id_is_source : {last_arrived_node_id_is_source}");
+                
+                is_mission_returning_task: bool = mission_task.task_code == "returning";
+                
+                if source_node_id == "":
                     path_request.start_node = get_last_arrived_node_id();
-                    path_request.end_node = source_node_id;
-                else:
-                    self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");
+                    path_request.end_node = goal_node_id;  
+                elif last_arrived_node_id_is_source:
                     path_request.start_node = source_node_id;
                     path_request.end_node = goal_node_id;
-            
-            path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
-            
-            if path_response != None or len(path_response.path.node_list) != 0:
-                self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response\n{ros_message_dumps(message=path_response)}");
-                
-                if get_driving_flag() != True:
-                    self.__route_service.send_goal(path_response=path_response);
-                    response.result = True;
+                    
+                    if not is_mission_returning_task:
+                        self.__status_service.notify_mission_status_publish(status="SourceArrived");
+                        self.__log.info(f"==================================== Source Arrived ====================================");
+                    else:
+                        self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");
+                        pass;
                 else:
-                    self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} is already driving");
-                    response.result = False;
-            else:
-                self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response is None");
-                self.__error_service.error_report_publish(error_code="201");
-                self.__status_service.notify_mission_status_publish(status="Failed");
-                self.__route_service.goal_flush();
-                self.__route_service.mission_flush();
-                response.result = False;
+                    if not is_mission_returning_task:
+                        self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Wait To Source");
+                        path_request.start_node = get_last_arrived_node_id();
+                        path_request.end_node = source_node_id;
+                    else:
+                        self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");
+                        path_request.start_node = source_node_id;
+                        path_request.end_node = goal_node_id;
                 
-        return response;
+                path_response: Path.Response = self.__path_service.convert_path_request(path_request=path_request);
+                
+                if path_response != None or len(path_response.path.node_list) != 0:
+                    self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response\n{ros_message_dumps(message=path_response)}");
+                    
+                    if get_driving_flag() != True:
+                        self.__route_service.start_mission();
+                        self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Sleep For Assign Mission");
+                        time.sleep(1.2);
+                        self.__route_service.send_goal(path_response=path_response);
+                        response.result = True;
+                    else:
+                        self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} is already driving");
+                        response.result = False;
+                else:
+                    self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response is None");
+                    self.__error_service.error_report_publish(error_code="201");
+                    self.__status_service.notify_mission_status_publish(status="Failed");
+                    self.__route_service.goal_flush();
+                    self.__route_service.mission_flush();
+                    response.result = False;
+                    
+            return response;
+        except Exception as e:
+            self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} : {e}");
+            self.__error_service.error_report_publish(error_code="999");
+            self.__status_service.notify_mission_status_publish(status="Failed");
+            response.result = False;
+            return response;
     
 
 __all__: list[str] = ["MissionController"];
