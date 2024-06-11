@@ -331,6 +331,11 @@ class RouteService:
             if not get_is_mission_canceled():
                 set_driving_status(driving_status=DRIVE_STATUS_ON_DRIVE);
                 
+            if get_mission() is None:
+                self.__error_service.error_report_publish(error_code="999");
+                self.goal_flush();
+                return;
+                
             is_mission_returning_task: bool = get_mission().task[0].task_code == "returning";
             
             if self.__current_goal.start_node.node_id == get_mission().task[0].task_data.source and not is_mission_returning_task:
@@ -406,7 +411,7 @@ class RouteService:
                     pass;
             elif is_end_node_is_mission_goal:
                 """
-                목적지가 Mission Source 일 경우
+                목적지가 Mission Goal 일 경우
                 """
                 if not is_mission_returning_task and not get_is_mission_canceled():
                     """
@@ -420,10 +425,10 @@ class RouteService:
                     self.__log.info(f"==================================== Dest Arrived ====================================");
                     self.goal_flush();
                     return;
-                elif get_is_mission_canceled() and not is_mission_returning_task:
+                elif not is_mission_returning_task and get_is_mission_canceled():
                     self.process_cancel_no_return();
                     return;
-                elif is_mission_returning_task:
+                elif not get_is_mission_canceled() and is_mission_returning_task:
                     if self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{self.__param_initial_node}":
                         self.process_return();
                 else:

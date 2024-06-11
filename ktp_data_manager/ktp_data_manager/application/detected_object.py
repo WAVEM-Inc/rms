@@ -1,6 +1,6 @@
 from rclpy.node import Node;
 from rclpy.publisher import Publisher;
-from rclpy.qos import qos_profile_sensor_data;
+from rclpy.qos import qos_profile_system_default;
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
 from ktp_data_msgs.msg import DetectedObject;
 
@@ -17,7 +17,7 @@ class DetectedObjectService:
         self.__object_detect_publisher: Publisher = self.__node.create_publisher(
             topic=OBJECT_DETECT_TOPIC,
             msg_type=DetectedObject,
-            qos_profile=qos_profile_sensor_data,
+            qos_profile=qos_profile_system_default,
             callback_group=object_detect_publisher_cb_group
         );
         
