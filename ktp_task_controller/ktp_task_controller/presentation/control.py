@@ -1,4 +1,5 @@
 import json;
+import time;
 from rclpy.node import Node;
 from rclpy.client import Client;
 from rclpy.service import Service;
@@ -39,6 +40,8 @@ CONTROL_MS_CANCEL: str = "mscancel";
 CONTROL_CODE_MOVE_TO_DEST: str = "movetodest";
 CONTROL_CODE_MS_COMPLETE: str = "mscomplete";
 CONTORL_CODE_GRAPH_SYNC: str = "graphsync";
+
+DRIVE_STATUS_WAIT: int = 0;
 DRIVE_STATUS_CANCELLED: int = 3;
 
 class ControlController:
@@ -110,7 +113,12 @@ class ControlController:
                 set_driving_status(driving_status=DRIVE_STATUS_CANCELLED);
                 self.control_report_publish(control=control, control_type="control", response_code=201);
                 self.__status_service.notify_mission_status_publish(status="Cancelled");
+                self.__route_service.mission_flush();
                 self.__log.info(f"==================================== Cancelled ====================================");
+                self.__log.info(f"==================================== SLEEP ====================================");
+                time.sleep(4.0);
+                set_is_mission_canceled(is_mission_canceled=False);
+                set_driving_status(driving_status=DRIVE_STATUS_WAIT);
             elif control_code == CONTROL_CODE_MOVE_TO_DEST:
                 """
                 Source -> Goal

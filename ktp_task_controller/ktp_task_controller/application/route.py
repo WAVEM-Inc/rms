@@ -1,3 +1,4 @@
+import time;
 from rclpy.node import Node;
 from rclpy.subscription import Subscription;
 from rclpy.task import Future;
@@ -283,6 +284,14 @@ class RouteService:
         self.goal_flush();
         self.mission_flush();
     
+    def process_cancel_no_return(self) -> None:
+        time.sleep(1.0);
+        set_driving_flag(flag=False);
+        set_driving_status(driving_status=DRIVE_STATUS_WAIT);
+        self.__log.info(f"==================================== Cancel No Return ====================================");
+        self.goal_flush();
+        self.mission_flush();
+    
     def calculate_mission_total_distance(self) -> None:
         try:
             self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} started capture mission_distance");
@@ -300,6 +309,9 @@ class RouteService:
         if not goal_handle.accepted:
             self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal rejected");
             self.__error_service.error_report_publish(error_code="201");
+            self.__status_service.notify_mission_status_publish(status="Failed");
+            self.goal_flush();
+            self.mission_flush();
             return;
 
         self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal accepted\n");
@@ -371,11 +383,11 @@ class RouteService:
                 is_return_node_via_mission_cancel = False;
                 pass;
             
-            if is_end_node_is_mission_source and not get_is_mission_canceled():
+            if is_end_node_is_mission_source:
                 """
                 목적지가 Mission Source 일 경우
                 """
-                if not is_mission_returning_task:
+                if not is_mission_returning_task and not get_is_mission_canceled():
                     """
                     대기 장소 -> Source 주행 도착 시
                     """
@@ -387,13 +399,16 @@ class RouteService:
                     self.__log.info(f"==================================== Source Arrived ====================================");
                     self.goal_flush();
                     return;
+                elif get_is_mission_canceled():
+                    self.process_cancel_no_return();
+                    return;
                 else:
                     pass;
-            elif is_end_node_is_mission_goal and not get_is_mission_canceled():
+            elif is_end_node_is_mission_goal:
                 """
                 목적지가 Mission Source 일 경우
                 """
-                if not is_mission_returning_task:
+                if not is_mission_returning_task and not get_is_mission_canceled():
                     """
                     Source -> Goal 주행 도착 시
                     """
@@ -405,12 +420,14 @@ class RouteService:
                     self.__log.info(f"==================================== Dest Arrived ====================================");
                     self.goal_flush();
                     return;
-                else:
-                    if not get_is_mission_canceled() and self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{self.__param_initial_node}":
+                elif get_is_mission_canceled() and not is_mission_returning_task:
+                    self.process_cancel_no_return();
+                    return;
+                elif is_mission_returning_task:
+                    if self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{self.__param_initial_node}":
                         self.process_return();
-                        return;
-                    else:
-                        pass;
+                else:
+                    pass;
             elif is_end_node_is_waiting_area and not get_is_mission_canceled():
                 """
                 목적지가 대기 장소 일 경우
@@ -442,12 +459,11 @@ class RouteService:
                     self.__status_service.notify_mission_status_publish(status="Failed");
                     self.__error_service.error_report_publish(error_code="201");
                     return;
-            elif get_is_mission_canceled() and self.__current_goal.end_node.node_id == self.__goal_list[self.__goal_list_size - 1].node_id:
+            elif get_is_mission_canceled() and self.__current_goal.end_node.node_id == self.__goal_list[self.__goal_list_size - 1].node_id and not is_mission_returning_task:
                 set_driving_flag(flag=False);
                 set_driving_status(driving_status=DRIVE_STATUS_WAIT);
                 set_is_mission_canceled(is_mission_canceled=False);
                 self.goal_flush();
-                self.mission_flush();
                 self.__log.info(f"=============== Cancel Return Finished ===============");
             else:
                 self.__goal_index = self.__goal_index + 1;

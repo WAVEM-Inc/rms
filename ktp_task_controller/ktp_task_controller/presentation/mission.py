@@ -19,11 +19,14 @@ from ktp_task_controller.domain.flags import get_driving_flag;
 from ktp_task_controller.domain.mission import get_mission;
 from ktp_task_controller.domain.mission import set_mission;
 from ktp_task_controller.domain.status import get_last_arrived_node_id;
+from ktp_task_controller.domain.status import set_driving_status;
 
 
 NODE_NAME: str = "ktp_task_controller";
 ASSIGN_MISSION_TOPIC_NAME: str = "/rms/ktp/data/assign/mission";
 ASSIGN_MISSION_SERVICE_NAME: str = f"/{NODE_NAME}/assign/mission";
+
+DRIVE_STATUS_DRIVE_FINISHED: int = 2;
 
 
 class MissionController:
@@ -82,13 +85,6 @@ class MissionController:
                 elif last_arrived_node_id_is_source:
                     path_request.start_node = source_node_id;
                     path_request.end_node = goal_node_id;
-                    
-                    if not is_mission_returning_task:
-                        self.__status_service.notify_mission_status_publish(status="SourceArrived");
-                        self.__log.info(f"==================================== Source Arrived ====================================");
-                    else:
-                        self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");
-                        pass;
                 else:
                     if not is_mission_returning_task:
                         self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Wait To Source");
@@ -107,9 +103,23 @@ class MissionController:
                     if get_driving_flag() != True:
                         self.__route_service.start_mission();
                         self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Sleep For Assign Mission");
-                        time.sleep(1.2);
-                        self.__route_service.send_goal(path_response=path_response);
-                        response.result = True;
+                        time.sleep(2.0);
+                        self.__log.info(f"==================================== SLEEP ====================================");
+                        if last_arrived_node_id_is_source:
+                            if not is_mission_returning_task:
+                                set_driving_status(driving_status=DRIVE_STATUS_DRIVE_FINISHED);
+                                self.__status_service.notify_mission_status_publish(status="SourceArrived");
+                                self.__log.info(f"==================================== Source Arrived ====================================");
+                                self.__log.info(f"==================================== Wait For MSCOMPLETE ====================================");
+                                response.result = True;
+                            else:
+                                self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");
+                                self.__log.info(f"==================================== SLEEP ====================================");
+                                pass;
+                        else:
+                            time.sleep(2.0);
+                            self.__route_service.send_goal(path_response=path_response);
+                            response.result = True;
                     else:
                         self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} is already driving");
                         response.result = False;
@@ -120,6 +130,7 @@ class MissionController:
                     self.__route_service.goal_flush();
                     self.__route_service.mission_flush();
                     response.result = False;
+                    return response;
                     
             return response;
         except Exception as e:

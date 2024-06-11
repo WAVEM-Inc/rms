@@ -57,10 +57,10 @@ class DummyRouteToPose:
         feedback.status_code = 1001;
 
         goal_handle.publish_feedback(feedback=feedback);
-        time.sleep(0.5);
+        time.sleep(1.0);
         
         goal_handle.succeed();
-        time.sleep(0.5);
+        time.sleep(1.0);
         
         result: RouteToPose.Result = RouteToPose.Result();
         result.result = 1001;
