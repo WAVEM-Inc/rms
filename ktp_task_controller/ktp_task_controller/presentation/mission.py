@@ -20,6 +20,8 @@ from ktp_task_controller.domain.mission import get_mission;
 from ktp_task_controller.domain.mission import set_mission;
 from ktp_task_controller.domain.status import get_last_arrived_node_id;
 from ktp_task_controller.domain.status import set_driving_status;
+from ktp_task_controller.utils import get_initial_node_id;
+from ktp_task_controller.domain.status import set_last_arrived_node_id;
 
 
 NODE_NAME: str = "ktp_task_controller";
@@ -36,6 +38,9 @@ class MissionController:
         self.__log: RcutilsLogger = self.__node.get_logger();
         
         self.__param_map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
+        set_last_arrived_node_id(last_arrived_node_id=f"NO-{self.__param_map_id}-{get_initial_node_id()}");
+        
+        self.__log.info(f"=================== LAST Arrived Node ID : {get_last_arrived_node_id()} ===================");
         
         self.__error_service: ErrorService = ErrorService(node=self.__node);
         self.__path_service: PathService = PathService(node=self.__node);

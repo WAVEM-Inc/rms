@@ -32,9 +32,12 @@ def get_initial_node_id() -> str | None:
         file_path: str = f"{home_directory}/RobotData/route/route.json";
             
         with open(file_path, "r", encoding="utf-8") as f:
-            file: str = f;
-            print(f"Get initial node id file : {json.dumps(obj=file, indent=4)}");
-            return file;
+            file_content: Any = json.load(f);
+            initial_node_id = file_content["initial_node"];
+            
+            if initial_node_id is None:
+                raise Exception();
+            return initial_node_id;
     except Exception as e:
         print(f"Get initial node id : {e}");
         return None;

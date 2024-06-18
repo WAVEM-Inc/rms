@@ -31,7 +31,6 @@ from ktp_task_controller.domain.status import set_driving_status;
 from ktp_task_controller.domain.status import set_mission_total_distance;
 from ktp_task_controller.domain.gps import get_gps;
 from ktp_task_controller.domain.mission import get_mission;
-from ktp_task_controller.domain.status import get_last_arrived_node_id;
 from ktp_task_controller.domain.status import set_last_arrived_node_id;
 from ktp_task_controller.domain.status import get_is_mission_canceled;
 from ktp_task_controller.domain.status import set_is_mission_canceled;
@@ -61,6 +60,7 @@ class RouteService:
         self.__param_map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
         
         self.__param_goal_validation_limit: float = self.__node.get_parameter(name="goal_validation_limit").get_parameter_value().double_value;
+        # set_last_arrived_node_id(last_arrived_node_id=f"NO-{self.__param_map_id}-{get_initial_node_id()}");
         
         self.__error_service: ErrorService = ErrorService(node=self.__node);
         self.__status_service: StatusService = StatusService(node=self.__node);
