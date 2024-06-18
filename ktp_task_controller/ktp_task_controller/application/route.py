@@ -135,15 +135,12 @@ class RouteService:
         else:
             return;
         
-    def goal_flush(self) -> None:
+    def __goal_flush(self) -> None:
         self.__goal_index = 0;
         self.__goal_list.clear();
         self.__goal_list_size = 0;
-                    
-        # set_driving_flag(flag=False);
-        # set_driving_status(driving_status=DRIVE_STATUS_WAIT);
     
-    def mission_flush(self) -> None:
+    def __mission_flush(self) -> None:
         set_mission(mission=None);
         self.__log.info("====================== Mission Flushed ======================");
         
@@ -163,9 +160,7 @@ class RouteService:
             self._send_goal(goal=goal);
         except IndexError as ide:
             self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} : {ide}");
-            self.__error_service.error_report_publish(error_code="450");
-            self.__status_service.notify_mission_status_publish(status="Failed");
-            self.mission_flush();
+            self.__process_fail(error_code="450");
             return;
         
     def __send_goal(self) -> None:
@@ -181,9 +176,7 @@ class RouteService:
             self._send_goal(goal=goal);
         except IndexError as ide:
             self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} : {ide}");
-            self.__error_service.error_report_publish(error_code="450");
-            self.__status_service.notify_mission_status_publish(status="Failed");
-            self.mission_flush();
+            self.__process_fail(error_code="450");
             return;
         
     def _send_goal(self, goal: RouteToPose.Goal) -> None:
@@ -220,15 +213,14 @@ class RouteService:
                 self.__send_goal_future.add_done_callback(callback=self.__goal_response_cb);
             else:
                 self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} is not ready...");
-                self.__error_service.error_report_publish(error_code="999");
-                self.goal_flush();
+                self.__process_fail(error_code="999");
         except Exception as e:
             self.__log.error(f"Sending Goal : {e}");
             self.__error_service.error_report_publish(error_code="999");
-            self.goal_flush();
+            self.__goal_flush();
             return;
     
-    def check_goal(self, start_node_position: route.Position) -> bool:
+    def __check_goal(self, start_node_position: route.Position) -> bool:
         lon: float = start_node_position.longitude;
         lat: float = start_node_position.latitude;
         
@@ -264,33 +256,48 @@ class RouteService:
         self.__mission_end_distance = 0.0;
         set_mission_total_distance(mission_total_distance=0);
         
-    def process_return(self) -> None:
+    def __process_return(self) -> None:
         set_driving_flag(flag=False);
         set_driving_status(driving_status=DRIVE_STATUS_WAIT);
                         
         self.__goal_index = 0;
         self.__log.info(f"==================================== Returning Finished ====================================");
         self.end_mission();
-        self.goal_flush();
-        self.mission_flush();
+        self.__goal_flush();
+        self.__mission_flush();
     
-    def process_no_return(self) -> None:
+    def __process_no_return(self) -> None:
         set_driving_flag(flag=False);
         set_driving_status(driving_status=DRIVE_STATUS_WAIT);
                         
         self.__goal_index = 0;
         self.__log.info(f"==================================== No Return ====================================");
         self.end_mission();
-        self.goal_flush();
-        self.mission_flush();
+        self.__goal_flush();
+        self.__mission_flush();
     
-    def process_cancel_no_return(self) -> None:
+    def __process_cancel_no_return(self) -> None:
         time.sleep(1.0);
         set_driving_flag(flag=False);
         set_driving_status(driving_status=DRIVE_STATUS_WAIT);
         self.__log.info(f"==================================== Cancel No Return ====================================");
-        self.goal_flush();
-        self.mission_flush();
+        self.__goal_flush();
+        self.__mission_flush();
+        
+    def __process_fail(self, error_code: str) -> None:
+        self.__error_service.error_report_publish(error_code=error_code);
+        self.__status_service.notify_mission_status_publish(status="Failed");
+        set_last_arrived_node_id(last_arrived_node_id=f"NO-{self.__param_map_id}-{get_initial_node_id()}");
+        
+        if self.__goal_list_size != 0:
+            self.__goal_flush();
+        else:
+            return;
+        
+        if get_mission() is not None:
+            self.__mission_flush();
+        else:
+            return;
     
     def calculate_mission_total_distance(self) -> None:
         try:
@@ -308,10 +315,7 @@ class RouteService:
         
         if not goal_handle.accepted:
             self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal rejected");
-            self.__error_service.error_report_publish(error_code="201");
-            self.__status_service.notify_mission_status_publish(status="Failed");
-            self.goal_flush();
-            self.mission_flush();
+            self.__process_fail(error_code="201");
             return;
 
         self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal accepted\n");
@@ -333,7 +337,8 @@ class RouteService:
                 
             if get_mission() is None:
                 self.__error_service.error_report_publish(error_code="999");
-                self.goal_flush();
+                self.__status_service.notify_mission_status_publish(status="Failed");
+                self.__goal_flush();
                 return;
                 
             is_mission_returning_task: bool = get_mission().task[0].task_code == "returning";
@@ -397,7 +402,7 @@ class RouteService:
                 """
                 if get_is_mission_canceled() is True:
                     self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Source Mission Canceled");
-                    self.process_cancel_no_return();
+                    self.__process_cancel_no_return();
                     return;
                 elif not is_mission_returning_task and not get_is_mission_canceled() and self.__current_goal.end_node.node_id != initial_node_id:
                     """
@@ -409,7 +414,7 @@ class RouteService:
                         
                     self.__status_service.notify_mission_status_publish(status="SourceArrived");
                     self.__log.info(f"==================================== Source Arrived ====================================");
-                    self.goal_flush();
+                    self.__goal_flush();
                     return;
                 else:
                     pass;
@@ -427,21 +432,21 @@ class RouteService:
                         
                     self.__status_service.notify_mission_status_publish(status="DestArrived");
                     self.__log.info(f"==================================== Dest Arrived ====================================");
-                    self.goal_flush();
+                    self.__goal_flush();
                     return;
                 elif not is_mission_returning_task and get_is_mission_canceled():
-                    self.process_cancel_no_return();
+                    self.__process_cancel_no_return();
                     return;
                 elif not get_is_mission_canceled() and is_mission_returning_task:
                     if self.__current_goal.end_node.node_id == initial_node_id:
-                        self.process_return();
+                        self.__process_return();
                 else:
                     pass;
             elif is_end_node_is_waiting_area and not get_is_mission_canceled():
                 """
                 목적지가 대기 장소 일 경우
                 """
-                self.process_return();
+                self.__process_return();
                 return;
             elif is_return_node_via_mission_cancel:
                 """
@@ -460,7 +465,7 @@ class RouteService:
                     self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Return Via Mission Canceled Path Response\n{ros_message_dumps(message=path_response)}");
 
                     if get_driving_flag() != True:
-                        self.goal_flush();
+                        self.__goal_flush();
                         self.send_goal(path_response=path_response);
                     else:
                         self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} is already driving");
@@ -473,7 +478,7 @@ class RouteService:
                 set_driving_flag(flag=False);
                 set_driving_status(driving_status=DRIVE_STATUS_WAIT);
                 set_is_mission_canceled(is_mission_canceled=False);
-                self.goal_flush();
+                self.__goal_flush();
                 self.__log.info(f"=============== Cancel Return Finished ===============");
             else:
                 self.__goal_index = self.__goal_index + 1;
@@ -481,11 +486,9 @@ class RouteService:
                 self.__send_goal();
                 return;
         elif result_code == 2001 or result_code == 2003 or result_code == 2004 or result_code == 3001 and not get_is_mission_canceled():
-            self.__status_service.notify_mission_status_publish(status="Failed");
-            self.__error_service.error_report_publish(error_code="207");
+            self.__process_fail(error_code="206");
         elif result_code == 2002 and not get_is_mission_canceled():
-            self.__status_service.notify_mission_status_publish(status="Failed");
-            self.__error_service.error_report_publish(error_code="201");
+            self.__process_fail(error_code="201");
         else:
             return;
     
@@ -501,7 +504,7 @@ class RouteService:
                 self.__is_goal_need_to_retry = False;
                 self.__error_service.error_report_publish(error_code="450");
                 self.__status_service.notify_mission_status_publish(status="Failed");
-                self.goal_flush();
+                self.__goal_flush();
                 self.__odom_goal_retry_count = 0;
             else:
                 return;
@@ -514,13 +517,15 @@ class RouteService:
             self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} is on Driving");
             return;
         else:
-            self.goal_flush();
+            self.__goal_flush();
             
         cancel_response = future.result();
         if len(cancel_response.goals_canceling) > 0:
             self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Goal successfully canceled");
+            return;
         else:
             self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} Goal failed canceling");
+            return;
         
     def route_to_pose_goal_cancel_subscription(self, goal_cancel_cb: String) -> None:
         try:
@@ -545,9 +550,9 @@ class RouteService:
         try:
             self.cancel_goal();
             self.__status_service.notify_mission_status_publish(status="Cancelled");
-            self.goal_flush();
+            self.__goal_flush();
             self.__goal_handle = None;
-            self.mission_flush();
+            self.__mission_flush();
         except Exception as e:
             self.__log.error(f"{ROUTE_TO_POSE_ACTION_NAME} : {e}");
             return;

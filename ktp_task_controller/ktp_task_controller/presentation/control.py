@@ -116,6 +116,7 @@ class ControlController:
                 self.__log.info(f"==================================== Cancelled ====================================");
                 self.__log.info(f"==================================== SLEEP ====================================");
                 time.sleep(4.0);
+                set_driving_status(driving_status=DRIVE_STATUS_WAIT);
             elif control_code == CONTROL_CODE_MOVE_TO_DEST:
                 """
                 Source -> Goal
@@ -213,7 +214,7 @@ class ControlController:
                         self.control_report_publish(control=control, control_type="control", response_code=201);
                         response.result = True;
                         
-                    self.__route_service.process_no_return();
+                    self.__route_service.__process_no_return();
                     
                 return response;
             elif control_code == CONTORL_CODE_GRAPH_SYNC:

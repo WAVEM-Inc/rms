@@ -38,6 +38,7 @@ def get_initial_node_id(log: RcutilsLogger) -> str | None:
             
             initial_node_id: Any | str = file_content["initial_node"];
             log.info(f"========= initial node id : {initial_node_id} =========");
+            
             if initial_node_id is None:
                 raise Exception();
             return initial_node_id;

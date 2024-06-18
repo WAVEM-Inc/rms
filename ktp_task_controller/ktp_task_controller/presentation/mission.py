@@ -131,8 +131,8 @@ class MissionController:
                     self.__log.error(f"{ASSIGN_MISSION_SERVICE_NAME} Path Response is None");
                     self.__error_service.error_report_publish(error_code="201");
                     self.__status_service.notify_mission_status_publish(status="Failed");
-                    self.__route_service.goal_flush();
-                    self.__route_service.mission_flush();
+                    self.__route_service.__goal_flush();
+                    self.__route_service.__mission_flush();
                     response.result = False;
                     return response;
                     
