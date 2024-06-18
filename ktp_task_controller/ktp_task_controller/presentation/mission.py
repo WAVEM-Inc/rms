@@ -38,7 +38,7 @@ class MissionController:
         self.__log: RcutilsLogger = self.__node.get_logger();
         
         self.__param_map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
-        set_last_arrived_node_id(last_arrived_node_id=f"NO-{self.__param_map_id}-{get_initial_node_id()}");
+        set_last_arrived_node_id(last_arrived_node_id=f"NO-{self.__param_map_id}-{get_initial_node_id(log=self.__log)}");
         
         self.__log.info(f"=================== LAST Arrived Node ID : {get_last_arrived_node_id()} ===================");
         
@@ -114,7 +114,7 @@ class MissionController:
                                 set_driving_status(driving_status=DRIVE_STATUS_DRIVE_FINISHED);
                                 self.__status_service.notify_mission_status_publish(status="SourceArrived");
                                 self.__log.info(f"==================================== Source Arrived ====================================");
-                                self.__log.info(f"==================================== Wait For MSCOMPLETE ====================================");
+                                self.__log.info(f"==================================== Wait For MOVETODEST ====================================");
                                 response.result = True;
                             else:
                                 self.__log.info(f"{ASSIGN_MISSION_SERVICE_NAME} Mission Is Returning Task");

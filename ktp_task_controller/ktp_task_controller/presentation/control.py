@@ -113,12 +113,9 @@ class ControlController:
                 set_driving_status(driving_status=DRIVE_STATUS_CANCELLED);
                 self.control_report_publish(control=control, control_type="control", response_code=201);
                 self.__status_service.notify_mission_status_publish(status="Cancelled");
-                self.__route_service.mission_flush();
                 self.__log.info(f"==================================== Cancelled ====================================");
                 self.__log.info(f"==================================== SLEEP ====================================");
                 time.sleep(4.0);
-                set_is_mission_canceled(is_mission_canceled=False);
-                set_driving_status(driving_status=DRIVE_STATUS_WAIT);
             elif control_code == CONTROL_CODE_MOVE_TO_DEST:
                 """
                 Source -> Goal
@@ -174,7 +171,7 @@ class ControlController:
 
                     mission: Mission = get_mission();
                     if mission != None:
-                        initial_node_id: str = f"NO-{self.__param_map_id}-{get_initial_node_id()}";
+                        initial_node_id: str = f"NO-{self.__param_map_id}-{get_initial_node_id(log=self.__log)}";
                         
                         path_request.start_node = mission.task[0].task_data.goal[0];
                         path_request.end_node = initial_node_id;
