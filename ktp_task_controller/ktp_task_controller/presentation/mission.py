@@ -36,7 +36,6 @@ class MissionController:
         self.__log: RcutilsLogger = self.__node.get_logger();
         
         self.__param_map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
-        self.__param_initial_node: str = self.__node.get_parameter(name="initial_node").get_parameter_value().string_value;
         
         self.__error_service: ErrorService = ErrorService(node=self.__node);
         self.__path_service: PathService = PathService(node=self.__node);
