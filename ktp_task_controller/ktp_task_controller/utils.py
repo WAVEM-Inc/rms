@@ -25,6 +25,19 @@ def convert_latlon_to_utm(latitude: float, longitude: float) -> Any:
 
 def distance_between(x1: float, y1: float, x2: float, y2: float) -> float:
     return sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+    
+def get_initial_node_id() -> str | None:
+    try:
+        home_directory: str = os.path.expanduser("~");
+        file_path: str = f"{home_directory}/RobotData/route/route.json";
+            
+        with open(file_path, "r", encoding="utf-8") as f:
+            file: str = f;
+            print(f"Get initial node id file : {json.dumps(obj=file, indent=4)}");
+            return file;
+    except Exception as e:
+        print(f"Get initial node id : {e}");
+        return None;
         
 
 __all__: list[str] = ["utils"];

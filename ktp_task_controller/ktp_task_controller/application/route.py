@@ -1,3 +1,5 @@
+import os;
+import json;
 import time;
 from rclpy.node import Node;
 from rclpy.subscription import Subscription;
@@ -29,10 +31,12 @@ from ktp_task_controller.domain.status import set_driving_status;
 from ktp_task_controller.domain.status import set_mission_total_distance;
 from ktp_task_controller.domain.gps import get_gps;
 from ktp_task_controller.domain.mission import get_mission;
+from ktp_task_controller.domain.status import get_last_arrived_node_id;
 from ktp_task_controller.domain.status import set_last_arrived_node_id;
 from ktp_task_controller.domain.status import get_is_mission_canceled;
 from ktp_task_controller.domain.status import set_is_mission_canceled;
 from ktp_task_controller.utils import ros_message_dumps;
+from ktp_task_controller.utils import get_initial_node_id;
 
 
 ROUTE_TO_POSE_ACTION_NAME: str = "/route_to_pose";
@@ -55,10 +59,6 @@ class RouteService:
         self.__log: RcutilsLogger = self.__node.get_logger();
         
         self.__param_map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
-        self.__param_initial_node: str = self.__node.get_parameter(name="initial_node").get_parameter_value().string_value;
-        
-        last_arrived_node_id: str = f"NO-{self.__param_map_id}-{self.__param_initial_node}";
-        set_last_arrived_node_id(last_arrived_node_id=last_arrived_node_id);
         
         self.__param_goal_validation_limit: float = self.__node.get_parameter(name="goal_validation_limit").get_parameter_value().double_value;
         
@@ -370,11 +370,12 @@ class RouteService:
 
         if result_code == 1001:
             set_last_arrived_node_id(last_arrived_node_id=self.__current_goal.end_node.node_id);
+            initial_node_id: str = f"NO-{self.__param_map_id}-{get_initial_node_id()}";
             
             is_mission_returning_task: bool = get_mission().task[0].task_code == "returning";
             is_end_node_is_mission_source: bool = self.__current_goal.end_node.node_id == get_mission().task[0].task_data.source;
             is_end_node_is_mission_goal: bool = self.__current_goal.end_node.node_id == get_mission().task[0].task_data.goal[0];
-            is_end_node_is_waiting_area: bool = not get_is_mission_canceled() and self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{self.__param_initial_node}";
+            is_end_node_is_waiting_area: bool = not get_is_mission_canceled() and self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{get_initial_node_id()}";
             is_return_node_via_mission_cancel: bool = False;
             
             if len(self.__current_goal.end_node.detection_range) != 0:
@@ -388,7 +389,6 @@ class RouteService:
                 is_return_node_via_mission_cancel = False;
                 pass;
             
-            initial_node_id: str = f"NO-{self.__param_map_id}-{self.__param_initial_node}";
 
             if is_end_node_is_mission_source:
                 """
@@ -431,7 +431,7 @@ class RouteService:
                     self.process_cancel_no_return();
                     return;
                 elif not get_is_mission_canceled() and is_mission_returning_task:
-                    if self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{self.__param_initial_node}":
+                    if self.__current_goal.end_node.node_id == initial_node_id:
                         self.process_return();
                 else:
                     pass;

@@ -22,6 +22,7 @@ from ktp_task_controller.application.status import StatusService;
 from ktp_task_controller.application.route import RouteService;
 from ktp_task_controller.utils import ros_message_dumps;
 from ktp_task_controller.utils import get_current_time;
+from ktp_task_controller.utils import get_initial_node_id;
 from ktp_task_controller.domain.flags import get_driving_flag;
 from ktp_task_controller.domain.mission import get_mission;
 from ktp_task_controller.domain.status import set_is_mission_canceled;
@@ -52,7 +53,6 @@ class ControlController:
         
         self.__param_dev_id: str = self.__node.get_parameter(name="dev_id").get_parameter_value().string_value;
         self.__param_map_id: str = self.__node.get_parameter(name="map_id").get_parameter_value().string_value;
-        self.__param_initial_node: str = self.__node.get_parameter(name="initial_node").get_parameter_value().string_value;
         
         self.__error_service: ErrorService = ErrorService(node=self.__node);
         self.__path_service: PathService = PathService(node=self.__node);
@@ -174,7 +174,7 @@ class ControlController:
 
                     mission: Mission = get_mission();
                     if mission != None:
-                        initial_node_id: str = f"NO-{self.__param_map_id}-{self.__param_initial_node}";
+                        initial_node_id: str = f"NO-{self.__param_map_id}-{get_initial_node_id()}";
                         
                         path_request.start_node = mission.task[0].task_data.goal[0];
                         path_request.end_node = initial_node_id;
