@@ -370,12 +370,12 @@ class RouteService:
 
         if result_code == 1001:
             set_last_arrived_node_id(last_arrived_node_id=self.__current_goal.end_node.node_id);
-            initial_node_id: str = f"NO-{self.__param_map_id}-{get_initial_node_id()}";
+            initial_node_id: str = f"NO-{self.__param_map_id}-{get_initial_node_id(log=self.__log)}";
             
             is_mission_returning_task: bool = get_mission().task[0].task_code == "returning";
             is_end_node_is_mission_source: bool = self.__current_goal.end_node.node_id == get_mission().task[0].task_data.source;
             is_end_node_is_mission_goal: bool = self.__current_goal.end_node.node_id == get_mission().task[0].task_data.goal[0];
-            is_end_node_is_waiting_area: bool = not get_is_mission_canceled() and self.__current_goal.end_node.node_id == f"NO-{self.__param_map_id}-{get_initial_node_id()}";
+            is_end_node_is_waiting_area: bool = not get_is_mission_canceled() and self.__current_goal.end_node.node_id == initial_node_id;
             is_return_node_via_mission_cancel: bool = False;
             
             if len(self.__current_goal.end_node.detection_range) != 0:
@@ -389,12 +389,17 @@ class RouteService:
                 is_return_node_via_mission_cancel = False;
                 pass;
             
-
+            self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} is mission canceled : {get_is_mission_canceled()}");
+            
             if is_end_node_is_mission_source:
                 """
                 목적지가 Mission Source 일 경우
                 """
-                if not is_mission_returning_task and not get_is_mission_canceled() and self.__current_goal.end_node.node_id != initial_node_id:
+                if get_is_mission_canceled() is True:
+                    self.__log.info(f"{ROUTE_TO_POSE_ACTION_NAME} Source Mission Canceled");
+                    self.process_cancel_no_return();
+                    return;
+                elif not is_mission_returning_task and not get_is_mission_canceled() and self.__current_goal.end_node.node_id != initial_node_id:
                     """
                     대기 장소 -> Source 주행 도착 시
                     """
@@ -405,9 +410,6 @@ class RouteService:
                     self.__status_service.notify_mission_status_publish(status="SourceArrived");
                     self.__log.info(f"==================================== Source Arrived ====================================");
                     self.goal_flush();
-                    return;
-                elif get_is_mission_canceled():
-                    self.process_cancel_no_return();
                     return;
                 else:
                     pass;
@@ -446,6 +448,7 @@ class RouteService:
                 목적지가 임무 취소 후 회차 노드 일 경우
                 """
                 set_driving_flag(flag=False);
+                # self.mission_flush();
                 
                 path_request: Path.Request = Path.Request();
                 path_request.start_node = self.__current_goal.end_node.node_id;
