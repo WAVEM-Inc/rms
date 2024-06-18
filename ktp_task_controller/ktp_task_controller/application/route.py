@@ -388,11 +388,13 @@ class RouteService:
                 is_return_node_via_mission_cancel = False;
                 pass;
             
+            initial_node_id: str = f"NO-{self.__param_map_id}-{self.__param_initial_node}";
+
             if is_end_node_is_mission_source:
                 """
                 목적지가 Mission Source 일 경우
                 """
-                if not is_mission_returning_task and not get_is_mission_canceled():
+                if not is_mission_returning_task and not get_is_mission_canceled() and self.__current_goal.end_node.node_id != initial_node_id:
                     """
                     대기 장소 -> Source 주행 도착 시
                     """
