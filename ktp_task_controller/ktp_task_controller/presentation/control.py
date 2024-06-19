@@ -214,7 +214,7 @@ class ControlController:
                         self.control_report_publish(control=control, control_type="control", response_code=201);
                         response.result = True;
                         
-                    self.__route_service.__process_no_return();
+                    self.__route_service.process_no_return();
                     
                 return response;
             elif control_code == CONTORL_CODE_GRAPH_SYNC:

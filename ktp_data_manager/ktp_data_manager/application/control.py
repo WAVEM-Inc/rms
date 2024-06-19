@@ -4,6 +4,7 @@ from rclpy.client import Client;
 from rclpy.qos import qos_profile_services_default;
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
 from ktp_data_msgs.srv import AssignControl;
+from ktp_data_manager.utils import ros_message_to_json; 
 
 
 ASSIGN_CONTROL_TO_TASK_CTRL_SERVICE_NAME: str = "/ktp_task_controller/assign/control";
@@ -29,6 +30,7 @@ class ControlService:
             is_assign_control_service_server_ready: bool = self.__assign_control_to_task_ctrl_service_client.wait_for_service(timeout_sec=0.7);
             
             if is_assign_control_service_server_ready:
+                self.__log.info(f"{ASSIGN_CONTROL_TO_TASK_CTRL_SERVICE_NAME} control\n{ros_message_to_json(message=request.control)}");
                 response: AssignControl.Response = self.__assign_control_to_task_ctrl_service_client.call(request=request);
                 self.__log.info(f"{ASSIGN_CONTROL_TO_TASK_CTRL_SERVICE_NAME} result : {response.result}");
                 request_result = response.result;
