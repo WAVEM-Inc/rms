@@ -216,8 +216,7 @@ class RouteService:
                 self.__process_fail(error_code="999");
         except Exception as e:
             self.__log.error(f"Sending Goal : {e}");
-            self.__error_service.error_report_publish(error_code="999");
-            self.__goal_flush();
+            self.__process_fail(error_code="999");
             return;
     
     def __check_goal(self, start_node_position: route.Position) -> bool:
@@ -266,7 +265,7 @@ class RouteService:
         self.__goal_flush();
         self.__mission_flush();
     
-    def __process_no_return(self) -> None:
+    def process_no_return(self) -> None:
         set_driving_flag(flag=False);
         set_driving_status(driving_status=DRIVE_STATUS_WAIT);
                         
@@ -336,9 +335,7 @@ class RouteService:
                 set_driving_status(driving_status=DRIVE_STATUS_ON_DRIVE);
                 
             if get_mission() is None:
-                self.__error_service.error_report_publish(error_code="999");
-                self.__status_service.notify_mission_status_publish(status="Failed");
-                self.__goal_flush();
+                self.__process_fail(error_code="999");
                 return;
                 
             is_mission_returning_task: bool = get_mission().task[0].task_code == "returning";
