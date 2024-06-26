@@ -346,7 +346,6 @@ class RouteService:
                     Source -> Goal 주행 출발 시
                     """
                     if self.__is_goal_need_to_retry == False:
-                        self.mission_start_distance = self.__current_distance;
                         self.__status_service.notify_mission_status_publish(status="OnProgress");
                         self.__log.info(f"==================================== OnProgress ===================================={self.mission_start_distance}");
                     else:
