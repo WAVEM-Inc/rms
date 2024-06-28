@@ -17,7 +17,7 @@ NAVIGATION_STATUS_TOPIC: str = "/rms/ktp/task/notify/navigation/status";
 BATTERY_STATE_TOPIC: str = "/sensor/battery/state";
 VELOCITY_STATE_TOPIC: str = "/drive/velocity/state";
 UBLOX_FIX_TOPIC: str = "/sensor/ublox/fix";
-RTT_ODOM_TOPIC: str = "/drive/rtt_odom";
+RTT_ODOM_TOPIC: str = "/drive/odom/eular";
 TEMPERATURE_TOPIC: str = "/sensor/temp/temperature";
 HUMIDITY_TOPIC: str = "/sensor/temp/humidity";
 

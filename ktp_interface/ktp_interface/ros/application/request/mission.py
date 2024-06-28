@@ -1,20 +1,13 @@
-#-*- coding:utf-8 -*-
-
 import json;
 from rclpy.node import Node;
 from rclpy.client import Client;
-from rclpy.subscription import Subscription;
 from rclpy.task import Future;
-from rclpy.qos import qos_profile_system_default
 from rclpy.qos import qos_profile_services_default;
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
 from rosbridge_library.internal import message_conversion;
 from typing import Any;
-
-from std_msgs.msg import String;
 from ktp_data_msgs.msg import Mission;
 from ktp_data_msgs.srv import AssignMission;
-from ktp_interface.tcp.application.service import mission_callback_flag;
 
 
 DATA_MANAGER_NODE_NAME: str = "ktp_data_manager";
@@ -61,4 +54,4 @@ class MissionManager:
             return;
 
 
-__all__ = ["MissionManager"];
+__all__: list[str] = ["MissionManager"];

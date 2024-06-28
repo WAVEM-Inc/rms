@@ -1,13 +1,9 @@
 from rclpy.node import Node;
 from rclpy.timer import Timer;
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup;
-
-from typing import Any;
-
 from ktp_interface.ros.application.request.control import ControlManager;
 from ktp_interface.ros.application.request.detected_object import DetectedObjectManager;
 from ktp_interface.ros.application.request.mission import MissionManager;
-
 from ktp_interface.tcp.application.service import get_control_callback_flag;
 from ktp_interface.tcp.application.service import set_control_callback_flag;
 from ktp_interface.tcp.application.service import get_mission_callback_flag;
@@ -26,7 +22,7 @@ class RequestManager:
 
         polling_timer_cb_group: MutuallyExclusiveCallbackGroup = MutuallyExclusiveCallbackGroup();
         self.__polling_timer: Timer = self.__node.create_timer(
-            timer_period_sec=0.5,
+            timer_period_sec=0.4,
             callback_group=polling_timer_cb_group,
             callback=self.__polling_timer_cb
         );
@@ -44,15 +40,17 @@ class RequestManager:
         if get_control_callback_flag():
             self.__control_manager.deliver_control_callback_json(control_callback_json=get_control());
             set_control_callback_flag(False);
+            pass;
 
         if get_mission_callback_flag():
             self.__mission_manager.deliver_mission_callback_json(mission_callback_json=get_mission());
             set_mission_callback_flag(False);
+            pass;
 
         if get_detected_object_flag():
             self.__detected_object_manager.deliver_detected_object_callback_json(detected_object_callback_json=get_detected_object());
             set_detected_object_flag(False);
+            pass;
 
 
-
-__all__ = ["RequestManager"];
+__all__: list[str] = ["RequestManager"];

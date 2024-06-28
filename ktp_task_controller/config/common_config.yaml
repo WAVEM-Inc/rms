@@ -1,6 +1,6 @@
 /ktp_task_controller:
   ros__parameters:
     dev_id: "KECDSEMITB001"
-    map_id: "220"
-    initial_node: "201"
+    map_id: "966"
+    initial_node: "9001"
     goal_validation_limit: 2.0

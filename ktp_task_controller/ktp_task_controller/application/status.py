@@ -65,35 +65,39 @@ class StatusService:
             return;
         
     def notify_mission_status_publish(self, status: str) -> None:
-        if get_mission() is not None:
-            service_status: ServiceStatus = ServiceStatus();
-            service_status.create_time = get_current_time();
-            service_status.mission_code = get_mission().mission_code;
-            service_status.mission_id = get_mission().mission_id;
-            service_status.owner = get_mission().owner;
+        try:
+            if get_mission() is not None:
+                service_status: ServiceStatus = ServiceStatus();
+                service_status.create_time = get_current_time();
+                service_status.mission_code = get_mission().mission_code;
+                service_status.mission_id = get_mission().mission_id;
+                service_status.owner = get_mission().owner;
 
-            mission_task: MissionTask = get_mission().task[0];
-            service_status_task: ServiceStatusTask = ServiceStatusTask();
-            service_status_task.task_id = mission_task.task_id;
-            service_status_task.task_code = mission_task.task_code;
-            service_status_task.status = status;
-            service_status_task.seq = mission_task.seq;
+                mission_task: MissionTask = get_mission().task[0];
+                service_status_task: ServiceStatusTask = ServiceStatusTask();
+                service_status_task.task_id = mission_task.task_id;
+                service_status_task.task_code = mission_task.task_code;
+                service_status_task.status = status;
+                service_status_task.seq = mission_task.seq;
 
-            mission_task_data: MissionTaskData = mission_task.task_data;
-            service_status_task_data: ServiceStatusTaskData = ServiceStatusTaskData();
-            service_status_task_data.map_id = mission_task_data.map_id;
-            service_status_task_data.source = mission_task_data.source;
-            service_status_task_data.goal = mission_task_data.goal;
-            service_status_task_data.lock_status = "0";
-            service_status_task_data.distance = get_mission_total_distance();
+                mission_task_data: MissionTaskData = mission_task.task_data;
+                service_status_task_data: ServiceStatusTaskData = ServiceStatusTaskData();
+                service_status_task_data.map_id = mission_task_data.map_id;
+                service_status_task_data.source = mission_task_data.source;
+                service_status_task_data.goal = mission_task_data.goal;
+                service_status_task_data.lock_status = "0";
+                service_status_task_data.distance = get_mission_total_distance();
 
-            service_status.task = [service_status_task];
-            service_status_task.task_data = service_status_task_data;
+                service_status.task = [service_status_task];
+                service_status_task.task_data = service_status_task_data;
 
-            self.__log.info(f"{NOTIFY_MISSION_STATUS_TOPIC_NAME} Service Status\n{ros_message_dumps(message=service_status)}");
-            self.__notify_mission_status_publisher.publish(msg=service_status);
-        else:
-            self.__log.info(f"{NOTIFY_MISSION_STATUS_TOPIC_NAME} Service Status Mission Is None");
+                self.__log.info(f"{NOTIFY_MISSION_STATUS_TOPIC_NAME} Service Status : {service_status_task.status}");
+                self.__notify_mission_status_publisher.publish(msg=service_status);
+            else:
+                self.__log.info(f"{NOTIFY_MISSION_STATUS_TOPIC_NAME} Service Status Mission Is None");
+                return;
+        except AssertionError as ate:
+            self.__log.error(f"{ate}");
             return;
     
     def notify_mission_timer_cb(self) -> None:

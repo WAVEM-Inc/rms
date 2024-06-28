@@ -1,6 +1,7 @@
 import os;
 import json;
 from rosbridge_library.internal import message_conversion;
+from rclpy.impl.rcutils_logger import RcutilsLogger;
 from datetime import datetime;
 from pyproj import Proj;
 from math import sqrt;
@@ -25,6 +26,25 @@ def convert_latlon_to_utm(latitude: float, longitude: float) -> Any:
 
 def distance_between(x1: float, y1: float, x2: float, y2: float) -> float:
     return sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+    
+def get_initial_node_id(log: RcutilsLogger) -> str | None:
+    try:
+        home_directory: str = os.path.expanduser("~");
+        file_path: str = f"{home_directory}/RobotData/route/route.json";
+            
+        with open(file_path, "r", encoding="utf-8") as f:
+            file_content: Any = json.load(f);
+            log.info(f"Get initial node id : {json.dumps(obj=file_content, indent=4)}");
+            
+            initial_node_id: Any | str = file_content["initial_node"];
+            log.info(f"========= initial node id : {initial_node_id} =========");
+            
+            if initial_node_id is None:
+                raise Exception();
+            return initial_node_id;
+    except Exception as e:
+        print(f"Get initial node id : {e}");
+        return None;
         
 
 __all__: list[str] = ["utils"];
